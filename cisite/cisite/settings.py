@@ -26,7 +26,7 @@ with open(os.environ.get('SECRET_KEY_FILE', DEFAULT_SECRET_KEY_FILE)) as f:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["zaun.dpdklab.iol.unh.edu"]
+ALLOWED_HOSTS = ["zaun.dpdklab.iol.unh.edu", "localhost"]
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

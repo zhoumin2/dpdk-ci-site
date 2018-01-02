@@ -6,7 +6,7 @@ from django.db import models
 class PatchSet(models.Model):
     """Model a single patchset."""
 
-    patchworks_id = models.IntegerField()
+    patchworks_id = models.IntegerField(unique=True)
     branch = models.CharField(max_length=64)
     commit_id = models.CharField('git commit hash', max_length=40)
     tarball = models.CharField(max_length=256)
@@ -21,7 +21,7 @@ class PatchSet(models.Model):
 class Patch(models.Model):
     """Model a single patch in PatchWorks."""
 
-    patchworks_id = models.IntegerField()
+    patchworks_id = models.IntegerField(unique=True)
     submitter = models.CharField(max_length=128)
     subject = models.CharField(max_length=128)
     patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE)
