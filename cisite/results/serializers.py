@@ -6,7 +6,7 @@ from results.models import PatchSet, Patch
 class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize PatchSet objects."""
 
-    patches = serializers.HyperlinkedRelatedField(many=True, view_name='patch-detail', read_only=True, source='patch_set')
+    patches = serializers.HyperlinkedRelatedField(many=True, view_name='patch-detail', read_only=True)
 
     class Meta:
         model = PatchSet

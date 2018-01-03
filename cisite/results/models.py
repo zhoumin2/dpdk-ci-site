@@ -15,7 +15,7 @@ class PatchSet(models.Model):
     def __str__(self):
         """Return string representation of patchset record."""
         return 'PatchSet ID={pid:d} Count={count:d}'.format(
-            pid=self.patchworks_id, count=len(self.patch_set.values()))
+            pid=self.patchworks_id, count=len(self.patches.values()))
 
 
 class Patch(models.Model):
@@ -24,7 +24,8 @@ class Patch(models.Model):
     patchworks_id = models.IntegerField(unique=True)
     submitter = models.CharField(max_length=128)
     subject = models.CharField(max_length=128)
-    patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE)
+    patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
+                                 related_name='patches')
     version = models.CharField(max_length=16)
     patch_number = models.IntegerField()
     date = models.DateTimeField('date submitted')
