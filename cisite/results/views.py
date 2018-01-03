@@ -1,7 +1,6 @@
 """Render views for results database objects."""
 
-from rest_framework import permissions, renderers, viewsets
-from rest_framework.response import Response
+from rest_framework import permissions, viewsets
 from .models import PatchSet, Patch
 from .serializers import PatchSetSerializer, PatchSerializer
 

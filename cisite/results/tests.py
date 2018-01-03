@@ -5,11 +5,13 @@ import pytz
 from django.test import TestCase
 from results.models import Patch, PatchSet
 
-# Create your tests here.
-class ModelTestCase(TestCase):
+
+class PatchSetModelTestCase(TestCase):
+    """Test the PatchSet and Patch models."""
 
     @classmethod
     def setUpTestData(cls):
+        """Set up dummy test data."""
         cls.test_ps = PatchSet(patchworks_id=30741, patch_count=3)
         cls.test_ps.save()
         Patch(patchworks_id=30741,
@@ -30,9 +32,11 @@ class ModelTestCase(TestCase):
                                      tzinfo=pytz.utc)).save()
 
     def test_incomplete_patch_set(self):
+        """Test string representation of incomplete patch set."""
         self.assertEqual(str(self.__class__.test_ps), '30741 2/3')
 
     def test_complete_patch_set(self):
+        """Test string representation of complete patch set."""
         Patch(patchworks_id=30743,
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               subject='ethdev: fix xstats get by id APIS',
