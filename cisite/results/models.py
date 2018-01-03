@@ -14,8 +14,9 @@ class PatchSet(models.Model):
 
     def __str__(self):
         """Return string representation of patchset record."""
-        return 'PatchSet ID={pid:d} Count={count:d}'.format(
-            pid=self.patchworks_id, count=len(self.patches.values()))
+        return '{pid:d} {actual:d}/{expected:d}'.format(
+            pid=self.patchworks_id, actual=self.patches.count(),
+            expected=self.patch_count)
 
 
 class Patch(models.Model):
@@ -32,6 +33,6 @@ class Patch(models.Model):
 
     def __str__(self):
         """Return string representation of patch record."""
-        return '[PATCH,{pid:d},{number:d},{count:d}] {subject:s}'.format(
-            pid=self.patchworks_id, subject=self.subject,
+        return '{pid:d} [PATCH {version:s} {number:d}/{count:d}] {subject:s}'.format(
+            pid=self.patchworks_id, version=self.version, subject=self.subject,
             number=self.patch_number, count=self.patchset.patch_count)
