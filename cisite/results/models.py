@@ -1,5 +1,6 @@
 """Model data for patchsets, environments, and test results."""
 
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 from django.db import models
 
@@ -54,8 +55,8 @@ class Environment(models.Model):
     """
 
     inventory_id = models.CharField(max_length=64)
-    owner = models.ForeignKey(Group, on_delete=models.SET_DEFAULT,
-                              default=get_admin_group)
+    owner = models.ForeignKey(Group, on_delete=models.SET_NULL,
+                              null=True)
     motherboard_make = models.CharField(max_length=64)
     motherboard_model = models.CharField(max_length=64)
     motherboard_serial = models.CharField(max_length=64)
@@ -71,9 +72,9 @@ class Environment(models.Model):
     nic_device_id = models.CharField(max_length=64)
     nic_device_bustype = models.CharField(max_length=64)
     nic_pmd = models.CharField(max_length=64)
-    nic_firmware_source_id = models.CharField(max_length=64)
+    nic_firmware_source_id = models.CharField(max_length=64, blank=True)
     nic_firmware_version = models.CharField(max_length=64)
-    kernel_cmdline = models.CharField(max_length=4096)
+    kernel_cmdline = models.CharField(max_length=4096, blank=True)
     kernel_name = models.CharField(max_length=32)
     kernel_version = models.CharField(max_length=64)
     compiler_name = models.CharField(max_length=32)
@@ -100,6 +101,11 @@ class Measurement(models.Model):
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
                                     related_name='measurements')
 
+    @property
+    def owner(self):
+        """Return the owner of the environment for this measurement."""
+        return self.environment.owner
+
     def __str__(self):
         """Return a string describing the measurement.
 
@@ -115,12 +121,59 @@ class Measurement(models.Model):
             delta=self.delta_limit, hl=hl)
 
 
+class TestRun(models.Model):
+    """Model a test run of a patch set."""
+
+    timestamp = models.DateTimeField('time run')
+    log_output_file = models.CharField(max_length=4096)
+    is_official = models.BooleanField(default=True)
+    patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
+                                 related_name='results')
+
+    def clean(self):
+        """Check for same environment for all results."""
+        if self.results.count() == 0:
+            return
+
+        values = self.results.all()
+        env = values[0].measurement.environment
+        for result in values[1:]:
+            if result.measurement.environment != env:
+                raise ValidationError('All results for a test run must be on the same environment.')
+
+    @property
+    def owner(self):
+        """Return the owner of the test results."""
+        if self.results.count() > 0:
+            return self.results[0].owner
+        else:
+            return None
+
+    def __str__(self):
+        """Return the patchset and timestamp as a string."""
+        return '{psid:d} {timestamp:s}'.format(
+            psid=self.patchset.patchworks_id,
+            timestamp=self.timestamp.isoformat(sep=' '))
+
+
 class TestResult(models.Model):
     """Model a single test result in a patch set."""
 
     result = models.CharField(max_length=64)
     actual_value = models.FloatField()
     measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE)
+    run = models.ForeignKey(TestRun, on_delete=models.CASCADE,
+                            related_name='results')
+
+    def clean(self):
+        """Check for same environment for all results."""
+        if self.run is not None:
+            self.run.clean()
+
+    @property
+    def owner(self):
+        """Return the owner of the measurement."""
+        return self.measurement.owner
 
     def __str__(self):
         """Return a string briefly describing the test result.
@@ -134,21 +187,3 @@ class TestResult(models.Model):
             actual=self.actual_value,
             expected=self.measurement.expected_value,
             delta=self.measurement.delta_limit)
-
-
-class TestRun(models.Model):
-    """Model a test run of a patch set."""
-
-    timestamp = models.DateTimeField('time run')
-    log_output_file = models.CharField(max_length=4096)
-    is_official = models.BooleanField()
-    patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
-                                 related_name='test_runs')
-    result = models.ForeignKey(TestResult, on_delete=models.CASCADE,
-                               related_name='results')
-
-    def __str__(self):
-        """Return the patchset and timestamp as a string."""
-        return '{psid:d} {timestamp:s}'.format(
-            psid=self.patchset.patchworks_id,
-            timestamp=self.timestamp.isoformat(sep=' '))
