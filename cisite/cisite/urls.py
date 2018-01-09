@@ -15,19 +15,28 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from results.views import PatchSetViewSet, PatchViewSet
+from results.views import PatchSetViewSet, PatchViewSet, TarballViewSet, \
+    EnvironmentViewSet, MeasurementViewSet, TestResultViewSet, \
+    TestRunViewSet, GroupViewSet
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
 router = DefaultRouter()
 router.register(r'patchsets', PatchSetViewSet)
 router.register(r'patches', PatchViewSet)
+router.register(r'tarballs', TarballViewSet)
+router.register(r'environments', EnvironmentViewSet)
+router.register(r'measurements', MeasurementViewSet)
+router.register(r'testresults', TestResultViewSet)
+router.register(r'testruns', TestRunViewSet)
+router.register(r'group', GroupViewSet)
 
-schema_view = get_schema_view('DPDK CI Site API')
+schema_view = get_schema_view(title='DPDK CI Site API')
 
 urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls',
                               namespace='rest_framework')),
     path('admin/', admin.site.urls),
+    path('schema/', schema_view),
 ]

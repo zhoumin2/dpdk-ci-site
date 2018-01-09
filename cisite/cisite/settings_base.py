@@ -10,24 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+import ldap
 import os
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
-
-DEFAULT_SECRET_KEY_FILE = os.path.join(BASE_DIR, 'secret_key.txt')
-with open(os.environ.get('SECRET_KEY_FILE', DEFAULT_SECRET_KEY_FILE)) as f:
-    SECRET_KEY = f.read().strip()
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["zaun.dpdklab.iol.unh.edu", "localhost"]
-
 
 # Application definition
 
@@ -74,17 +65,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cisite.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
@@ -107,10 +87,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
 
 USE_L10N = True
@@ -118,17 +94,31 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.0/howto/static-files/
-
-STATIC_URL = '/static/'
 
 # REST Framework configuration
 
 REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+# Use LDAP group membership to calculate group permissions.
+AUTH_LDAP_FIND_GROUP_PERMS = True
+
+# Cache group memberships for an hour to minimize LDAP traffic
+AUTH_LDAP_CACHE_GROUPS = True
+AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+
+AUTHENTICATION_BACKENDS = (
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
