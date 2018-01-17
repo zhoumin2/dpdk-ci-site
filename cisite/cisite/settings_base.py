@@ -20,7 +20,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-# Application definition
+# Application definition -- these are Python packages which provide models,
+# forms, views, or templates used by Django
 
 INSTALLED_APPS = [
     'results.apps.ResultsConfig',
@@ -32,6 +33,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+
+    # At first glance this isn't an app but it does provide templates for
+    # Django REST Framework forms, so it needs to be listed here
+    'django_filters',
 ]
 
 MIDDLEWARE = [
