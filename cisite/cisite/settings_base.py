@@ -99,7 +99,6 @@ USE_L10N = True
 USE_TZ = True
 
 
-
 # REST Framework configuration
 
 REST_FRAMEWORK = {
