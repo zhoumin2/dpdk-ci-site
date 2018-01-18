@@ -78,7 +78,7 @@ class ParameterSerializer(serializers.HyperlinkedModelSerializer):
 class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize measurement objects."""
 
-    parameters = ParameterSerializer(many=True)
+    parameters = ParameterSerializer(many=True, required=False)
 
     class Meta:
         """Specify how to serialize measurements."""
@@ -86,6 +86,7 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
         model = Measurement
         fields = ('url', 'name', 'unit', 'higher_is_better', 'expected_value',
                   'delta_limit', 'environment', 'parameters')
+        read_only_fields = ('environment', )
         filter_fields = ('name', 'unit', 'environment')
 
 
@@ -108,6 +109,25 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'nic_firmware_version', 'kernel_cmdline',
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'measurements')
+
+    def create(self, validated_data):
+        """Create an environment based on the POST data.
+
+        Measurements specified in the measurements list will also be
+        created along with the environment.
+        """
+        measurements_data = validated_data.pop('measurements')
+        environment = Environment.objects.create(**validated_data)
+        for measurement_data in measurements_data:
+            parameters_data = list()
+            if 'parameters' in measurements_data:
+                parameters_data = measurements_data.pop('parameters')
+            measurement = Measurement.objects.create(environment=environment,
+                                                     **measurement_data)
+            for parameter_data in parameters_data:
+                Parameter.objects.create(measurement=measurement,
+                                         **parameters_data)
+        return environment
 
 
 class TestResultSerializer(serializers.HyperlinkedModelSerializer):
