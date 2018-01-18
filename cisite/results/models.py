@@ -76,7 +76,7 @@ class Tarball(models.Model):
 
     def __str__(self):
         """Return string representation of tarball record."""
-        return tarball_url
+        return self.tarball_url
 
 
 class Patch(models.Model):
@@ -256,7 +256,7 @@ class TestRun(models.Model):
     log_output_file = models.URLField(
         help_text='External URL of log output file')
     is_official = models.BooleanField(default=True,
-        help_text='True if the test run is based off of an official tree or patch submission; False if the test run is based on a private vendor tree')
+        help_text='True if the test run is based off of an official tree or patch submission; False if the test run is based on a private vendor tree') # noqa:E501
     tarball = models.ForeignKey(Tarball, on_delete=models.CASCADE,
         related_name='runs', help_text='Tarball used for test run')
 
