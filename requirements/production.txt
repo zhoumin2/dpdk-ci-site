@@ -1,3 +1,4 @@
 -r base.txt
 
-# Nothing yet
+mod_wsgi
+mysqlclient
