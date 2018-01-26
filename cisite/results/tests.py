@@ -5,9 +5,12 @@ import pytz
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from rest_framework.reverse import reverse
+from rest_framework.test import APIRequestFactory
 from .models import Patch, PatchSet, Environment, Measurement, \
-    TestRun, TestResult, Tarball
-from .serializers import PatchSerializer, EnvironmentSerializer
+    TestRun, TestResult, Tarball, Parameter
+from .serializers import PatchSerializer, EnvironmentSerializer, \
+    TarballSerializer, TestRunSerializer
 
 
 class PatchSerializerTestCase(TestCase):
@@ -91,6 +94,58 @@ class EnvironmentSerializerTestCase(TestCase):
                          "Frame size")
         self.assertEqual(env.measurements.all()[0].parameters.all()[1].name,
                          "txd/rxd")
+
+
+class TestRunSerializerTestCase(TestCase):
+    """Test customized behavior of TestRunSerializer."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        tarball = Tarball.objects.create(
+            branch="master",
+            commit_id="0000000000000000000000000000000000000000",
+            tarball_url='http://host.invalid/dpdk.tar.gz')
+        cls.tarball_url = reverse(
+            'tarball-detail', args=[tarball.id], request=request)
+        env = Environment.objects.create(
+            inventory_id='IOL-IOL-1', motherboard_make="Intel",
+            motherboard_model="ABCDEF", motherboard_serial="12345",
+            cpu_socket_count=1, cpu_cores_per_socket=1, cpu_threads_per_core=1,
+            ram_type="DDR4", ram_size=65536, ram_channel_count=2,
+            ram_frequency=2400, nic_make="Intel", nic_model="XL710",
+            nic_device_id="01:00.0", nic_device_bustype="PCI", nic_pmd="i40e",
+            nic_firmware_version="5.05", kernel_version="4.14",
+            compiler_name="gcc", compiler_version="7.1", bios_version="5.05")
+        m = Measurement.objects.create(name='throughput_large_queue',
+                                       unit='Mpps',
+                                       higher_is_better=True,
+                                       expected_value=14.862,
+                                       delta_limit=2.2,
+                                       environment=env)
+        Parameter.objects.create(name='Frame size', unit='bytes',
+                                 value=64, measurement=m)
+        Parameter.objects.create(name='txd/rxd', unit='descriptors',
+                                 value=2048, measurement=m)
+        cls.m_url = reverse(
+            'measurement-detail', args=[m.id], request=request)
+
+    def test_create_test_run(self):
+        """Verify that deserializing a test run creates its results."""
+        serializer = TestRunSerializer(
+            data=dict(tarball=self.__class__.tarball_url,
+                      is_official=True,
+                      log_output_file='http://host.invalid/log_file.txt',
+                      timestamp=datetime.now(tz=pytz.utc),
+                      results=[dict(result='PASS',
+                                    actual_value=14.777,
+                                    measurement=self.__class__.m_url)]))
+        serializer.is_valid(raise_exception=True)
+        run = serializer.save()
+        self.assertEqual(run.results.count(), 1)
+        self.assertEqual(run.results.all()[0].result, 'PASS')
 
 
 class PatchSetModelTestCase(TestCase):
