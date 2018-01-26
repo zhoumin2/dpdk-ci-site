@@ -120,13 +120,13 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         environment = Environment.objects.create(**validated_data)
         for measurement_data in measurements_data:
             parameters_data = list()
-            if 'parameters' in measurements_data:
-                parameters_data = measurements_data.pop('parameters')
+            if 'parameters' in measurement_data:
+                parameters_data = measurement_data.pop('parameters')
             measurement = Measurement.objects.create(environment=environment,
                                                      **measurement_data)
             for parameter_data in parameters_data:
                 Parameter.objects.create(measurement=measurement,
-                                         **parameters_data)
+                                         **parameter_data)
         return environment
 
 
