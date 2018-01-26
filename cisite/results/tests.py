@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from .models import Patch, PatchSet, Environment, Measurement, \
     TestRun, TestResult, Tarball
-from .serializers import PatchSerializer
+from .serializers import PatchSerializer, EnvironmentSerializer
 
 
 class PatchSerializerTestCase(TestCase):
@@ -42,6 +42,55 @@ class PatchSerializerTestCase(TestCase):
         serializer.is_valid(raise_exception=True)
         p = serializer.save()
         self.assertEqual(p.patchset, self.__class__.test_ps)
+
+
+class EnvironmentSerializerTestCase(TestCase):
+    def test_create_environment_measurement_parameters(self):
+        serializer = EnvironmentSerializer(data=dict(
+            inventory_id="inventory_id",
+            motherboard_make="Vendor",
+            motherboard_model="Model T",
+            motherboard_serial="ABCDEFG12345",
+            cpu_socket_count=2,
+            cpu_cores_per_socket=8,
+            cpu_threads_per_core=1,
+            ram_type="DDR4",
+            ram_size=65536,
+            ram_channel_count=4,
+            ram_frequency=2166,
+            nic_make="Vendor",
+            nic_model="Model S",
+            nic_device_id="07:00.0",
+            nic_device_bustype="PCI",
+            nic_pmd="models",
+            nic_firmware_version="1.0",
+            kernel_cmdline="ro quiet",
+            kernel_name="linux",
+            kernel_version="4.11.8-300.fc26.x86_64",
+            compiler_name="gcc",
+            compiler_version="7.2.1-2",
+            bios_version="4.2",
+            measurements=[dict(name="throughput_large_queue",
+                               unit="Mpps",
+                               higher_is_better=True,
+                               expected_value=14.862,
+                               delta_limit=2.2,
+                               parameters=[dict(name="Frame size",
+                                                    unit="bytes",
+                                                    value=64),
+                                           dict(name="txd/rxd",
+                                                unit="descriptors",
+                                                value=2048)])]))
+        serializer.is_valid(raise_exception=True)
+        env = serializer.save()
+        self.assertEqual(env.measurements.count(), 1)
+        self.assertEqual(env.measurements.all()[0].name,
+                         "throughput_large_queue")
+        self.assertEqual(env.measurements.all()[0].parameters.count(), 2)
+        self.assertEqual(env.measurements.all()[0].parameters.all()[0].name,
+                         "Frame size")
+        self.assertEqual(env.measurements.all()[0].parameters.all()[1].name,
+                         "txd/rxd")
 
 
 class PatchSetModelTestCase(TestCase):
