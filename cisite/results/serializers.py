@@ -7,17 +7,6 @@ from .models import PatchSet, Tarball, Patch, Environment, Measurement, \
     TestResult, TestRun, Parameter
 
 
-class TarballSerializer(serializers.HyperlinkedModelSerializer):
-    """Serialize Tarball objects."""
-
-    class Meta:
-        """Specify fields to pull from Tarball model."""
-
-        model = Tarball
-        fields = ('url', 'patchset', 'branch', 'commit_id',
-                  'job_id', 'tarball_url')
-
-
 class PatchSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize Patch objects."""
 
@@ -158,6 +147,20 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
         for result in results:
             TestResult.objects.create(run=run, **result)
         return run
+
+
+class TarballSerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize Tarball objects."""
+
+    runs = serializers.HyperlinkedRelatedField(many=True, read_only=True,
+                                                   view_name='testrun-detail')
+
+    class Meta:
+        """Specify fields to pull from Tarball model."""
+
+        model = Tarball
+        fields = ('url', 'patchset', 'branch', 'commit_id',
+                  'job_id', 'tarball_url', 'runs')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
