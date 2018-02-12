@@ -176,6 +176,8 @@ class Environment(models.Model):
         help_text='Version of C compiler')
     bios_version = models.CharField(max_length=64,
         help_text='Version of BIOS for Device Under Test')
+    os_distro = models.CharField('OS distribution', max_length=64,
+        help_text='Operating system distribution name and version, e.g., Fedora26')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)

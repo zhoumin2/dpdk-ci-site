@@ -97,7 +97,8 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'nic_pmd', 'nic_firmware_source_id',
                   'nic_firmware_version', 'kernel_cmdline',
                   'kernel_name', 'kernel_version', 'compiler_name',
-                  'compiler_version', 'bios_version', 'measurements')
+                  'compiler_version', 'bios_version', 'os_distro',
+                  'measurements')
 
     def create(self, validated_data):
         """Create an environment based on the POST data.

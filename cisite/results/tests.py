@@ -67,6 +67,7 @@ class EnvironmentSerializerTestCase(TestCase):
             nic_device_bustype="PCI",
             nic_pmd="models",
             nic_firmware_version="1.0",
+            os_distro="Fedora26",
             kernel_cmdline="ro quiet",
             kernel_name="linux",
             kernel_version="4.11.8-300.fc26.x86_64",
@@ -118,6 +119,7 @@ class TestRunSerializerTestCase(TestCase):
             ram_frequency=2400, nic_make="Intel", nic_model="XL710",
             nic_device_id="01:00.0", nic_device_bustype="PCI", nic_pmd="i40e",
             nic_firmware_version="5.05", kernel_version="4.14",
+            os_distro="Fedora26",
             compiler_name="gcc", compiler_version="7.1", bios_version="5.05")
         m = Measurement.objects.create(name='throughput_large_queue',
                                        unit='Mpps',
@@ -244,7 +246,7 @@ class OwnerTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05", owner=cls.g1)
+                os_distro="Fedora26", bios_version="5.05", owner=cls.g1)
         cls.envn = Environment.objects.create(inventory_id='IOL-IOL-1',
                 motherboard_make="Intel", motherboard_model="ABCDEF",
                 motherboard_serial="12345", cpu_socket_count=1,
@@ -255,7 +257,7 @@ class OwnerTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
 
     @classmethod
     def create_measurement(self, environment):
@@ -336,7 +338,7 @@ class TestResultTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
         cls.m1 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
                 expected_value=39.0, delta_limit=1.0, environment=cls.env1)
@@ -350,7 +352,7 @@ class TestResultTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
         cls.m2 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
                 expected_value=39.0, delta_limit=1.0, environment=cls.env2)
