@@ -139,7 +139,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
 
         model = TestRun
         fields = ('url', 'timestamp', 'log_output_file', 'is_official',
-                  'tarball', 'results')
+                  'tarball', 'results', 'environment')
 
     def create(self, validated_data):
         results = validated_data.pop('results')

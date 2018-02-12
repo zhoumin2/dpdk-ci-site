@@ -259,15 +259,18 @@ class TestRun(models.Model):
         help_text='True if the test run is based off of an official tree or patch submission; False if the test run is based on a private vendor tree') # noqa:E501
     tarball = models.ForeignKey(Tarball, on_delete=models.CASCADE,
         related_name='runs', help_text='Tarball used for test run')
+    environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
+        help_text='Environment that this test run was executed on',
+        related_name='runs')
 
     def clean(self):
-        """Check for same environment for all results."""
+        """Check that all expected measurements' environment matches."""
         if self.results.count() == 0:
             return
 
+        env = self.environment
         values = self.results.all()
-        env = values[0].measurement.environment
-        for result in values[1:]:
+        for result in values:
             if result.measurement.environment != env:
                 raise ValidationError('All results for a test run must be on the same environment.')
 
