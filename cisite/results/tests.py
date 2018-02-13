@@ -67,6 +67,7 @@ class EnvironmentSerializerTestCase(TestCase):
             nic_device_bustype="PCI",
             nic_pmd="models",
             nic_firmware_version="1.0",
+            os_distro="Fedora26",
             kernel_cmdline="ro quiet",
             kernel_name="linux",
             kernel_version="4.11.8-300.fc26.x86_64",
@@ -118,6 +119,7 @@ class TestRunSerializerTestCase(TestCase):
             ram_frequency=2400, nic_make="Intel", nic_model="XL710",
             nic_device_id="01:00.0", nic_device_bustype="PCI", nic_pmd="i40e",
             nic_firmware_version="5.05", kernel_version="4.14",
+            os_distro="Fedora26",
             compiler_name="gcc", compiler_version="7.1", bios_version="5.05")
         m = Measurement.objects.create(name='throughput_large_queue',
                                        unit='Mpps',
@@ -131,6 +133,8 @@ class TestRunSerializerTestCase(TestCase):
                                  value=2048, measurement=m)
         cls.m_url = reverse(
             'measurement-detail', args=[m.id], request=request)
+        cls.env_url = reverse(
+            'environment-detail', args=[env.id], request=request)
 
     def test_create_test_run(self):
         """Verify that deserializing a test run creates its results."""
@@ -139,6 +143,7 @@ class TestRunSerializerTestCase(TestCase):
                       is_official=True,
                       log_output_file='http://host.invalid/log_file.txt',
                       timestamp=datetime.now(tz=pytz.utc),
+                      environment=self.__class__.env_url,
                       results=[dict(result='PASS',
                                     actual_value=14.777,
                                     measurement=self.__class__.m_url)]))
@@ -241,7 +246,7 @@ class OwnerTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05", owner=cls.g1)
+                os_distro="Fedora26", bios_version="5.05", owner=cls.g1)
         cls.envn = Environment.objects.create(inventory_id='IOL-IOL-1',
                 motherboard_make="Intel", motherboard_model="ABCDEF",
                 motherboard_serial="12345", cpu_socket_count=1,
@@ -252,7 +257,7 @@ class OwnerTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
 
     @classmethod
     def create_measurement(self, environment):
@@ -261,12 +266,12 @@ class OwnerTestCase(TestCase):
                 expected_value=39.0, delta_limit=1.0, environment=environment)
 
     @classmethod
-    def create_test_run(self):
+    def create_test_run(cls, environment):
         tb = Tarball.objects.create(branch="master",
                 commit_id="0000000000000000000000000000000000000000",
                 tarball_url='http://host.invalid/dpdk.tar.gz')
         return TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
-            log_output_file='/foo/bar', tarball=tb)
+            log_output_file='/foo/bar', tarball=tb, environment=environment)
 
     def test_measurement_owner(self):
         """Test owner property of Measurement model."""
@@ -297,7 +302,7 @@ class OwnerTestCase(TestCase):
     def test_test_run_owner(self):
         """Test owner property of TestRun model."""
         env = self.__class__.env1
-        run = self.__class__.create_test_run()
+        run = self.__class__.create_test_run(environment=env)
         for i in [38.5, 39.5]:
             m = self.__class__.create_measurement(environment=env)
             res = TestResult.objects.create(result="PASS",
@@ -307,7 +312,7 @@ class OwnerTestCase(TestCase):
     def test_test_run_owner_null(self):
         """Test NULL owner of TestRun model."""
         env = self.__class__.envn
-        run = self.__class__.create_test_run()
+        run = self.__class__.create_test_run(environment=env)
         m = self.__class__.create_measurement(environment=env)
         res = TestResult.objects.create(result="PASS",
             actual_value=38.5, measurement=m, run=run)
@@ -333,7 +338,7 @@ class TestResultTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
         cls.m1 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
                 expected_value=39.0, delta_limit=1.0, environment=cls.env1)
@@ -347,7 +352,7 @@ class TestResultTestCase(TestCase):
                 nic_device_bustype="PCI", nic_pmd="i40e",
                 nic_firmware_version="5.05", kernel_version="4.14",
                 compiler_name="gcc", compiler_version="7.1",
-                bios_version="5.05")
+                os_distro="Fedora26", bios_version="5.05")
         cls.m2 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
                 expected_value=39.0, delta_limit=1.0, environment=cls.env2)
@@ -355,7 +360,8 @@ class TestResultTestCase(TestCase):
     def test_different_envs_fails(self):
         cls = self.__class__
         run = TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
-            log_output_file='/foo/bar', tarball=cls.test_tb)
+            log_output_file='/foo/bar', tarball=cls.test_tb,
+            environment=cls.env1)
         res1 = TestResult.objects.create(result="PASS",
                     actual_value=38.5, measurement=cls.m1, run=run)
         with self.assertRaises(ValidationError):
