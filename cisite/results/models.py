@@ -183,6 +183,23 @@ class Environment(models.Model):
     # bios_settings = models.CharField(max_length=4096)
     # dts_configuration = models.CharField(max_length=4096)
 
+    @property
+    def contacts(self):
+        """Return a list of contacts to be e-mailed about test results.
+
+        Each contact is represented as a dictionary with a display name,
+        e-mail address, and a "how" field specifying whether the contact
+        should be put in the To, Cc, or Bcc field of the e-mail.
+
+        At present this list is simply built from the list of users that
+        are part of the owner group. This will become more sophisticated
+        in the future.
+        """
+        users = self.owner.user_set
+        return [{'display_name': ' '.join(x['first_name'], x['last_name']),
+                 'email': x['email'], 'how': 'to'}
+                for x in users.values('first_name', 'last_name', 'email')]
+
     def __str__(self):
         """Return inventory ID as a string."""
         return self.inventory_id
