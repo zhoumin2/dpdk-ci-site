@@ -73,8 +73,8 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize measurements."""
 
         model = Measurement
-        fields = ('url', 'name', 'unit', 'higher_is_better', 'expected_value',
-                  'delta_limit', 'environment', 'parameters')
+        fields = ('url', 'name', 'unit', 'higher_is_better',
+                  'environment', 'parameters')
         read_only_fields = ('environment', )
         filter_fields = ('name', 'unit', 'environment')
 
@@ -143,7 +143,8 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize test results."""
 
         model = TestResult
-        fields = ('url', 'result', 'actual_value', 'measurement')
+        fields = ('url', 'result', 'difference', 'expected_value',
+                  'measurement')
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):

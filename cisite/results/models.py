@@ -269,10 +269,6 @@ class Measurement(models.Model):
         help_text='Units for this measurement value, e.g., Gbps')
     higher_is_better = models.BooleanField(
         help_text='True if higher numbers are better, e.g., throughput; False otherwise, e.g., latency')
-    expected_value = models.FloatField(
-        help_text='Value of measurement expected by vendor')
-    delta_limit = models.FloatField(
-        help_text='Maximum difference allowed between expected and actual results')
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
         help_text='Environment that measurement applies to',
         related_name='measurements')
@@ -283,18 +279,8 @@ class Measurement(models.Model):
         return self.environment.owner
 
     def __str__(self):
-        """Return a string describing the measurement.
-
-        Return a string like "throughput ^ 5.0 0.1" for a throughput
-        measurement expected to be 5.0 Gbps with an allowed variation
-        of 100 Mbps.
-        """
-        hl = 'v'
-        if self.higher_is_better:
-            hl = '^'
-        return '{name:s} {expected:f} {hl:s} {delta:f}'.format(
-            name=self.name, expected=self.expected_value,
-            delta=self.delta_limit, hl=hl)
+        """Return a string describing the measurement."""
+        return '{name:s} ({unit:s})'.format(name=self.name, unit=self.unit)
 
 
 class Parameter(models.Model):
@@ -366,10 +352,24 @@ class TestRun(models.Model):
 class TestResult(models.Model):
     """Model a single test result in a patch set."""
 
-    result = models.CharField(max_length=64,
-        help_text='Result for this test; "PASS" or "FAIL"')
-    actual_value = models.FloatField(
-        help_text='Actual value corresponding to expected measurement')
+    PASS = 'PASS'
+    FAIL = 'FAIL'
+    WARNING = 'WARN'
+    NOT_TESTED = 'N/T'
+    RESULT_CHOICES = (
+        (PASS, 'Pass'),
+        (FAIL, 'Fail'),
+        (WARNING, 'Warning'),
+        (NOT_TESTED, 'Not Tested'),
+    )
+
+    result = models.CharField(max_length=4,
+        help_text='Result for this test: ' +
+            ', '.join([x[0] for x in RESULT_CHOICES]))
+    difference = models.FloatField(
+        help_text='Difference between actual and expected values')
+    expected_value = models.FloatField(null=True, blank=True,
+        help_text='Value of measurement expected by vendor')
     measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE,
         help_text='Vendor expected measurement that this result corresponds to')
     run = models.ForeignKey(TestRun, on_delete=models.CASCADE,
@@ -389,12 +389,10 @@ class TestResult(models.Model):
     def __str__(self):
         """Return a string briefly describing the test result.
 
-        Return a string like "throughput PASS 4.9/5.0+-0.1" for a
+        Return a string like "throughput PASS -0.1 Gbps" for a
         test throughput measuring 4.9 Gbps against an expected
         result of 5.0 Gbps +/- 100 Mbps.
         """
-        return '{name:s} {result:s} {actual:f}/{expected:f}+-{delta:f}'.format(
+        return '{name:s} {result:s} {difference:f} {unit:s}'.format(
             name=self.measurement.name, result=self.result,
-            actual=self.actual_value,
-            expected=self.measurement.expected_value,
-            delta=self.measurement.delta_limit)
+            difference=self.difference, unit=self.measurement.unit)
