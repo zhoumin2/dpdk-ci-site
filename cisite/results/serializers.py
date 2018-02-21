@@ -25,7 +25,7 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer):
         model = Patch
         fields = ('url', 'patchworks_id', 'message_id', 'submitter', 'subject',
                   'version', 'is_rfc', 'patch_number', 'date', 'patchset',
-                  'patchset_count')
+                  'patchset_count', 'contacts')
         read_only_fields = ('patchset',)
 
     def create(self, validated_data):

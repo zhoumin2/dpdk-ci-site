@@ -1,6 +1,9 @@
 """Model data for patchsets, environments, and test results."""
 
+import json
+
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import F, Count
@@ -79,6 +82,17 @@ class Tarball(models.Model):
         return self.tarball_url
 
 
+def validate_contact_list(value):
+    xs = json.loads(value)
+    for x in xs:
+        if 'email' not in x:
+            raise ValidationError('Patch contact does not have e-mail address')
+        elif 'how' not in x or x['how'].lower() not in ('to', 'cc', 'bcc'):
+            raise ValidationError('Patch contact "how" not present or '
+                                  'valid; must be "to", "cc", or "bcc"')
+        validate_email(x['email'])
+
+
 class Patch(models.Model):
     """Model a single patch in PatchWorks."""
 
@@ -99,6 +113,11 @@ class Patch(models.Model):
     patch_number = models.PositiveIntegerField(
         help_text="Number of this patch within its patchset")
     date = models.DateTimeField(help_text='Date this patch was submitted')
+    contacts = models.TextField(blank=True, validators=[validate_contact_list],
+        help_text='Recipients listed in To and Cc field, as JSON string '
+        'containing list of dictionaries with fields: '
+        'display_name (optional), email (required), '
+        'how (required, "to" or "cc")')
 
     def __str__(self):
         """Return string representation of patch record."""
