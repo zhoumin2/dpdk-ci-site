@@ -1,6 +1,9 @@
 """Model data for patchsets, environments, and test results."""
 
+import json
+
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import F, Count
@@ -79,6 +82,17 @@ class Tarball(models.Model):
         return self.tarball_url
 
 
+def validate_contact_list(value):
+    xs = json.loads(value)
+    for x in xs:
+        if 'email' not in x:
+            raise ValidationError('Patch contact does not have e-mail address')
+        elif 'how' not in x or x['how'].lower() not in ('to', 'cc', 'bcc'):
+            raise ValidationError('Patch contact "how" not present or '
+                                  'valid; must be "to", "cc", or "bcc"')
+        validate_email(x['email'])
+
+
 class Patch(models.Model):
     """Model a single patch in PatchWorks."""
 
@@ -99,6 +113,11 @@ class Patch(models.Model):
     patch_number = models.PositiveIntegerField(
         help_text="Number of this patch within its patchset")
     date = models.DateTimeField(help_text='Date this patch was submitted')
+    contacts = models.TextField(blank=True, validators=[validate_contact_list],
+        help_text='Recipients listed in To and Cc field, as JSON string '
+        'containing list of dictionaries with fields: '
+        'display_name (optional), email (required), '
+        'how (required, "to" or "cc")')
 
     def __str__(self):
         """Return string representation of patch record."""
@@ -116,6 +135,33 @@ class Patch(models.Model):
         fs = '{pwid:d} [dpdk-dev{rfc:s}{version:s}{nc:s}] {subject:s}'
         return fs.format(pwid=self.patchworks_id, rfc=rfc, version=ver,
                          nc=nc, subject=self.subject)
+
+
+class ContactPolicy(models.Model):
+    """Define policy for e-mailing on test failure.
+
+    This provides a number of knobs to determine exactly who gets an e-mail
+    when a test fails.
+    """
+
+    email_submitter = models.BooleanField(default=False,
+        help_text="Whether or not to e-mail the patch submitter")
+    email_recipients = models.BooleanField(default=False,
+        help_text="Whether to e-mail the recipients of the patch")
+    email_owner = models.BooleanField(default=True,
+        help_text="Whether to e-mail the owner group of the environment")
+    email_list = models.CharField(max_length=128, blank=True,
+        default="dpdklab@iol.unh.edu",
+        help_text="Mailing list to cc on all e-mails")
+
+    def __str__(self):
+        """Return string representation of contact policy.
+
+        This implementation defers to returning a string for the environment
+        itself, as this makes it easy to find the right policy in the admin
+        interface.
+        """
+        return str(self.environment)
 
 
 class Environment(models.Model):
@@ -178,6 +224,9 @@ class Environment(models.Model):
         help_text='Version of BIOS for Device Under Test')
     os_distro = models.CharField('OS distribution', max_length=64,
         help_text='Operating system distribution name and version, e.g., Fedora26')
+    contact_policy = models.OneToOneField(
+        ContactPolicy, on_delete=models.CASCADE,
+        help_text='Contact policy for this environment')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -195,10 +244,16 @@ class Environment(models.Model):
         are part of the owner group. This will become more sophisticated
         in the future.
         """
-        users = self.owner.user_set
-        return [{'display_name': ' '.join(x['first_name'], x['last_name']),
-                 'email': x['email'], 'how': 'to'}
-                for x in users.values('first_name', 'last_name', 'email')]
+        ret = []
+        if self.contact_policy.email_owner:
+            users = self.owner.user_set
+            ret.extend(
+                [{'display_name': ' '.join(x['first_name'], x['last_name']),
+                  'email': x['email'], 'how': 'to'}
+                 for x in users.values('first_name', 'last_name', 'email')])
+        if self.contact_policy.email_list:
+            ret.append({'email': self.contact_policy.email_list, 'how': 'cc'})
+        return ret
 
     def __str__(self):
         """Return inventory ID as a string."""

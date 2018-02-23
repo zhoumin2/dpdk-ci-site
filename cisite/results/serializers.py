@@ -4,7 +4,7 @@ import re
 from django.contrib.auth.models import Group
 from rest_framework import serializers
 from .models import PatchSet, Tarball, Patch, Environment, Measurement, \
-    TestResult, TestRun, Parameter
+    TestResult, TestRun, Parameter, ContactPolicy
 
 
 class PatchSerializer(serializers.HyperlinkedModelSerializer):
@@ -25,7 +25,7 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer):
         model = Patch
         fields = ('url', 'patchworks_id', 'message_id', 'submitter', 'subject',
                   'version', 'is_rfc', 'patch_number', 'date', 'patchset',
-                  'patchset_count')
+                  'patchset_count', 'contacts')
         read_only_fields = ('patchset',)
 
     def create(self, validated_data):
@@ -79,10 +79,22 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
         filter_fields = ('name', 'unit', 'environment')
 
 
+class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize contact policy objects."""
+
+    class Meta:
+        """Define how to setup ContactPolicySerializer."""
+
+        model = ContactPolicy
+        fields = ('email_submitter', 'email_recipients', 'email_owner',
+                  'email_list')
+
+
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize environment objects."""
 
     measurements = MeasurementSerializer(many=True)
+    contact_policy = ContactPolicySerializer()
 
     class Meta:
         """Specify how to serialize environment."""
@@ -98,7 +110,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'nic_firmware_version', 'kernel_cmdline',
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'os_distro',
-                  'measurements', 'contacts')
+                  'measurements', 'contacts', 'contact_policy')
         read_only_fields = ('contacts',)
 
     def create(self, validated_data):
@@ -108,7 +120,10 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         created along with the environment.
         """
         measurements_data = validated_data.pop('measurements')
-        environment = Environment.objects.create(**validated_data)
+        cpolicy_data = validated_data.pop('contact_policy')
+        cpolicy = ContactPolicy.objects.create(**cpolicy_data)
+        environment = Environment.objects.create(contact_policy=cpolicy,
+                                                 **validated_data)
         for measurement_data in measurements_data:
             parameters_data = list()
             if 'parameters' in measurement_data:
