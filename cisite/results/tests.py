@@ -138,7 +138,6 @@ class TestRunSerializerTestCase(TestCase):
         """Verify that deserializing a test run creates its results."""
         serializer = TestRunSerializer(
             data=dict(tarball=self.__class__.tarball_url,
-                      is_official=True,
                       log_output_file='http://host.invalid/log_file.txt',
                       timestamp=datetime.now(tz=pytz.utc),
                       environment=self.__class__.env_url,

@@ -45,6 +45,8 @@ class PatchSet(models.Model):
         help_text="Subset of patch e-mail Message-Id to match on")
     patch_count = models.PositiveIntegerField(
         help_text='Number of patches in the patch set')
+    is_public = models.BooleanField(default=True,
+        help_text='Was the patch set posted to a public mailing list?')
 
     objects = PatchSetManager.from_queryset(PatchSetQuerySet)()
 
@@ -97,6 +99,7 @@ class Patch(models.Model):
     """Model a single patch in PatchWorks."""
 
     patchworks_id = models.PositiveIntegerField("Patchwork ID", unique=True,
+        null=True, blank=True,
         help_text="ID of patch in DPDK Patchworks instance")
     # Per RFC, maximum length of a Message-ID is 995 characters
     message_id = models.CharField("Message-ID", max_length=1024,
@@ -315,8 +318,6 @@ class TestRun(models.Model):
         help_text='Date and time that test was run')
     log_output_file = models.URLField(
         help_text='External URL of log output file')
-    is_official = models.BooleanField(default=True,
-        help_text='True if the test run is based off of an official tree or patch submission; False if the test run is based on a private vendor tree') # noqa:E501
     tarball = models.ForeignKey(Tarball, on_delete=models.CASCADE,
         related_name='runs', help_text='Tarball used for test run')
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
