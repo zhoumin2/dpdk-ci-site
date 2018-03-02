@@ -179,7 +179,7 @@ class Environment(models.Model):
     inventory_id = models.CharField(max_length=64,
         help_text='Site equipment inventory label/identifier')
     owner = models.ForeignKey(Group, on_delete=models.SET_NULL,
-                              null=True)
+                              null=True, blank=False)
     motherboard_make = models.CharField(max_length=64,
         help_text='Motherboard manufacturer of Device Under Test')
     motherboard_model = models.CharField(max_length=64,
@@ -258,6 +258,13 @@ class Environment(models.Model):
             ret.append({'email': self.contact_policy.email_list, 'how': 'cc'})
         return ret
 
+    class Meta:
+        """Specify how to set up environments."""
+
+        permissions = (
+            ('view_environment', 'View environment'),
+        )
+
     def __str__(self):
         """Return inventory ID as a string."""
         return self.inventory_id
@@ -280,6 +287,13 @@ class Measurement(models.Model):
     def owner(self):
         """Return the owner of the environment for this measurement."""
         return self.environment.owner
+
+    class Meta:
+        """Specify how to set up measurements."""
+
+        permissions = (
+            ('view_measurement', 'View measurement'),
+        )
 
     def __str__(self):
         """Return a string describing the measurement."""
@@ -338,10 +352,14 @@ class TestRun(models.Model):
     @property
     def owner(self):
         """Return the owner of the test results."""
-        if self.results.count() > 0:
-            return self.results.all()[0].owner
-        else:
-            return None
+        return self.environment.owner
+
+    class Meta:
+        """Specify how to set up test runs."""
+
+        permissions = (
+            ('view_testrun', 'View test run'),
+        )
 
     def __str__(self):
         """Return the patchset and timestamp as a string."""
@@ -386,6 +404,13 @@ class TestResult(models.Model):
     def owner(self):
         """Return the owner of the measurement."""
         return self.measurement.owner
+
+    class Meta:
+        """Specify how to set up test results."""
+
+        permissions = (
+            ('view_testresult', 'View test result'),
+        )
 
     def __str__(self):
         """Return a string briefly describing the test result.

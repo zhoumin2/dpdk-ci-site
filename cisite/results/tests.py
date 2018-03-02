@@ -48,8 +48,17 @@ class PatchSerializerTestCase(TestCase):
 
 
 class EnvironmentSerializerTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        group = Group.objects.create(name="TestGroup")
+        cls.group_url = reverse(
+            "group-detail", args=[group.id], request=request)
+
     def test_create_environment_measurement_parameters(self):
         serializer = EnvironmentSerializer(data=dict(
+            owner=self.__class__.group_url,
             inventory_id="inventory_id",
             motherboard_make="Vendor",
             motherboard_model="Model T",
@@ -104,6 +113,7 @@ class TestRunSerializerTestCase(TestCase):
         """Set up dummy test data."""
         factory = APIRequestFactory()
         request = factory.get('/')
+        group = Group.objects.create(name="TestGroup")
         tarball = Tarball.objects.create(
             branch="master",
             commit_id="0000000000000000000000000000000000000000",
@@ -111,6 +121,7 @@ class TestRunSerializerTestCase(TestCase):
         cls.tarball_url = reverse(
             'tarball-detail', args=[tarball.id], request=request)
         env = Environment.objects.create(
+            owner=group,
             inventory_id='IOL-IOL-1', motherboard_make="Intel",
             motherboard_model="ABCDEF", motherboard_serial="12345",
             cpu_socket_count=1, cpu_cores_per_socket=1, cpu_threads_per_core=1,
