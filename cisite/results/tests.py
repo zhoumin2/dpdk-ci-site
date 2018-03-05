@@ -77,8 +77,6 @@ class EnvironmentSerializerTestCase(TestCase):
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
-                               expected_value=14.862,
-                               delta_limit=2.2,
                                parameters=[dict(name="Frame size",
                                                     unit="bytes",
                                                     value=64),
@@ -126,8 +124,6 @@ class TestRunSerializerTestCase(TestCase):
         m = Measurement.objects.create(name='throughput_large_queue',
                                        unit='Mpps',
                                        higher_is_better=True,
-                                       expected_value=14.862,
-                                       delta_limit=2.2,
                                        environment=env)
         Parameter.objects.create(name='Frame size', unit='bytes',
                                  value=64, measurement=m)
@@ -142,12 +138,11 @@ class TestRunSerializerTestCase(TestCase):
         """Verify that deserializing a test run creates its results."""
         serializer = TestRunSerializer(
             data=dict(tarball=self.__class__.tarball_url,
-                      is_official=True,
                       log_output_file='http://host.invalid/log_file.txt',
                       timestamp=datetime.now(tz=pytz.utc),
                       environment=self.__class__.env_url,
                       results=[dict(result='PASS',
-                                    actual_value=14.777,
+                                    difference=-0.85,
                                     measurement=self.__class__.m_url)]))
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
@@ -267,7 +262,7 @@ class OwnerTestCase(TestCase):
     def create_measurement(self, environment):
         return Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
-                expected_value=39.0, delta_limit=1.0, environment=environment)
+                environment=environment)
 
     @classmethod
     def create_test_run(cls, environment):
@@ -307,10 +302,10 @@ class OwnerTestCase(TestCase):
         """Test owner property of TestRun model."""
         env = self.__class__.env1
         run = self.__class__.create_test_run(environment=env)
-        for i in [38.5, 39.5]:
+        for i in [-1.0, 1.0]:
             m = self.__class__.create_measurement(environment=env)
             res = TestResult.objects.create(result="PASS",
-                actual_value=i, measurement=m, run=run)
+                difference=i, measurement=m, run=run)
         self.assertEqual(run.owner, env.owner)
 
     def test_test_run_owner_null(self):
@@ -319,7 +314,7 @@ class OwnerTestCase(TestCase):
         run = self.__class__.create_test_run(environment=env)
         m = self.__class__.create_measurement(environment=env)
         res = TestResult.objects.create(result="PASS",
-            actual_value=38.5, measurement=m, run=run)
+            difference=-1.0, measurement=m, run=run)
         self.assertIsNone(run.owner)
 
 
@@ -346,7 +341,7 @@ class TestResultTestCase(TestCase):
                 contact_policy=ContactPolicy.objects.create())
         cls.m1 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
-                expected_value=39.0, delta_limit=1.0, environment=cls.env1)
+                environment=cls.env1)
         cls.env2 = Environment.objects.create(inventory_id='IOL-IOL-2',
                 motherboard_make="Intel", motherboard_model="ABCDEF",
                 motherboard_serial="12346", cpu_socket_count=1,
@@ -361,7 +356,7 @@ class TestResultTestCase(TestCase):
                 contact_policy=ContactPolicy.objects.create())
         cls.m2 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
-                expected_value=39.0, delta_limit=1.0, environment=cls.env2)
+                environment=cls.env2)
 
     def test_different_envs_fails(self):
         cls = self.__class__
@@ -369,8 +364,8 @@ class TestResultTestCase(TestCase):
             log_output_file='/foo/bar', tarball=cls.test_tb,
             environment=cls.env1)
         res1 = TestResult.objects.create(result="PASS",
-                    actual_value=38.5, measurement=cls.m1, run=run)
+                    difference=-1.0, measurement=cls.m1, run=run)
         with self.assertRaises(ValidationError):
             res2 = TestResult.objects.create(result="PASS",
-                    actual_value=39.5, measurement=cls.m2, run=run)
+                    difference=1.0, measurement=cls.m2, run=run)
             res2.full_clean()

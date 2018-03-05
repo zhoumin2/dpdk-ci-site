@@ -34,8 +34,11 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer):
             m = pattern.match(validated_data['message_id'])
             if m:
                 message_uid = m.group('uid')
+        is_public = ('patchworks_id' in validated_data and
+            validated_data['patchworks_id'] is not None)
         patchset, created = PatchSet.objects.get_or_create(message_uid=message_uid,
-            defaults=dict(patch_count=validated_data.pop('patchset_count')))
+            defaults=dict(patch_count=validated_data.pop('patchset_count'),
+                          is_public=is_public))
         patch = Patch.objects.create(patchset=patchset, **validated_data)
         return patch
 
@@ -49,7 +52,7 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull from PatchSet model."""
 
         model = PatchSet
-        fields = ('url', 'patch_count', 'patches', 'complete')
+        fields = ('url', 'patch_count', 'patches', 'complete', 'is_public')
         read_only_fields = ('complete',)
 
 
@@ -73,8 +76,8 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize measurements."""
 
         model = Measurement
-        fields = ('url', 'name', 'unit', 'higher_is_better', 'expected_value',
-                  'delta_limit', 'environment', 'parameters')
+        fields = ('url', 'name', 'unit', 'higher_is_better',
+                  'environment', 'parameters')
         read_only_fields = ('environment', )
         filter_fields = ('name', 'unit', 'environment')
 
@@ -143,7 +146,8 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize test results."""
 
         model = TestResult
-        fields = ('url', 'result', 'actual_value', 'measurement')
+        fields = ('url', 'result', 'difference', 'expected_value',
+                  'measurement')
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):
@@ -155,7 +159,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize test runs."""
 
         model = TestRun
-        fields = ('url', 'timestamp', 'log_output_file', 'is_official',
+        fields = ('url', 'timestamp', 'log_output_file',
                   'tarball', 'results', 'environment')
 
     def create(self, validated_data):
