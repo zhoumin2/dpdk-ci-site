@@ -4,8 +4,9 @@ from rest_framework import viewsets
 from django.contrib.auth.models import Group
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
-from rest_framework.decorators import list_route
+from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+from rest_framework import status
 from .filters import PatchSetFilter
 from .models import PatchSet, Patch, Environment, Measurement, TestResult,\
     TestRun, Tarball
@@ -56,6 +57,20 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = Environment.objects.all()
     serializer_class = EnvironmentSerializer
+
+    @detail_route(methods=['post'])
+    def clone(self, request, pk=None):
+        """Create a clone of this object.
+
+        The clone will be returned as part of the response.
+        """
+        env = self.get_object()
+        clone = env.clone()
+        serializer = EnvironmentSerializer(clone)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,
+                        status_code=status.HTTP_201_CREATED,
+                        headers=headers)
 
 
 class MeasurementViewSet(viewsets.ModelViewSet):

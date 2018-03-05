@@ -113,7 +113,8 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'nic_firmware_version', 'kernel_cmdline',
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'os_distro',
-                  'measurements', 'contacts', 'contact_policy')
+                  'measurements', 'contacts', 'contact_policy',
+                  'predecessor')
         read_only_fields = ('contacts',)
 
     def create(self, validated_data):

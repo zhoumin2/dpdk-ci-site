@@ -329,6 +329,45 @@ class OwnerTestCase(TestCase):
         self.assertIsNone(run.owner)
 
 
+class EnvironmentTestCase(TestCase):
+    """Test custom functionality of environment model."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.env = Environment.objects.create(inventory_id='IOL-IOL-1',
+                motherboard_make="Intel", motherboard_model="ABCDEF",
+                motherboard_serial="12345", cpu_socket_count=1,
+                cpu_cores_per_socket=1, cpu_threads_per_core=1,
+                ram_type="DDR4", ram_size=65536, ram_channel_count=2,
+                ram_frequency=2400, nic_make="Intel",
+                nic_model="XL710", nic_device_id="01:00.0",
+                nic_device_bustype="PCI", nic_pmd="i40e",
+                nic_firmware_version="5.05", kernel_version="4.14",
+                compiler_name="gcc", compiler_version="7.1",
+                os_distro="Fedora26", bios_version="5.05")
+        ContactPolicy.objects.create(environment=cls.env)
+
+
+    def test_clone_works(self):
+        """Verify that the basic case of the clone() method works."""
+        old_env = self.__class__.env
+        new_env = old_env.clone()
+        self.assertNotEqual(old_env.pk, new_env.pk)
+        self.assertIs(old_env.successor, new_env)
+        self.assertIs(new_env.predecessor, old_env)
+        self.assertNotEqual(old_env.contact_policy.pk,
+                            new_env.contact_policy.pk)
+        self.assertEqual(old_env.contact_policy.email_submitter,
+                         new_env.contact_policy.email_submitter)
+        self.assertEqual(old_env.contact_policy.email_recipients,
+                         new_env.contact_policy.email_recipients)
+        self.assertEqual(old_env.contact_policy.email_owner,
+                         new_env.contact_policy.email_owner)
+        self.assertEqual(old_env.contact_policy.email_list,
+                         new_env.contact_policy.email_list)
+
+
 class TestResultTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
