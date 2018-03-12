@@ -5,7 +5,6 @@ from django.contrib.auth.models import Group
 from rest_framework import serializers
 from .models import PatchSet, Tarball, Patch, Environment, Measurement, \
     TestResult, TestRun, Parameter, ContactPolicy
-from guardian.shortcuts import assign_perm
 
 
 class PatchSerializer(serializers.HyperlinkedModelSerializer):
@@ -73,14 +72,6 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
 
     parameters = ParameterSerializer(many=True, required=False)
 
-    def create(self, validated_data):
-        measurement = Measurement.objects.create(**validated_data)
-
-        group = Group.objects.get(id=measurement.owner.id)
-        assign_perm('view_measurement', group, measurement)
-
-        return measurement
-
     class Meta:
         """Specify how to serialize measurements."""
 
@@ -136,10 +127,6 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         cpolicy = ContactPolicy.objects.create(**cpolicy_data)
         environment = Environment.objects.create(contact_policy=cpolicy,
                                                  **validated_data)
-
-        group = Group.objects.get(id=environment.owner.id)
-        assign_perm('view_environment', group, environment)
-
         for measurement_data in measurements_data:
             parameters_data = list()
             if 'parameters' in measurement_data:
@@ -163,14 +150,6 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
                   'measurement', 'run')
         read_only_fields = ('run',)
 
-    def create(self, validated_data):
-        results = TestResult.objects.create(**validated_data)
-
-        group = Group.objects.get(id=results.owner.id)
-        assign_perm('view_testresult', group, results)
-
-        return results
-
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize test run objects."""
@@ -189,10 +168,6 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
         run = TestRun.objects.create(**validated_data)
         for result in results:
             TestResult.objects.create(run=run, **result)
-
-        group = Group.objects.get(id=run.owner.id)
-        assign_perm('view_testrun', group, run)
-
         return run
 
 
