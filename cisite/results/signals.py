@@ -1,9 +1,23 @@
 """Define signals for results models."""
 
 from .models import Environment, Measurement, TestResult, TestRun
+from django.contrib.auth.models import Group, Permission
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from guardian.shortcuts import assign_perm
+
+
+@receiver(post_save, sender=Group)
+def save_group(sender, instance, created, **kwargs):
+    """Assign group permissions on save"""
+    if (created):
+        permissions = [
+            'add_environment', 'view_environment',
+            'add_measurement', 'view_measurement',
+            'add_testresult', 'view_testresult',
+            'add_testrun', 'view_testrun']
+        instance.permissions.set(
+            [Permission.objects.get(codename=x) for x in permissions])
 
 
 @receiver(post_save, sender=Environment)

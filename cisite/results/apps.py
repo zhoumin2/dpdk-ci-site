@@ -9,4 +9,5 @@ class ResultsConfig(AppConfig):
     name = 'results'
 
     def ready(self):
+        """Perform initialization tasks after registry is populated."""
         from . import signals

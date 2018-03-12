@@ -1,7 +1,7 @@
 """Define custom permissions for results app."""
 
 from rest_framework.permissions import BasePermission, \
-    DjangoObjectPermissions, IsAdminUser, SAFE_METHODS
+    DjangoObjectPermissions, SAFE_METHODS
 
 
 class IsAdminUserOrReadOnly(BasePermission):
@@ -25,12 +25,22 @@ class OwnerReadCreateOnly(DjangoObjectPermissions):
     Allow access only to the owner of the object, or staff.
     """
 
+    perms_map = {
+        'GET': ['%(app_label)s.view_%(model_name)s'],
+        'OPTIONS': ['%(app_label)s.view_%(model_name)s'],
+        'HEAD': ['%(app_label)s.view_%(model_name)s'],
+        'POST': ['%(app_label)s.add_%(model_name)s'],
+        'PUT': ['%(app_label)s.change_%(model_name)s'],
+        'PATCH': ['%(app_label)s.change_%(model_name)s'],
+        'DELETE': ['%(app_label)s.delete_%(model_name)s'],
+    }
+
     def has_permission(self, request, view):
         """Permission to view list in api view.
 
         Also only checks has_object_permission if this returns true.
         """
-        return True
+        return request.user.is_staff or super().has_permission(request, view)
 
     def has_object_permission(self, request, view, obj):
         """Return true if permission should be granted."""
@@ -39,11 +49,4 @@ class OwnerReadCreateOnly(DjangoObjectPermissions):
         if user.is_staff or obj.owner is None:
             return True
 
-        model_name = obj._meta.model_name
-
-        if request.method in SAFE_METHODS:
-            return user.has_perm('view_' + model_name, obj)
-        elif request.method == "DELETE":
-            return user.has_perm('delete_' + model_name, obj)
-        else:
-            return user.has_perm('change_' + model_name, obj)
+        return super().has_object_permission(request, view, obj)
