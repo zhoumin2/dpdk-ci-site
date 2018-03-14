@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     # At first glance this isn't an app but it does provide templates for
     # Django REST Framework forms, so it needs to be listed here
     'django_filters',
+
+    # Provides per object permission
+    'guardian',
 ]
 
 MIDDLEWARE = [
@@ -125,4 +128,5 @@ AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 AUTHENTICATION_BACKENDS = (
     'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )

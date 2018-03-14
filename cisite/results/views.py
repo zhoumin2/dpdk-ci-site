@@ -3,7 +3,7 @@
 from rest_framework import viewsets
 from django.contrib.auth.models import Group
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import list_route
 from rest_framework.response import Response
 from .filters import PatchSetFilter
@@ -52,7 +52,8 @@ class PatchViewSet(viewsets.ModelViewSet):
 class EnvironmentViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of environments."""
 
-    permission_classes = (permissions.OwnerReadOnly,)
+    filter_backends = (DjangoObjectPermissionsFilter,)
+    permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = Environment.objects.all()
     serializer_class = EnvironmentSerializer
 
@@ -60,7 +61,8 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
 class MeasurementViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of measurements."""
 
-    permission_classes = (permissions.OwnerReadOnly,)
+    filter_backends = (DjangoObjectPermissionsFilter,)
+    permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = Measurement.objects.all()
     serializer_class = MeasurementSerializer
 
@@ -68,7 +70,8 @@ class MeasurementViewSet(viewsets.ModelViewSet):
 class TestResultViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of test results."""
 
-    permission_classes = (permissions.OwnerReadOnly,)
+    filter_backends = (DjangoObjectPermissionsFilter,)
+    permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = TestResult.objects.all()
     serializer_class = TestResultSerializer
 
@@ -76,7 +79,8 @@ class TestResultViewSet(viewsets.ModelViewSet):
 class TestRunViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of test runs."""
 
-    permission_classes = (permissions.OwnerReadOnly,)
+    filter_backends = (DjangoObjectPermissionsFilter,)
+    permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = TestRun.objects.all()
     serializer_class = TestRunSerializer
 
@@ -84,6 +88,6 @@ class TestRunViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     """Provide a read-only view of groups."""
 
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
