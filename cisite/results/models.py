@@ -123,6 +123,11 @@ class Patch(models.Model):
         'display_name (optional), email (required), '
         'how (required, "to" or "cc")')
 
+    class Meta:
+        """Define metadata for patch model."""
+
+        verbose_name_plural = "patches"
+
     def __str__(self):
         """Return string representation of patch record."""
         rfc = ''
@@ -157,6 +162,11 @@ class ContactPolicy(models.Model):
     email_list = models.CharField(max_length=128, blank=True,
         default="dpdklab@iol.unh.edu",
         help_text="Mailing list to cc on all e-mails")
+
+    class Meta:
+        """Define metadata for contact policy model."""
+
+        verbose_name_plural = "contact policies"
 
     def __str__(self):
         """Return string representation of contact policy.
