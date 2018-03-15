@@ -68,7 +68,8 @@ class Tarball(models.Model):
         help_text='DPDK branch that the patch set was applied to')
     commit_id = models.CharField('git commit hash', max_length=40, blank=False,
         help_text='git commit id that the patch set was applied to')
-    job_id = models.PositiveIntegerField('Jenkins job id', null=True,
+    job_id = models.PositiveIntegerField('Jenkins job id',
+        null=True, blank=True,
         help_text='''Jenkins job id that generated this tarball
 
         This can be NULL if the tarball was manually created.
@@ -76,7 +77,7 @@ class Tarball(models.Model):
     tarball_url = models.URLField(max_length=1024,
         help_text='URL from which Jenkins can download this tarball')
     patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
-        related_name='tarballs', null=True,
+        related_name='tarballs', null=True, blank=True,
         help_text='Patchset this tarball was constructed from')
 
     def __str__(self):
@@ -122,6 +123,11 @@ class Patch(models.Model):
         'display_name (optional), email (required), '
         'how (required, "to" or "cc")')
 
+    class Meta:
+        """Define metadata for patch model."""
+
+        verbose_name_plural = "patches"
+
     def __str__(self):
         """Return string representation of patch record."""
         rfc = ''
@@ -156,15 +162,27 @@ class ContactPolicy(models.Model):
     email_list = models.CharField(max_length=128, blank=True,
         default="dpdklab@iol.unh.edu",
         help_text="Mailing list to cc on all e-mails")
+    environment = models.OneToOneField(
+        'Environment', on_delete=models.CASCADE,
+        related_name='contact_policy',
+        help_text='Environment that this contact policy applies to')
+
+    class Meta:
+        """Define metadata for contact policy model."""
+
+        verbose_name_plural = "contact policies"
 
     def __str__(self):
-        """Return string representation of contact policy.
-
-        This implementation defers to returning a string for the environment
-        itself, as this makes it easy to find the right policy in the admin
-        interface.
-        """
-        return str(self.environment)
+        """Return string representation of contact policy."""
+        result = []
+        if self.email_submitter:
+            result.append('submitter')
+        if self.email_recipients:
+            result.append('recipients')
+        if self.email_owner:
+            result.append('owner')
+        result.append(self.email_list)
+        return 'Send mail to ' + ', '.join(result)
 
 
 class Environment(models.Model):
@@ -227,9 +245,6 @@ class Environment(models.Model):
         help_text='Version of BIOS for Device Under Test')
     os_distro = models.CharField('OS distribution', max_length=64,
         help_text='Operating system distribution name and version, e.g., Fedora26')
-    contact_policy = models.OneToOneField(
-        ContactPolicy, on_delete=models.CASCADE,
-        help_text='Contact policy for this environment')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -248,6 +263,9 @@ class Environment(models.Model):
         in the future.
         """
         ret = []
+        if not self.contact_policy:
+            return []
+
         if self.contact_policy.email_owner:
             users = self.owner.user_set
             ret.extend(
