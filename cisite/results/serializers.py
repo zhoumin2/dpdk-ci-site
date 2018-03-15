@@ -124,9 +124,9 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         """
         measurements_data = validated_data.pop('measurements')
         cpolicy_data = validated_data.pop('contact_policy')
-        cpolicy = ContactPolicy.objects.create(**cpolicy_data)
-        environment = Environment.objects.create(contact_policy=cpolicy,
-                                                 **validated_data)
+        environment = Environment.objects.create(**validated_data)
+        cpolicy = ContactPolicy.objects.create(environment=environment,
+                                               **cpolicy_data)
         for measurement_data in measurements_data:
             parameters_data = list()
             if 'parameters' in measurement_data:
