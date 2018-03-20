@@ -335,23 +335,68 @@ class EnvironmentTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        cls.env = Environment.objects.create(inventory_id='IOL-IOL-1',
-                motherboard_make="Intel", motherboard_model="ABCDEF",
-                motherboard_serial="12345", cpu_socket_count=1,
-                cpu_cores_per_socket=1, cpu_threads_per_core=1,
-                ram_type="DDR4", ram_size=65536, ram_channel_count=2,
-                ram_frequency=2400, nic_make="Intel",
-                nic_model="XL710", nic_device_id="01:00.0",
-                nic_device_bustype="PCI", nic_pmd="i40e",
-                nic_firmware_version="5.05", kernel_version="4.14",
-                compiler_name="gcc", compiler_version="7.1",
-                os_distro="Fedora26", bios_version="5.05")
-        ContactPolicy.objects.create(environment=cls.env)
+        cls.user = User.objects.create_user('joevendor',
+                                            'joe@example.com', 'AbCdEfGh')
+        cls.grp = Group.objects.create(name='Group1')
+        cls.user.groups.add(cls.grp)
 
+    def create_environment(self, name):
+        """Create a dummy environment object for test methods.
+
+        This is not done in setUpTestData() because test methods may modify the
+        environment and this needs to be done in the per-test method transaction
+        and not the class-wide transaction.
+        """
+        env = Environment.objects.create(
+            inventory_id=name, owner=self.__class__.grp,
+            motherboard_make="Intel", motherboard_model="ABCDEF",
+            motherboard_serial="12345", cpu_socket_count=1,
+            cpu_cores_per_socket=1, cpu_threads_per_core=1,
+            ram_type="DDR4", ram_size=65536, ram_channel_count=2,
+            ram_frequency=2400, nic_make="Intel",
+            nic_model="XL710", nic_device_id="01:00.0",
+            nic_device_bustype="PCI", nic_pmd="i40e",
+            nic_firmware_version="5.05", kernel_version="4.14",
+            compiler_name="gcc", compiler_version="7.1",
+            os_distro="Fedora26", bios_version="5.05")
+        ContactPolicy.objects.create(environment=env)
+        return env
+
+    def test_initial_permissions(self):
+        """Verify that owner has change/delete permissions to start."""
+        env = self.create_environment("test")
+        self.assertTrue(
+            self.__class__.user.has_perm('results.add_environment'))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.change_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.delete_environment', env))
+
+    def test_add_test_run_removes_permissions(self):
+        """Verify that adding a test run removes change permission.
+
+        Adding a test run to an environment needs to remove the change/delete
+        permission from that environment, but preserve view permission.
+        """
+        env = self.create_environment("test")
+        tb = Tarball.objects.create(
+            tarball_url='http://example.com/dpdk.tar.gz', branch='master',
+            commit_id='0000000000000000000000000000000000000000')
+        TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
+                               log_output_file='http://example.com/log.tar.gz',
+                               tarball=tb, environment=env)
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_environment', env))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.change_environment', env))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.delete_environment', env))
 
     def test_clone_works(self):
-        """Verify that the basic case of the clone() method works."""
-        old_env = self.__class__.env
+        """Verify that the clone() method works."""
+        old_env = self.create_environment("test")
         new_env = old_env.clone()
         self.assertNotEqual(old_env.pk, new_env.pk)
         self.assertIs(old_env.successor, new_env)
@@ -366,6 +411,23 @@ class EnvironmentTestCase(TestCase):
                          new_env.contact_policy.email_owner)
         self.assertEqual(old_env.contact_policy.email_list,
                          new_env.contact_policy.email_list)
+
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_environment', new_env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.change_environment',
+                                         new_env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.delete_environment',
+                                         new_env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_environment', old_env))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.change_environment',
+                                         old_env))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.delete_environment',
+                                         old_env))
 
 
 class TestResultTestCase(TestCase):
