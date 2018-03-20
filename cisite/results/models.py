@@ -316,7 +316,13 @@ class Environment(models.Model):
 
     def __str__(self):
         """Return inventory ID as a string."""
-        return self.inventory_id
+        generation = 0
+        p = self.predecessor
+        if p is not None:
+            while p is not None:
+                generation += 1
+                p = p.predecessor
+        return '{0:s} (v{1:d})'.format(self.inventory_id, generation)
 
 
 class Measurement(models.Model):
