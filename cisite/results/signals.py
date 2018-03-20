@@ -1,6 +1,7 @@
 """Define signals for results models."""
 
-from .models import Environment, Measurement, TestResult, TestRun
+from .models import ContactPolicy, Environment, Measurement, TestResult, \
+    TestRun
 from django.contrib.auth.models import Group, Permission
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -18,6 +19,16 @@ def save_group(sender, instance, created, **kwargs):
             'add_testrun', 'view_testrun']
         instance.permissions.set(
             [Permission.objects.get(codename=x) for x in permissions])
+
+
+@receiver(post_save, sender=ContactPolicy)
+def save_contactpolicy(sender, instance, **kwargs):
+    """Assign contact policy permissions on save."""
+    group = instance.environment.owner
+    if group is None:
+        return
+    assign_perm('view_contactpolicy', group, instance)
+    assign_perm('change_contactpolicy', group, instance)
 
 
 @receiver(post_save, sender=Environment)

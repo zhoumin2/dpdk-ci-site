@@ -170,6 +170,9 @@ class ContactPolicy(models.Model):
     class Meta:
         """Define metadata for contact policy model."""
 
+        permissions = (
+            ('view_contactpolicy', 'View contact policy'),
+        )
         verbose_name_plural = "contact policies"
 
     def __str__(self):
