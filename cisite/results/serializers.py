@@ -147,9 +147,8 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize test results."""
 
         model = TestResult
-        fields = ('url', 'result', 'difference', 'expected_value',
-                  'measurement', 'run')
-        read_only_fields = ('run',)
+        fields = ('id', 'result', 'difference', 'expected_value',
+                  'measurement')
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):

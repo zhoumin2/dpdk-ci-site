@@ -8,12 +8,12 @@ from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from rest_framework import status
 from .filters import PatchSetFilter
-from .models import PatchSet, Patch, Environment, Measurement, TestResult,\
+from .models import PatchSet, Patch, Environment, Measurement, \
     TestRun, Tarball
 from . import permissions
-from .serializers import PatchSetSerializer, PatchSerializer,\
-    EnvironmentSerializer, MeasurementSerializer, TestResultSerializer,\
-    TestRunSerializer, TarballSerializer, GroupSerializer
+from .serializers import PatchSetSerializer, PatchSerializer, \
+    EnvironmentSerializer, MeasurementSerializer, TestRunSerializer, \
+    TarballSerializer, GroupSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -80,15 +80,6 @@ class MeasurementViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = Measurement.objects.all()
     serializer_class = MeasurementSerializer
-
-
-class TestResultViewSet(viewsets.ModelViewSet):
-    """Provide a read-write view of test results."""
-
-    filter_backends = (DjangoObjectPermissionsFilter,)
-    permission_classes = (permissions.OwnerReadCreateOnly,)
-    queryset = TestResult.objects.all()
-    serializer_class = TestResultSerializer
 
 
 class TestRunViewSet(viewsets.ModelViewSet):
