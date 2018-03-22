@@ -170,7 +170,18 @@ class ContactPolicy(models.Model):
     class Meta:
         """Define metadata for contact policy model."""
 
+        permissions = (
+            ('view_contactpolicy', 'View contact policy'),
+        )
         verbose_name_plural = "contact policies"
+
+    def clone(self, environment):
+        """Make a copy of this object which is unrelated to any environment."""
+        new_obj = ContactPolicy.objects.get(pk=self.pk)
+        new_obj.pk = None
+        new_obj.environment = environment
+        new_obj.save()
+        return new_obj
 
     def __str__(self):
         """Return string representation of contact policy."""
@@ -245,6 +256,10 @@ class Environment(models.Model):
         help_text='Version of BIOS for Device Under Test')
     os_distro = models.CharField('OS distribution', max_length=64,
         help_text='Operating system distribution name and version, e.g., Fedora26')
+    predecessor = models.OneToOneField(
+        'self', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='successor',
+        help_text='Environment that this was cloned from')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -283,9 +298,31 @@ class Environment(models.Model):
             ('view_environment', 'View environment'),
         )
 
+    def clone(self):
+        """Create and return an inactive copy of this object.
+
+        This copy will be linked to the original object by the predecessor
+        and successor attributes.
+        """
+        new_obj = Environment.objects.get(pk=self.pk)
+
+        new_obj.pk = None
+        new_obj.predecessor = self
+        new_obj.contact_policy = None
+        new_obj.save()
+        new_obj.contact_policy = self.contact_policy.clone(
+            environment=new_obj)
+        return new_obj
+
     def __str__(self):
         """Return inventory ID as a string."""
-        return self.inventory_id
+        generation = 0
+        p = self.predecessor
+        if p is not None:
+            while p is not None:
+                generation += 1
+                p = p.predecessor
+        return '{0:s} (v{1:d})'.format(self.inventory_id, generation)
 
 
 class Measurement(models.Model):
