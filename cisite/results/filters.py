@@ -16,17 +16,18 @@ class PatchSetFilter(FilterSet):
     filtering via our custom query.
     """
 
-    complete = BooleanFilter(name="complete", method='complete_filter',
+    complete = BooleanFilter(
+        name='complete', label='complete', method='complete_filter',
         help_text='If present, limits to complete (if True) or incomplete (if False) patchsets.')
-    has_tarball = BooleanFilter(name="has_tarball",
-        method='has_tarball_filter',
+    has_tarball = BooleanFilter(
+        name='has_tarball', label='has tarball', method='has_tarball_filter',
         help_text='If present, limits to patchsets with or without a corresponding tarball built.')
 
     class Meta:
         """Set up class fields automatically."""
 
         model = PatchSet
-        fields = ['complete']
+        fields = []
 
     def complete_filter(self, queryset, name, value):
         """Filter based on the value of the complete query field."""
