@@ -232,6 +232,8 @@ class Environment(models.Model):
         help_text='Manufaturer of NIC under test')
     nic_model = models.CharField(max_length=64,
         help_text='Model of NIC under test')
+    nic_speed = models.PositiveIntegerField(default=10000,
+        help_text='Speed of NIC link(s) used for testing')
     nic_device_id = models.CharField(max_length=64,
         help_text='Bus-specific address or identifier of NIC under test')
     nic_device_bustype = models.CharField(max_length=64, default='pci',
