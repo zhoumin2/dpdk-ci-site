@@ -47,6 +47,8 @@ class PatchSet(models.Model):
         help_text='Number of patches in the patch set')
     is_public = models.BooleanField(default=True,
         help_text='Was the patch set posted to a public mailing list?')
+    apply_error = models.BooleanField(default=False,
+        help_text='Was an error encountered trying to apply the patch?')
 
     objects = PatchSetManager.from_queryset(PatchSetQuerySet)()
 

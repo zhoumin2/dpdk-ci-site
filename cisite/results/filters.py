@@ -27,7 +27,7 @@ class PatchSetFilter(FilterSet):
         """Set up class fields automatically."""
 
         model = PatchSet
-        fields = []
+        fields = ['apply_error']
 
     def complete_filter(self, queryset, name, value):
         """Filter based on the value of the complete query field."""
