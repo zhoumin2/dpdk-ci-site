@@ -129,6 +129,7 @@ class Patch(models.Model):
         """Define metadata for patch model."""
 
         verbose_name_plural = "patches"
+        ordering = ['patchset', 'patch_number']
 
     def __str__(self):
         """Return string representation of patch record."""
