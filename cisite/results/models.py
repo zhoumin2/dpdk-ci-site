@@ -47,6 +47,8 @@ class PatchSet(models.Model):
         help_text='Number of patches in the patch set')
     is_public = models.BooleanField(default=True,
         help_text='Was the patch set posted to a public mailing list?')
+    apply_error = models.BooleanField(default=False,
+        help_text='Was an error encountered trying to apply the patch?')
 
     objects = PatchSetManager.from_queryset(PatchSetQuerySet)()
 
@@ -232,6 +234,8 @@ class Environment(models.Model):
         help_text='Manufaturer of NIC under test')
     nic_model = models.CharField(max_length=64,
         help_text='Model of NIC under test')
+    nic_speed = models.PositiveIntegerField(default=10000,
+        help_text='Speed of NIC link(s) used for testing')
     nic_device_id = models.CharField(max_length=64,
         help_text='Bus-specific address or identifier of NIC under test')
     nic_device_bustype = models.CharField(max_length=64, default='pci',

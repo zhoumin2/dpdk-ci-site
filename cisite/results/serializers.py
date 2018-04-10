@@ -64,7 +64,8 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull from PatchSet model."""
 
         model = PatchSet
-        fields = ('url', 'patch_count', 'patches', 'complete', 'is_public')
+        fields = ('url', 'patch_count', 'patches', 'complete', 'is_public',
+                  'apply_error')
         read_only_fields = ('complete',)
 
 
