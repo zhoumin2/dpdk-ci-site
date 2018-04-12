@@ -289,7 +289,7 @@ class Environment(models.Model):
         if self.contact_policy.email_owner:
             users = self.owner.user_set
             ret.extend(
-                [{'display_name': ' '.join(x['first_name'], x['last_name']),
+                [{'display_name': ' '.join([x['first_name'], x['last_name']]),
                   'email': x['email'], 'how': 'to'}
                  for x in users.values('first_name', 'last_name', 'email')])
         if self.contact_policy.email_list:
