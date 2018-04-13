@@ -133,6 +133,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
             ram_frequency=2166,
             nic_make="Vendor",
             nic_model="Model S",
+            nic_speed=10000,
             nic_device_id="07:00.0",
             nic_device_bustype="PCI",
             nic_pmd="models",
