@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import include, path
 from results.views import PatchSetViewSet, PatchViewSet, TarballViewSet, \
     EnvironmentViewSet, MeasurementViewSet, \
-    TestRunViewSet, GroupViewSet
+    TestRunViewSet, GroupViewSet, UserViewSet
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
@@ -31,6 +31,7 @@ router.register(r'environments', EnvironmentViewSet)
 router.register(r'measurements', MeasurementViewSet)
 router.register(r'testruns', TestRunViewSet)
 router.register(r'group', GroupViewSet)
+router.register(r'users', UserViewSet)
 
 schema_view = get_schema_view(title='DPDK CI Site API')
 

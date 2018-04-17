@@ -1,10 +1,14 @@
 """Render views for results database objects."""
 
 from rest_framework import viewsets
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
+from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import detail_route
+from rest_framework.exceptions import NotFound
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from .filters import PatchSetFilter
@@ -13,7 +17,7 @@ from .models import PatchSet, Patch, Environment, Measurement, \
 from . import permissions
 from .serializers import PatchSetSerializer, PatchSerializer, \
     EnvironmentSerializer, MeasurementSerializer, TestRunSerializer, \
-    TarballSerializer, GroupSerializer
+    TarballSerializer, GroupSerializer, UserSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -97,3 +101,32 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+
+
+class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
+    """Provide administrators API access to the registered users.
+
+    list:
+    Lists all users that have been populated in this instance.
+
+    retrieve:
+    Returns the user with the username given in the URL. Populates the user
+    from LDAP if necessary.
+    """
+
+    lookup_field = 'username'
+    permission_classes = (IsAdminUser,)
+    queryset = User.objects.exclude(username__in=('AnonymousUser',))
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        """Return the user object requested by the user.
+
+        This method will populate the user object from LDAP if necessary.
+        """
+        queryset = self.get_queryset()
+        user = LDAPBackend().populate_user(self.kwargs['username'])
+        if user is None:
+            raise NotFound(self.kwargs['username'])
+        self.check_object_permissions(self.request, user)
+        return user
