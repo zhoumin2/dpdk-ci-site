@@ -1,7 +1,7 @@
 """Define serializers for results models."""
 
 import re
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 from .models import PatchSet, Tarball, Patch, Environment, Measurement, \
     TestResult, TestRun, Parameter, ContactPolicy
@@ -333,3 +333,17 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
         model = Group
         fields = ('url', 'name')
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize user objects."""
+
+    class Meta:
+        """Specify metadata for group serializer."""
+
+        model = User
+        fields = ('url', 'username', 'groups')
+        read_only_fields = fields
+        extra_kwargs = {
+            'url': {'lookup_field': 'username'},
+        }
