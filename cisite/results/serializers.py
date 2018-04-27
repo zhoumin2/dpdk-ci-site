@@ -106,7 +106,7 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
 
         model = ContactPolicy
         fields = ('email_submitter', 'email_recipients', 'email_owner',
-                  'email_list')
+                  'email_success', 'email_list')
 
 
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
