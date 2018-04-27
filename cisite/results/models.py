@@ -162,6 +162,8 @@ class ContactPolicy(models.Model):
         help_text="Whether to e-mail the recipients of the patch")
     email_owner = models.BooleanField(default=True,
         help_text="Whether to e-mail the owner group of the environment")
+    email_success = models.BooleanField(default=True,
+        help_text="Set to false to send only reports of failures")
     email_list = models.CharField(max_length=128, blank=True,
         default="dpdklab@iol.unh.edu",
         help_text="Mailing list to cc on all e-mails")

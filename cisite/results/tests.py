@@ -158,6 +158,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
             contact_policy=dict(email_submitter=False,
                                 email_recipients=False,
                                 email_owner=False,
+                                email_success=True,
                                 email_list='xyz@example.com'))
         # We cannot instantiate the environment here as some of our test
         # methods modify it
