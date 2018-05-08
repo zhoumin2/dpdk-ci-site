@@ -77,7 +77,7 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
                         headers=headers)
 
 
-class MeasurementViewSet(viewsets.ModelViewSet):
+class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
     """Provide a read-write view of measurements."""
 
     filter_backends = (DjangoObjectPermissionsFilter,)
