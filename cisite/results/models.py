@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.models import Group
 from django.db import models
-from django.db.models import F, Count
+from django.db.models import Q, F, Count
 
 
 def get_admin_group():
@@ -35,7 +35,8 @@ class PatchSetManager(models.Manager):
 
     def get_queryset(self):
         return super().get_queryset().annotate(
-            cur_patch_count=Count('patches'))
+            cur_patch_count=Count('patches',
+                                  filter=Q(patches__pw_is_active=True)))
 
 
 class PatchSet(models.Model):
@@ -104,6 +105,8 @@ class Patch(models.Model):
     patchworks_id = models.PositiveIntegerField("Patchwork ID", unique=True,
         null=True, blank=True,
         help_text="ID of patch in DPDK Patchworks instance")
+    pw_is_active = models.BooleanField('Is active?', default=True,
+        help_text="True if still considered active in Patchwork")
     # Per RFC, maximum length of a Message-ID is 995 characters
     message_id = models.CharField("Message-ID", max_length=1024,
         help_text="Message-ID from patch submission e-mail")

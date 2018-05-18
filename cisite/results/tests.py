@@ -84,6 +84,7 @@ class PatchSerializerTestCase(TestCase):
 
     def test_create_patchset_does_not_exist(self):
         serializer = PatchSerializer(data=dict(patchworks_id=30744,
+              pw_is_active=True,
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               message_id='20171024231534.90997-1-ferruh.yigit@intel.com',
               subject='ethdev: extract xstat basic stat count calculation',
@@ -97,6 +98,7 @@ class PatchSerializerTestCase(TestCase):
 
     def test_create_patchset_exists(self):
         serializer = PatchSerializer(data=dict(patchworks_id=30741,
+              pw_is_active=True,
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               message_id='20171023231534.90996-1-ferruh.yigit@intel.com',
               subject='ethdev: extract xstat basic stat count calculation',

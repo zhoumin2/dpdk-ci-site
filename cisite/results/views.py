@@ -51,7 +51,7 @@ class PatchViewSet(viewsets.ModelViewSet):
     queryset = Patch.objects.all()
     serializer_class = PatchSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filter_fields = ('patchworks_id', 'is_rfc', 'submitter')
+    filter_fields = ('patchworks_id', 'is_rfc', 'submitter', 'pw_is_active')
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
