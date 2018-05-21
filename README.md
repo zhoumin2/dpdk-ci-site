@@ -16,12 +16,18 @@ $ . ~/.venvs/dpdklab-cisite/bin/activate
 (cisite) $ pip install -r requirements/local.txt
 ...
 Successfully installed Django-2.0 django-filter-1.1.0 djangorestframework-3.7.3 flake8-3.5.0 flake8-docstrings-1.1.0 flake8-polyfill-1.0.1 markdown-2.6.10 mccabe-0.6.1 pycodestyle-2.3.1 pydocstyle-2.1.1 pyflakes-1.6.0 pytz-2017.3 six-1.11.0 snowballstemmer-1.2.1
+(cisite) $ pre-commit install --hook-type pre-commit
+(cisite) $ pre-commit install --hook-type commit-msg
 ```
 
 Now, just run `. ~/.venv/dpdklab-cisite/bin/activate` whenever you want
 to work on this Django project. Run `deactivate` to leave the virtual
 environment (which will remove django-admin, flake8, etc. from your path
 and you will then be on the default Python version for your OS).
+
+Note that the pre-commit hooks will fail if you attempt to commit
+without activating the virtual environment first, since it looks for
+`python3.6` in `$PATH`.
 
 ## Running the server
 
