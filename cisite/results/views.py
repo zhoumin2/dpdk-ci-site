@@ -9,7 +9,9 @@ from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
+from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
 from .filters import PatchSetFilter
 from .models import PatchSet, Patch, Environment, Measurement, \
@@ -129,3 +131,13 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound(self.kwargs['username'])
         self.check_object_permissions(self.request, user)
         return user
+
+
+class Dashboard(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'dashboard.html'
+
+    def get(self, request):
+        queryset = PatchSet.objects.complete().exclude(
+            patches__pw_is_active=False)
+        return Response({'patchsets': queryset})

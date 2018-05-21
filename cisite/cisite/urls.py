@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import include, path
 from results.views import PatchSetViewSet, PatchViewSet, TarballViewSet, \
     EnvironmentViewSet, MeasurementViewSet, \
-    TestRunViewSet, GroupViewSet, UserViewSet
+    TestRunViewSet, GroupViewSet, UserViewSet, Dashboard
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
@@ -41,4 +41,5 @@ urlpatterns = [
                               namespace='rest_framework')),
     path('admin/', admin.site.urls),
     path('schema/', schema_view),
+    path('dashboard/', Dashboard.as_view())
 ]
