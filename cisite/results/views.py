@@ -124,7 +124,6 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
 
         This method will populate the user object from LDAP if necessary.
         """
-        queryset = self.get_queryset()
         user = LDAPBackend().populate_user(self.kwargs['username'])
         if user is None:
             raise NotFound(self.kwargs['username'])

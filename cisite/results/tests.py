@@ -689,8 +689,8 @@ class OwnerTestCase(TestCase):
         run = create_test_run(environment=env)
         for i in [-1.0, 1.0]:
             m = self.__class__.create_measurement(environment=env)
-            res = TestResult.objects.create(result="PASS",
-                difference=i, measurement=m, run=run)
+            TestResult.objects.create(result="PASS", difference=i,
+                                      measurement=m, run=run)
         self.assertEqual(run.owner, env.owner)
 
     def test_test_run_owner_null(self):
@@ -698,8 +698,8 @@ class OwnerTestCase(TestCase):
         env = self.__class__.envn
         run = create_test_run(environment=env)
         m = self.__class__.create_measurement(environment=env)
-        res = TestResult.objects.create(result="PASS",
-            difference=-1.0, measurement=m, run=run)
+        TestResult.objects.create(result="PASS", difference=-1.0,
+                                  measurement=m, run=run)
         self.assertIsNone(run.owner)
 
 
@@ -849,9 +849,9 @@ class TestResultTestCase(TestCase):
         run = TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
             log_output_file='/foo/bar', tarball=cls.test_tb,
             environment=cls.env1)
-        res1 = TestResult.objects.create(result="PASS",
-                    difference=-1.0, measurement=cls.m1, run=run)
+        TestResult.objects.create(result="PASS", difference=-1.0,
+                                  measurement=cls.m1, run=run)
         with self.assertRaises(ValidationError):
-            res2 = TestResult.objects.create(result="PASS",
-                    difference=1.0, measurement=cls.m2, run=run)
+            res2 = TestResult.objects.create(result="PASS", difference=1.0,
+                                             measurement=cls.m2, run=run)
             res2.full_clean()
