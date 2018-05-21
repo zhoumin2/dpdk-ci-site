@@ -1,0 +1,57 @@
+---
+exclude: '^$'
+fail_fast: false
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+      - id: check-byte-order-marker
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-case-conflict
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-docstring-first
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-executables-have-shebangs
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-merge-conflict
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-symlinks
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: check-vcs-permalinks
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: debug-statements
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: detect-private-key
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: end-of-file-fixer
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: flake8
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: forbid-new-submodules
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: mixed-line-ending
+        args:
+          - "--fix=no"
+        stages: ["commit"]
+        language_version: "python3.6"
+      - id: trailing-whitespace
+        stages: ["commit"]
+        language_version: "python3.6"
+
+  - repo: ssh://git@bitbucket.iol.unh.edu:7999/ofa/code-review-standards.git
+    rev: v2018.05
+    hooks:
+      - id: iol-commit-message-format
+        stages: ["commit-msg"]

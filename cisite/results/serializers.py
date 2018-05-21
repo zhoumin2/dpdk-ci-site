@@ -315,7 +315,7 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize Tarball objects."""
 
     runs = serializers.HyperlinkedRelatedField(many=True, read_only=True,
-                                                   view_name='testrun-detail')
+                                               view_name='testrun-detail')
 
     class Meta:
         """Specify fields to pull from Tarball model."""
