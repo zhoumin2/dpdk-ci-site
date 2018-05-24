@@ -14,12 +14,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from .filters import PatchSetFilter
-from .models import PatchSet, Patch, Environment, Measurement, \
-    TestRun, Tarball
+from .models import Branch, Environment, Measurement, PatchSet, Patch, \
+    Tarball, TestRun
 from . import permissions
-from .serializers import PatchSetSerializer, PatchSerializer, \
-    EnvironmentSerializer, MeasurementSerializer, TestRunSerializer, \
-    TarballSerializer, GroupSerializer, UserSerializer
+from .serializers import BranchSerializer, EnvironmentSerializer, \
+    GroupSerializer, MeasurementSerializer, PatchSerializer, \
+    PatchSetSerializer, TarballSerializer, TestRunSerializer, UserSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -35,6 +35,16 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PatchSetFilter
+
+
+class BranchViewSet(viewsets.ModelViewSet):
+    """Manage git branches used by DPDK."""
+
+    permission_classes = (permissions.IsAdminUserOrReadOnly,)
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    filter_fields = ('name', 'last_commit_id')
+    lookup_field = 'name'
 
 
 class TarballViewSet(viewsets.ModelViewSet):

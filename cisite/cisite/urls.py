@@ -17,9 +17,9 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
-from results.views import PatchSetViewSet, PatchViewSet, TarballViewSet, \
-    EnvironmentViewSet, MeasurementViewSet, \
-    TestRunViewSet, GroupViewSet, UserViewSet, Dashboard
+from results.views import BranchViewSet, Dashboard, EnvironmentViewSet, \
+    GroupViewSet, MeasurementViewSet, PatchSetViewSet, PatchViewSet, \
+    TarballViewSet, TestRunViewSet, UserViewSet
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
@@ -27,6 +27,7 @@ router = DefaultRouter()
 router.register(r'patchsets', PatchSetViewSet)
 router.register(r'patches', PatchViewSet)
 router.register(r'tarballs', TarballViewSet)
+router.register(r'branches', BranchViewSet)
 router.register(r'environments', EnvironmentViewSet)
 router.register(r'measurements', MeasurementViewSet)
 router.register(r'testruns', TestRunViewSet)

@@ -3,8 +3,8 @@ from django.contrib import admin
 from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import ContactPolicy, Environment, Measurement, Parameter, \
-    Patch, PatchSet, Tarball, TestResult, TestRun
+from .models import Branch, ContactPolicy, Environment, Measurement, \
+    Parameter, Patch, PatchSet, Tarball, TestResult, TestRun
 from guardian.admin import GuardedModelAdmin
 
 
@@ -97,6 +97,7 @@ class EnvironmentAdmin(GuardedModelAdmin):
                            obj.contact_policy)
 
 
+admin.site.register(Branch)
 admin.site.register(Measurement, GuardedModelAdmin, inlines=[ParameterInline])
 admin.site.register(PatchSet, inlines=[PatchInline])
 admin.site.register(Tarball)

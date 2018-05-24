@@ -3,8 +3,8 @@
 import re
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
-from .models import PatchSet, Tarball, Patch, Environment, Measurement, \
-    TestResult, TestRun, Parameter, ContactPolicy
+from .models import Branch, ContactPolicy, Environment, Measurement, \
+    Parameter, PatchSet, Patch, Tarball, TestResult, TestRun
 
 
 def qs_get_missing(queryset, data):
@@ -309,6 +309,19 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
         for result in results:
             TestResult.objects.create(run=run, **result)
         return run
+
+
+class BranchSerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize branch objects for use in the REST API."""
+
+    class Meta:
+        """Specify fields to pull in for BranchSerializer."""
+
+        model = Branch
+        fields = ('url', 'name', 'repository_url', 'regexp', 'last_commit_id')
+        extra_kwargs = {
+            'url': {'lookup_field': 'name'},
+        }
 
 
 class TarballSerializer(serializers.HyperlinkedModelSerializer):

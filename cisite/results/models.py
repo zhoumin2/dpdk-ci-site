@@ -100,6 +100,32 @@ class PatchSet(models.Model):
                 return "success"
 
 
+class Branch(models.Model):
+    """Model a DPDK repository branch."""
+
+    name = models.CharField(
+        max_length=64, blank=False, unique=True,
+        help_text='Name of the branch')
+    repository_url = models.URLField(
+        max_length=1024, help_text='Upstream URL of the repository')
+    regexp = models.CharField(
+        max_length=256, blank=True,
+        help_text='Regular expression of subject lines that should be applied'
+                  ' to this branch')
+    last_commit_id = models.CharField(
+        max_length=40, blank=False,
+        help_text='Commit ID of last tested commit on this branch')
+
+    class Meta:
+        """Define metadata for branch model."""
+
+        verbose_name_plural = "branches"
+
+    def __str__(self):
+        """Return string representation of branch record."""
+        return self.name
+
+
 class Tarball(models.Model):
     """Model a tarball constructed by a patchset."""
 
