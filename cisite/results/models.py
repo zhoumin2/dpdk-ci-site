@@ -63,6 +63,42 @@ class PatchSet(models.Model):
             uid=self.message_uid, actual=self.patches.count(),
             expected=self.patch_count)
 
+    def patchwork_range_str(self):
+        """Return the range of patchwork IDs as an HTML string."""
+        res = str(self.patches.first().patchworks_id)
+        if self.patches.count() > 1:
+            res += '&ndash;' + str(self.patches.last().patchworks_id)
+        return res
+
+    def status(self):
+        """Return the status string to be displayed on the dashboard."""
+        if self.apply_error:
+            return "Apply Error"
+        elif (not self.tarballs.exists() or
+              not self.tarballs.last().runs.exists()):
+            return "Pending"
+        else:
+            trs = self.tarballs.last().runs
+            if trs.filter(results__result="FAIL").exists():
+                return "Possible Regression"
+            else:
+                return "Pass"
+
+    def status_class(self):
+        """Return the background context class to be used on the dashboard."""
+        if self.apply_error:
+            return "warning"
+        elif not self.tarballs.exists():
+            return "secondary"
+        elif not self.tarballs.last().runs.exists():
+            return "primary"
+        else:
+            trs = self.tarballs.last().runs
+            if trs.filter(results__result="FAIL").exists():
+                return "danger"
+            else:
+                return "success"
+
 
 class Tarball(models.Model):
     """Model a tarball constructed by a patchset."""

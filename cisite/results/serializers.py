@@ -65,8 +65,8 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
 
         model = PatchSet
         fields = ('url', 'patch_count', 'patches', 'complete', 'is_public',
-                  'apply_error')
-        read_only_fields = ('complete',)
+                  'apply_error', 'tarballs',)
+        read_only_fields = ('complete', 'tarballs',)
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):
