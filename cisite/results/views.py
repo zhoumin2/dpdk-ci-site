@@ -151,3 +151,12 @@ class Dashboard(APIView):
         queryset = PatchSet.objects.complete().exclude(
             patches__pw_is_active=False)
         return Response({'patchsets': queryset})
+
+
+class DashboardDetail(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'detail.html'
+
+    def get(self, request, **kwargs):
+        patchset = PatchSet.objects.get(id=kwargs['id'])
+        return Response({'patchset': patchset})

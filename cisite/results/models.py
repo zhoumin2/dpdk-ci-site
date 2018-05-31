@@ -494,6 +494,11 @@ class TestRun(models.Model):
             url=self.tarball.tarball_url,
             timestamp=self.timestamp.isoformat(sep=' '))
 
+    @property
+    def failures(self):
+        """Return a queryset containing only failing test results."""
+        return self.results.filter(result="FAIL")
+
 
 class TestResult(models.Model):
     """Model a single test result in a patch set."""
@@ -549,3 +554,14 @@ class TestResult(models.Model):
         return '{name:s} {result:s} {difference:f} {unit:s}'.format(
             name=self.measurement.name, result=self.result,
             difference=self.difference, unit=self.measurement.unit)
+
+    @property
+    def result_class(self):
+        """Return the background context class to be used on the dashboard."""
+        class_map = {
+            self.__class__.PASS: 'success',
+            self.__class__.FAIL: 'danger',
+            self.__class__.WARNING: 'warning',
+            self.__class__.NOT_TESTED: 'secondary',
+        }
+        return class_map.get(self.result, 'warning')

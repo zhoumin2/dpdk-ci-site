@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
-from results.views import BranchViewSet, Dashboard, EnvironmentViewSet, \
+from results.views import BranchViewSet, Dashboard, DashboardDetail, EnvironmentViewSet, \
     GroupViewSet, MeasurementViewSet, PatchSetViewSet, PatchViewSet, \
     TarballViewSet, TestRunViewSet, UserViewSet
 from rest_framework.routers import DefaultRouter
@@ -42,5 +42,7 @@ urlpatterns = [
                               namespace='rest_framework')),
     path('admin/', admin.site.urls),
     path('schema/', schema_view),
-    path('dashboard/', Dashboard.as_view())
+    path('dashboard/', Dashboard.as_view(), name='dashboard'),
+    path('dashboard/<int:id>/', DashboardDetail.as_view(),
+         name='dashboard-detail'),
 ]
