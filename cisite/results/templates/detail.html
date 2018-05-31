@@ -16,16 +16,16 @@
         </ol>
       </nav>
 
-      <h1>Patch Set {{ patchset.patchwork_range_str|safe }}</h1>
+      <h1>Patch Set {{ patchset_range|safe }}</h1>
       <ul>
-        {% for p in patchset.patches.all %}
+        {% for p in patches.all %}
         <li>
-          <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/" target="_blank">[PATCH {{ p.patch_number }}/{{ patchset.patch_count }}] {{ p.subject }}</a>
+          <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/" target="_blank">[PATCH {{ p.patch_number }}/{{ patches.count }}] {{ p.subject }}</a>
         </li>
         {% endfor %}
       </ul>
       <h1>Results</h1>
-      {% for r in patchset.tarballs.last.runs.all %}
+      {% for r in runs %}
       <h2>NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps</h2>
       <h3>Environment Info</h3>
       <dl>
@@ -69,6 +69,10 @@
           {% endfor %}
         </tbody>
       </table>
+      {% empty %}
+      <p>There are not yet any runs for this patch set or you do not have
+      permission to view detailed results for any test runs for this patch
+      set.</p>
       {% endfor %}
     </div>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
+from guardian.shortcuts import get_objects_for_user
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
@@ -159,4 +160,14 @@ class DashboardDetail(APIView):
 
     def get(self, request, **kwargs):
         patchset = PatchSet.objects.get(id=kwargs['id'])
-        return Response({'patchset': patchset})
+        tarball = patchset.tarballs.last()
+        runs = []
+        if tarball is not None:
+            runs = get_objects_for_user(request.user, 'view_testrun',
+                                        tarball.runs.all())
+
+        return Response({
+            'patchset_range': patchset.patchwork_range_str(),
+            'patches': patchset.patches.all(),
+            'runs': runs,
+        })
