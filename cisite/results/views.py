@@ -23,6 +23,27 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     PatchSetSerializer, TarballSerializer, TestRunSerializer, UserSerializer
 
 
+def text_color_classes(bg_class):
+    """Return optimal Bootstrap text and background classes for the given class.
+
+    The colors are chosen based on the Bootstrap documentation.
+    """
+    foregrounds = {
+        'primary': 'white',
+        'secondary': 'white',
+        'success': 'white',
+        'danger': 'white',
+        'warning': 'dark',
+        'info': 'white',
+        'light': 'dark',
+        'dark': 'white',
+        'white': 'dark',
+        'transparent': 'dark',
+    }
+    return 'bg-{0:s} text-{1:s}'.format(
+        bg_class, foregrounds.get(bg_class, 'dark'))
+
+
 class PatchSetViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of incoming patchsets.
 
@@ -170,4 +191,6 @@ class DashboardDetail(APIView):
             'patchset_range': patchset.patchwork_range_str(),
             'patches': patchset.patches.all(),
             'runs': runs,
+            'status': patchset.status(),
+            'status_classes': text_color_classes(patchset.status_class()),
         })

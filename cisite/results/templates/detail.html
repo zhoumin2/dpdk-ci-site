@@ -24,7 +24,8 @@
         </li>
         {% endfor %}
       </ul>
-      <h1>Results</h1>
+      <h1>Test Results</h1>
+      <p>Overall result: <span class="{{ status_classes }}">{{ status }}</span></p>
       {% for r in runs %}
       <h2>NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps</h2>
       <h3>Environment Info</h3>
