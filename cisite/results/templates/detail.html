@@ -55,7 +55,7 @@
           {% for p in item.measurement.parameters.all %}
             <td>{{ p.value }}</td>
           {% endfor %}
-          <td>{{ item.difference }}</td>
+          <td>{{ item.difference|floatformat:"-5" }}</td>
         </tr>
         {% endfor %}
       </tbody>
