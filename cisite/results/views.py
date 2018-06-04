@@ -185,7 +185,8 @@ class DashboardDetail(APIView):
         runs = []
         if tarball is not None:
             runs = get_objects_for_user(request.user, 'view_testrun',
-                                        tarball.runs.all())
+                                        tarball.runs.all(),
+                                        accept_global_perms=False)
 
         return Response({
             'patchset_range': patchset.patchwork_range_str(),
