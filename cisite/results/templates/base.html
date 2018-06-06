@@ -8,9 +8,12 @@
     <title>{% block title %}DPDK Performance Test Lab Dashboard{% endblock %}</title>
 </head>
 <body>
-  <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-sm navbar-light bg-light">
     <div class="container">
-      <a class="navbar-brand" href="#">Dashboard</a>
+      <a class="navbar-brand" href="#">
+        <img src="/results-static/DPDK_logo_horizontal.svg" width="89" height="25" class="d-inline-block align-middle" alt="DPDK">
+        CI Dashboard
+      </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -46,6 +49,12 @@
     {% block content %}
     <p>Content goes here.</p>
     {% endblock %}
+
+    <p class="border-top text-muted">Copyright &copy; 2018
+    <a class="text-secondary" href="https://dpdk.org" target="_blank">DPDK Project</a>.
+    Hosted by the
+    <a class="text-secondary" href="https://www.iol.unh.edu" target="_blank">
+    University of New Hampshire InterOperability Laboratory</a>.</p>
   </div>
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>

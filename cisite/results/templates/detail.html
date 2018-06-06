@@ -43,9 +43,10 @@
         <tr>
           <th>Result</th>
           {% for p in r.results.first.measurement.parameters.all %}
-            <th>{{ p.name }}</th>
+            <th>{{ p.name }} ({{ p.unit }})</th>
           {% endfor %}
-          <th>{{ r.results.first.measurement.name }} Difference</th>
+          <th>{{ r.results.first.measurement.name }} Difference
+          ({{ r.results.first.measurement.unit }})</th>
         </tr>
       </thead>
       <tbody>
