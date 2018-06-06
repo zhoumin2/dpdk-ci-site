@@ -46,6 +46,10 @@
       </ol>
     </nav>
 
+    {% if banner %}
+    <p class="border bg-{{ banner.bg_class }}">{{ banner.text }}</p>
+    {% endif %}
+
     {% block content %}
     <p>Content goes here.</p>
     {% endblock %}

@@ -1,6 +1,7 @@
 """Render views for results database objects."""
 
 from rest_framework import viewsets
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
@@ -172,7 +173,10 @@ class Dashboard(APIView):
     def get(self, request):
         queryset = PatchSet.objects.complete().exclude(
             patches__pw_is_active=False)
-        return Response({'patchsets': queryset})
+        return Response({
+            'patchsets': queryset,
+            'banner': getattr(settings, 'DASHBOARD_BANNER', None),
+        })
 
 
 class DashboardDetail(APIView):
@@ -194,4 +198,5 @@ class DashboardDetail(APIView):
             'runs': runs,
             'status': patchset.status(),
             'status_classes': text_color_classes(patchset.status_class()),
+            'banner': getattr(settings, 'DASHBOARD_BANNER', None),
         })
