@@ -124,3 +124,7 @@ AUTH_LDAP_FIND_GROUP_PERMS = True
 # Cache group memberships for an hour to minimize LDAP traffic
 AUTH_LDAP_CACHE_GROUPS = True
 AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+
+# Defaults
+ENABLE_REST_API = True
+ENABLE_ADMIN = True
