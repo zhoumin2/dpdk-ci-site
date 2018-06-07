@@ -4,7 +4,8 @@ import re
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 from .models import Branch, ContactPolicy, Environment, Measurement, \
-    Parameter, PatchSet, Patch, Tarball, TestResult, TestRun
+    Parameter, PatchSet, Patch, Tarball, TestResult, TestRun, \
+    Subscription
 
 
 def qs_get_missing(queryset, data):
@@ -109,6 +110,24 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
                   'email_success', 'email_list')
 
 
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Serialize a user subscription entry.
+
+    This serializer is designed to be used from within EnvironmentSerializer
+    and is read-only.
+    """
+
+    display_name = serializers.CharField(source='user_profile.display_name')
+    email = serializers.EmailField(source='user_profile.user.email')
+
+    class Meta:
+        """Define serializer model and fields."""
+
+        model = Subscription
+        fields = ('display_name', 'email', 'email_success',
+                  'how')
+
+
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize environment objects."""
 
@@ -116,6 +135,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
 
     measurements = MeasurementSerializer(many=True)
     contact_policy = ContactPolicySerializer()
+    contacts = SubscriptionSerializer(many=True, read_only=True)
 
     class Meta:
         """Specify how to serialize environment."""

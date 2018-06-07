@@ -4,7 +4,7 @@ import json
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q, F, Count
 
@@ -337,32 +337,6 @@ class Environment(models.Model):
     # bios_settings = models.CharField(max_length=4096)
     # dts_configuration = models.CharField(max_length=4096)
 
-    @property
-    def contacts(self):
-        """Return a list of contacts to be e-mailed about test results.
-
-        Each contact is represented as a dictionary with a display name,
-        e-mail address, and a "how" field specifying whether the contact
-        should be put in the To, Cc, or Bcc field of the e-mail.
-
-        At present this list is simply built from the list of users that
-        are part of the owner group. This will become more sophisticated
-        in the future.
-        """
-        ret = []
-        if not self.contact_policy:
-            return []
-
-        if self.contact_policy.email_owner:
-            users = self.owner.user_set
-            ret.extend(
-                [{'display_name': ' '.join([x['first_name'], x['last_name']]),
-                  'email': x['email'], 'how': 'to'}
-                 for x in users.values('first_name', 'last_name', 'email')])
-        if self.contact_policy.email_list:
-            ret.append({'email': self.contact_policy.email_list, 'how': 'cc'})
-        return ret
-
     class Meta:
         """Specify how to set up environments."""
 
@@ -565,3 +539,75 @@ class TestResult(models.Model):
             self.__class__.NOT_TESTED: 'secondary',
         }
         return class_map.get(self.result, 'warning')
+
+
+class Subscription(models.Model):
+    """Represent an e-mail subscription of a user to an environment.
+
+    This is an intermediate model for the user-environment association. If a
+    subscription object exists for a user, they will be notified of all test
+    failures for the given device. Users can also request to be e-mailed for
+    passing results and can select whether they will appear in the To or Cc
+    field of the notification e-mails.
+    """
+
+    EMAIL_TO = 'to'
+    EMAIL_CC = 'cc'
+    HOW_CHOICES = (
+        (EMAIL_TO, 'To'),
+        (EMAIL_CC, 'Cc'),
+    )
+
+    user_profile = models.ForeignKey(
+        'UserProfile', on_delete=models.CASCADE,
+        help_text='The user that is being subscribed.')
+    environment = models.ForeignKey(
+        Environment, on_delete=models.CASCADE, related_name='contacts',
+        help_text='The environment that the user is subscribing to.')
+    email_success = models.NullBooleanField(
+        help_text='Send e-mails when test succeeds; if null/unknown, '
+        'then inherit the global setting from the environment.')
+    how = models.CharField(
+        max_length=4, blank=False, choices=HOW_CHOICES, default=EMAIL_TO,
+        help_text='Which e-mail header to include contact in')
+
+    def __str__(self):
+        """Return a string with the username and environment."""
+        return str(self.user_profile) + ': ' + str(self.environment)
+
+    def clean(self):
+        """Check that the user has permission to subscribe to the environment.
+
+        A user has permission if he or she has view_environment permission
+        for the target environment.
+        """
+        user = self.user_profile.user
+        if not user.has_perm('results.view_environment', self.environment):
+            raise ValidationError({
+                'environment': 'User {name:s} does not have permission to view this environment.'.format(
+                    name=user.username)
+            })
+
+
+class UserProfile(models.Model):
+    """Define a user profile model.
+
+    This has a one-to-one relationship with a user and is used to store
+    profile settings that are not required for authentication.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='results_profile',
+        help_text='The user that this profile corresponds to.')
+    subscriptions = models.ManyToManyField(
+        Environment, through='Subscription',
+        help_text='The set of environments for which this user receives e-mail notifications.')
+
+    def __str__(self):
+        """Return the name of the user that owns this profile."""
+        return self.user.username
+
+    @property
+    def display_name(self):
+        """Return the user's display name."""
+        return ' '.join([self.user.first_name, self.user.last_name])

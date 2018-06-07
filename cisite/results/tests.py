@@ -10,7 +10,8 @@ from django.utils.dateparse import parse_datetime
 import rest_framework.exceptions
 from rest_framework.reverse import reverse
 from .models import Patch, PatchSet, ContactPolicy, Environment, \
-    Measurement, TestRun, TestResult, Tarball, Parameter
+    Measurement, TestRun, TestResult, Tarball, Parameter, \
+    Subscription, UserProfile
 from .serializers import PatchSerializer, EnvironmentSerializer, \
     TestRunSerializer
 
@@ -811,3 +812,111 @@ class TestResultTestCase(TestCase):
             res2 = TestResult.objects.create(result="PASS", difference=1.0,
                                              measurement=cls.m2, run=run)
             res2.full_clean()
+
+
+class SubscriptionTestCase(TestCase):
+    """Test Subscription permissions."""
+
+    def test_profile_create(self):
+        """Test that a new user gets a profile."""
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        self.assertTrue(UserProfile.objects.filter(user__pk=user.pk).exists())
+
+    def test_unsubscribe(self):
+        """Test that a user can unsubscribe himself."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User', email='abc@iol.unh.edu')
+        user.groups.add(grp)
+        sub = Subscription.objects.create(user_profile=user.results_profile,
+                                          environment=env,
+                                          email_success=False)
+        sub.delete()
+        self.assertFalse(user.email in env.contacts.values_list(
+            'user_profile__user__email', flat=True))
+
+    def test_user_in_group(self):
+        """Test that a user with access can subscribe himself."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User', email='abc@iol.unh.edu')
+        user.groups.add(grp)
+        sub = Subscription(user_profile=user.results_profile,
+                           environment=env,
+                           email_success=False)
+        sub.full_clean()
+        sub.save()
+        self.assertTrue(user.email in env.contacts.values_list(
+            'user_profile__user__email', flat=True))
+
+    def test_user_not_in_group(self):
+        """Test that a user without access cannot subscibe himself."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        with self.assertRaises(ValidationError):
+            sub = Subscription(user_profile=user.results_profile,
+                               environment=env,
+                               email_success=False)
+            sub.full_clean()
+            sub.save()
+
+    def test_remove_user_from_group(self):
+        """Test that removing a user from a group removes subscription(s)."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        user.groups.add(grp)
+        sub = Subscription.objects.create(
+            user_profile=user.results_profile, environment=env,
+            email_success=False)
+        grp.user_set.remove(user)
+        profile = user.results_profile
+        self.assertFalse(profile.subscriptions.filter(pk=sub.pk).exists())
+
+    def test_remove_group_from_user(self):
+        """Test that removing a user from a group removes subscription(s)."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        user.groups.add(grp)
+        sub = Subscription.objects.create(
+            user_profile=user.results_profile, environment=env,
+            email_success=False)
+        user.groups.remove(grp)
+        profile = user.results_profile
+        self.assertFalse(profile.subscriptions.filter(pk=sub.pk).exists())
+
+    def test_clear_group_members(self):
+        """Test that clearing all members from group removes subscriptions."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        user.groups.add(grp)
+        sub = Subscription.objects.create(
+            user_profile=user.results_profile, environment=env,
+            email_success=False)
+        grp.user_set.clear()
+        profile = user.results_profile
+        self.assertFalse(profile.subscriptions.filter(pk=sub.pk).exists())
+
+    def test_clear_user_groups(self):
+        """Test that clearing user's group memberships clears subscriptions."""
+        grp = Group.objects.create(name='group')
+        env = create_test_environment(owner=grp)
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
+        user.groups.add(grp)
+        profile = user.results_profile
+        Subscription.objects.create(user_profile=profile, environment=env,
+                                    email_success=False)
+        self.assertTrue(profile.subscriptions.exists())
+        user.groups.clear()
+        self.assertFalse(profile.subscriptions.exists())

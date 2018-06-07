@@ -1,9 +1,9 @@
 """Define signals for results models."""
 
 from .models import ContactPolicy, Environment, Measurement, TestResult, \
-    TestRun
-from django.contrib.auth.models import Group, Permission
-from django.db.models.signals import post_save
+    TestRun, Subscription, UserProfile
+from django.contrib.auth.models import Group, Permission, User
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from guardian.shortcuts import assign_perm, remove_perm
 
@@ -28,6 +28,43 @@ def save_group(sender, instance, created, **kwargs):
                                  'testrun']]
         instance.permissions.set(
             [Permission.objects.get(codename=x) for x in permissions])
+
+
+def remove_subscriptions(user, group):
+    """Remove subscription for all environments owned by the given group."""
+    envs = group.environment_set.all()
+    for sub in Subscription.objects.filter(environment__pk__in=envs):
+        sub.delete()
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def group_membership_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    """Handle changes in user group membership."""
+    if action in 'post_remove':
+        if reverse:
+            group = instance
+            for user in User.objects.filter(pk__in=pk_set):
+                remove_subscriptions(user, group)
+        else:
+            user = instance
+            for group in Group.objects.filter(pk__in=pk_set):
+                remove_subscriptions(user, group)
+    elif action == 'pre_clear':
+        if reverse:
+            group = instance
+            for user in group.user_set.all():
+                remove_subscriptions(user, group)
+        else:
+            user = instance
+            for group in user.groups.all():
+                remove_subscriptions(user, group)
+
+
+@receiver(post_save, sender=User)
+def post_save_user(sender, instance, created, **kwargs):
+    """Assign default profile on save new user."""
+    if created:
+        UserProfile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=ContactPolicy)

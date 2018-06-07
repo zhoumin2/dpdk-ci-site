@@ -4,8 +4,10 @@ from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.html import format_html
 from .models import Branch, ContactPolicy, Environment, Measurement, \
-    Parameter, Patch, PatchSet, Tarball, TestResult, TestRun
+    Parameter, Patch, PatchSet, Tarball, TestResult, TestRun, \
+    Subscription, UserProfile
 from guardian.admin import GuardedModelAdmin
+from guardian.shortcuts import get_objects_for_user
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -68,6 +70,48 @@ class TestResultInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     model = TestResult
+
+
+class SubscriptionInline(admin.TabularInline):
+    """Present inline admin form for user environment-specific settings."""
+
+    extra = 0
+    show_change_link = True
+    model = Subscription
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Restrict the environments that can be supplied for the user.
+
+        Note that even if the user manages to get by this check and submit a
+        request to the admin interface to add a user to an environment he
+        doesn't have access to, the model's clean() function would reject
+        adding it.
+        """
+        # Solution taken from https://stackoverflow.com/a/4236159
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'environment':
+            print(dir(request))
+            if request._obj_ is not None and \
+                    isinstance(request._obj_, UserProfile):
+                field.queryset = get_objects_for_user(
+                    request._obj_.user, 'results.view_environment',
+                    accept_global_perms=False)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    """Present user profile on form."""
+
+    inlines = [SubscriptionInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Save object being used before calling superclass function."""
+        request._obj_ = obj
+        return super().get_form(request, obj, **kwargs)
 
 
 @admin.register(ContactPolicy)
