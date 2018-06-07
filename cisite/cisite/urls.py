@@ -24,6 +24,8 @@ from results.views import BranchViewSet, Dashboard, DashboardDetail, Environment
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 
+urlpatterns = []
+
 if getattr(settings, 'ENABLE_REST_API', True):
     router = DefaultRouter()
     router.register(r'patchsets', PatchSetViewSet)
@@ -38,7 +40,7 @@ if getattr(settings, 'ENABLE_REST_API', True):
 
     schema_view = get_schema_view(title='DPDK CI Site API')
 
-    urlpatterns = [
+    urlpatterns += [
         path('', include(router.urls)),
         path('api-auth/', include('rest_framework.urls',
                                   namespace='rest_framework')),
