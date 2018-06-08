@@ -1,5 +1,6 @@
 -r base.txt
 
-unittest-xml-reporting
+coverage
 flake8
 flake8-docstrings
+unittest-xml-reporting
