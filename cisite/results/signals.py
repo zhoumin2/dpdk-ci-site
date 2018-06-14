@@ -21,7 +21,7 @@ def clear_environment_perms(environment):
 @receiver(post_save, sender=Group)
 def save_group(sender, instance, created, **kwargs):
     """Assign group permissions on save"""
-    if (created):
+    if created and not kwargs.get('raw', False):
         permissions = ['_'.join([x, y])
                        for x in ['add', 'view', 'change', 'delete']
                        for y in ['environment', 'measurement', 'testresult',
@@ -63,7 +63,7 @@ def group_membership_changed(sender, instance, action, reverse, model, pk_set, *
 @receiver(post_save, sender=User)
 def post_save_user(sender, instance, created, **kwargs):
     """Assign default profile on save new user."""
-    if created:
+    if created and not kwargs.get('raw', False):
         UserProfile.objects.create(user=instance)
 
 
@@ -71,7 +71,7 @@ def post_save_user(sender, instance, created, **kwargs):
 def save_contactpolicy(sender, instance, **kwargs):
     """Assign contact policy permissions on save."""
     group = instance.environment.owner
-    if group is None:
+    if group is None or kwargs.get('raw', False):
         return
     assign_perm('view_contactpolicy', group, instance)
     assign_perm('change_contactpolicy', group, instance)
@@ -81,7 +81,7 @@ def save_contactpolicy(sender, instance, **kwargs):
 def save_environment(sender, instance, **kwargs):
     """Assign environment permissions on save."""
     group = instance.owner
-    if group is None:
+    if group is None or kwargs.get('raw', False):
         return
     assign_perm('view_environment', group, instance)
     assign_perm('change_environment', group, instance)
@@ -94,7 +94,7 @@ def save_environment(sender, instance, **kwargs):
 def save_measurement(sender, instance, **kwargs):
     """Assign measurement permissions on save"""
     group = instance.owner
-    if group is None:
+    if group is None or kwargs.get('raw', False):
         return
     assign_perm('view_measurement', group, instance)
     assign_perm('change_measurement', group, instance)
@@ -105,7 +105,7 @@ def save_measurement(sender, instance, **kwargs):
 def save_test_result(sender, instance, **kwargs):
     """Assign test result permissions on save"""
     group = instance.owner
-    if group is None:
+    if group is None or kwargs.get('raw', False):
         return
     assign_perm('view_testresult', group, instance)
     assign_perm('change_testresult', group, instance)
@@ -116,7 +116,7 @@ def save_test_result(sender, instance, **kwargs):
 def save_test_run(sender, instance, **kwargs):
     """Assign test run permissions on save"""
     group = instance.owner
-    if group is None:
+    if group is None or kwargs.get('raw', False):
         return
     assign_perm('view_testrun', group, instance)
     assign_perm('change_testrun', group, instance)
