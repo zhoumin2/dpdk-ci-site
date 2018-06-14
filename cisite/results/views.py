@@ -1,19 +1,15 @@
 """Render views for results database objects."""
 
 from rest_framework import viewsets
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
-from guardian.shortcuts import get_objects_for_user
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
-from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import status
 from .filters import PatchSetFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
@@ -22,27 +18,6 @@ from . import permissions
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
     PatchSetSerializer, TarballSerializer, TestRunSerializer, UserSerializer
-
-
-def text_color_classes(bg_class):
-    """Return optimal Bootstrap text and background classes for the given class.
-
-    The colors are chosen based on the Bootstrap documentation.
-    """
-    foregrounds = {
-        'primary': 'white',
-        'secondary': 'white',
-        'success': 'white',
-        'danger': 'white',
-        'warning': 'dark',
-        'info': 'white',
-        'light': 'dark',
-        'dark': 'white',
-        'white': 'dark',
-        'transparent': 'dark',
-    }
-    return 'bg-{0:s} text-{1:s}'.format(
-        bg_class, foregrounds.get(bg_class, 'dark'))
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -164,39 +139,3 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound(self.kwargs['username'])
         self.check_object_permissions(self.request, user)
         return user
-
-
-class Dashboard(APIView):
-    renderer_classes = [TemplateHTMLRenderer]
-    template_name = 'dashboard.html'
-
-    def get(self, request):
-        queryset = PatchSet.objects.complete().exclude(
-            patches__pw_is_active=False)
-        return Response({
-            'patchsets': queryset,
-            'banner': getattr(settings, 'DASHBOARD_BANNER', None),
-        })
-
-
-class DashboardDetail(APIView):
-    renderer_classes = [TemplateHTMLRenderer]
-    template_name = 'detail.html'
-
-    def get(self, request, **kwargs):
-        patchset = PatchSet.objects.get(id=kwargs['id'])
-        tarball = patchset.tarballs.last()
-        runs = []
-        if tarball is not None:
-            runs = get_objects_for_user(request.user, 'view_testrun',
-                                        tarball.runs.all(),
-                                        accept_global_perms=False)
-
-        return Response({
-            'patchset_range': patchset.patchwork_range_str(),
-            'patches': patchset.patches.all(),
-            'runs': runs,
-            'status': patchset.status(),
-            'status_classes': text_color_classes(patchset.status_class()),
-            'banner': getattr(settings, 'DASHBOARD_BANNER', None),
-        })

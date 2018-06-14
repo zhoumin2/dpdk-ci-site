@@ -1,16 +1,21 @@
 """Configure Django URLconf for results app."""
 
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
 from . import views
 
+router = DefaultRouter()
+router.register(r'patchsets', views.PatchSetViewSet)
+router.register(r'patches', views.PatchViewSet)
+router.register(r'tarballs', views.TarballViewSet)
+router.register(r'branches', views.BranchViewSet)
+router.register(r'environments', views.EnvironmentViewSet)
+router.register(r'measurements', views.MeasurementViewSet)
+router.register(r'testruns', views.TestRunViewSet)
+router.register(r'group', views.GroupViewSet)
+router.register(r'users', views.UserViewSet)
+
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('patchsets/', views.handle_patchsets),
-    path('patchsets/<int:patchset_id>/',
-         views.get_one_patchset, name='patchset'),
-    path('patchsets/<int:patchset_id>/patches/', views.add_patch_to_patchset,
-         name='patchset_new_patch'),
-    path('patchsets/<int:patchset_id>/patches/<int:patch_psid>/',
-         views.get_patchset_patch, name='patchset_patch'),
+    path('', include(router.urls)),
 ]
