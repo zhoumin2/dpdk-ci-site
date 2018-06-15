@@ -66,8 +66,10 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
 
         model = PatchSet
         fields = ('url', 'patch_count', 'patches', 'complete', 'is_public',
-                  'apply_error', 'tarballs',)
-        read_only_fields = ('complete', 'tarballs',)
+                  'apply_error', 'tarballs', 'patchwork_range_str',
+                  'status', 'status_class')
+        read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
+                            'status', 'status_class')
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):
@@ -279,7 +281,8 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
 
         model = TestResult
         fields = ('id', 'result', 'difference', 'expected_value',
-                  'measurement')
+                  'measurement', 'result_class')
+        read_only_fields = ('result_class',)
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):
