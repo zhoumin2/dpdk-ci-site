@@ -493,7 +493,8 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         run_data2 = TestRunSerializer(run, context={'request': None}).data
         self.assertTrue('url' in run_data2)
         self.assertSerializedNestedEqual(run_data, run_data2,
-                                         nested_lists=['results'])
+                                         nested_lists=['results'],
+                                         results_excludes=['result_class'])
 
     def test_remove_test_result(self):
         """Verify that deleting a test result in a run works."""
@@ -508,7 +509,8 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         run_data2 = TestRunSerializer(run, context={'request': None}).data
         self.assertTrue('url' in run_data2)
         self.assertSerializedNestedEqual(run_data, run_data2,
-                                         nested_lists=['results'])
+                                         nested_lists=['results'],
+                                         results_excludes=['result_class'])
 
     def test_update_test_result(self):
         """Verify that updating a test result in a run works."""
@@ -523,7 +525,8 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         run_data2 = TestRunSerializer(run, context={'request': None}).data
         self.assertTrue('url' in run_data2)
         self.assertSerializedNestedEqual(run_data, run_data2,
-                                         nested_lists=['results'])
+                                         nested_lists=['results'],
+                                         results_excludes=['result_class'])
 
     def test_update_test_run(self):
         """Verify that updating a test run field works."""
@@ -538,7 +541,8 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         run_data2 = TestRunSerializer(run, context={'request': None}).data
         self.assertTrue('url' in run_data2)
         self.assertSerializedNestedEqual(run_data, run_data2,
-                                         nested_lists=['results'])
+                                         nested_lists=['results'],
+                                         results_excludes=['result_class'])
 
     def test_create_test_run(self):
         """Verify that deserializing a test run creates its results."""
@@ -547,8 +551,11 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
         run_data['timestamp'] = parse_datetime(run_data['timestamp'])
+        for r in run_data['results']:
+            del r['result_class']
         self.assertSerializedNestedEqual(
-            self.__class__.initial_data, run_data, nested_lists=['results'])
+            self.__class__.initial_data, run_data, nested_lists=['results'],
+            results_excludes=['result_class'])
 
 
 class PatchSetModelTestCase(TestCase):
