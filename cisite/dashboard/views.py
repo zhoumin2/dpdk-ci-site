@@ -1,7 +1,8 @@
 """Define dashboard views."""
 
-import requests.exceptions
+from logging import getLogger
 from urllib.parse import urljoin
+import requests.exceptions
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
@@ -9,7 +10,6 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, HttpResponseServerError
-from logging import getLogger
 
 from .util import api_session
 

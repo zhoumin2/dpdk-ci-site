@@ -11,7 +11,7 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from .filters import PatchSetFilter
+from .filters import EnvironmentFilter, PatchSetFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
     Subscription, Tarball, TestRun
 from . import permissions
@@ -68,10 +68,11 @@ class PatchViewSet(viewsets.ModelViewSet):
 class EnvironmentViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of environments."""
 
-    filter_backends = (DjangoObjectPermissionsFilter,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter, DjangoObjectPermissionsFilter,)
     permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = Environment.objects.all()
     serializer_class = EnvironmentSerializer
+    filter_class = EnvironmentFilter
 
     @detail_route(methods=['post'])
     def clone(self, request, pk=None):
