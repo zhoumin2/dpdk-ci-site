@@ -80,10 +80,11 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
         """
         env = self.get_object()
         clone = env.clone()
-        serializer = EnvironmentSerializer(clone)
+        serializer = EnvironmentSerializer(clone,
+                                           context={'request': request})
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,
-                        status_code=status.HTTP_201_CREATED,
+                        status=status.HTTP_201_CREATED,
                         headers=headers)
 
 
