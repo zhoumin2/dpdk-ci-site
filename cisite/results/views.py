@@ -51,7 +51,7 @@ class TarballViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Tarball.objects.all()
     serializer_class = TarballSerializer
-    filter_fields = ('job_id', 'branch', 'commit_id', 'patchset')
+    filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
 
 
 class PatchViewSet(viewsets.ModelViewSet):
