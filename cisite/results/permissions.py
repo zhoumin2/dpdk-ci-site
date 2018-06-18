@@ -50,3 +50,16 @@ class OwnerReadCreateOnly(DjangoObjectPermissions):
             return True
 
         return super().has_object_permission(request, view, obj)
+
+
+class UserProfileObjectPermission(DjangoObjectPermissions):
+    """Allow user to access models attached to their user profile.
+
+    Allow access only to the owner of the object, or staff.
+    Note: This is only for an individual object, not a view set!
+    """
+
+    def has_object_permission(self, request, view, obj):
+        """Return true if permission should be granted."""
+        user = request.user
+        return user.is_staff or obj.user_profile.user == user

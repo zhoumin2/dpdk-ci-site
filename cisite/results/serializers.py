@@ -113,19 +113,20 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Serialize a user subscription entry.
 
-    This serializer is designed to be used from within EnvironmentSerializer
-    and is read-only.
+    This serializer is designed to be used from within SubscriptionSerializer.
     """
-
-    display_name = serializers.CharField(source='user_profile.display_name')
-    email = serializers.EmailField(source='user_profile.user.email')
 
     class Meta:
         """Define serializer model and fields."""
 
         model = Subscription
-        fields = ('display_name', 'email', 'email_success',
-                  'how')
+        fields = ('id', 'url', 'environment', 'email_success', 'how')
+
+    def create(self, validated_data):
+        """Set the user profile to the user creating the subscription."""
+        validated_data['user_profile_id'] =\
+            self.context['request'].user.results_profile.id
+        return Subscription.objects.create(**validated_data)
 
 
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
