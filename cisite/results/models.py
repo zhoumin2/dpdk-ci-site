@@ -359,6 +359,9 @@ class Environment(models.Model):
         new_obj.save()
         new_obj.contact_policy = self.contact_policy.clone(
             environment=new_obj)
+        for m in self.measurements.iterator():
+            m.clone(new_obj)
+        self.contacts.update(environment=new_obj)
         return new_obj
 
     def __str__(self):
@@ -400,6 +403,20 @@ class Measurement(models.Model):
     def __str__(self):
         """Return a string describing the measurement."""
         return '{name:s} ({unit:s})'.format(name=self.name, unit=self.unit)
+
+    def clone(self, environment):
+        """Return a clone of this measurement for a new environment."""
+        new_obj = Measurement.objects.get(pk=self.pk)
+
+        new_obj.pk = None
+        new_obj.environment = environment
+        new_obj.save()
+        for p in self.parameters.iterator():
+            new_p = Parameter.objects.get(pk=p.pk)
+            new_p.pk = None
+            new_p.measurement = new_obj
+            new_p.save()
+        return new_obj
 
 
 class Parameter(models.Model):
