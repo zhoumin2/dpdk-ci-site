@@ -354,8 +354,8 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull from Tarball model."""
 
         model = Tarball
-        fields = ('url', 'patchset', 'branch', 'commit_id',
-                  'job_id', 'tarball_url', 'runs')
+        fields = ('url', 'patchset', 'branch', 'commit_id', 'job_name',
+                  'build_id', 'tarball_url', 'runs')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):

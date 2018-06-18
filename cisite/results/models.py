@@ -133,12 +133,13 @@ class Tarball(models.Model):
         help_text='DPDK branch that the patch set was applied to')
     commit_id = models.CharField('git commit hash', max_length=40, blank=False,
         help_text='git commit id that the patch set was applied to')
-    job_id = models.PositiveIntegerField('Jenkins job id',
+    job_name = models.CharField('Jenkins job name', max_length=128, blank=True,
+        help_text='Name of Jenkins job that generated this tarball. '
+        'This can be NULL if the tarball was manually created.')
+    build_id = models.PositiveIntegerField('Jenkins build id',
         null=True, blank=True,
-        help_text='''Jenkins job id that generated this tarball
-
-        This can be NULL if the tarball was manually created.
-        ''')
+        help_text='Jenkins build id that generated this tarball. '
+        'This can be NULL if the tarball was manually created.')
     tarball_url = models.URLField(max_length=1024,
         help_text='URL from which Jenkins can download this tarball')
     patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
