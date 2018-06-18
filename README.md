@@ -29,6 +29,22 @@ Note that the pre-commit hooks will fail if you attempt to commit
 without activating the virtual environment first, since it looks for
 `python3.6` in `$PATH`.
 
+## Settings
+
+* `API_BASE_URL`: The URL of the root of the REST API to be used by the
+  dashboard.
+
+* `DASHBOARD_BANNER`: If present, expected to be a dictionary containing two
+  elements: `bg_class` is the Bootstrap background color class for the banner
+  at the top of the page, and `text` is the text to include in the banner.
+  This banner is intended to be used for site-wide announcements.
+
+* `ENABLE_REST_API`: If False, remove the URL routes for the REST API,
+  making it unusable.
+
+* `ENABLE_ADMIN`: If False, remove the URL route for the Django admin Web
+  interface.
+
 ## Running the server
 
 ```
