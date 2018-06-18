@@ -712,6 +712,14 @@ class EnvironmentTestCase(TestCase):
         env = create_test_environment(inventory_id=name,
                                       owner=self.__class__.grp)
         ContactPolicy.objects.create(environment=env)
+        m = Measurement.objects.create(name='throughput', unit='Mpps',
+                                       higher_is_better=True, environment=env)
+        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
+                                 measurement=m)
+        self.sub = Subscription.objects.create(
+            user_profile=self.__class__.user.results_profile,
+            environment=env)
+
         return env
 
     def test_initial_permissions(self):
@@ -725,6 +733,17 @@ class EnvironmentTestCase(TestCase):
             self.__class__.user.has_perm('results.change_environment', env))
         self.assertTrue(
             self.__class__.user.has_perm('results.delete_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.add_measurement'))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_measurement',
+                                         env.measurements.first()))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.change_measurement',
+                                         env.measurements.first()))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.delete_measurement',
+                                         env.measurements.first()))
 
     def test_add_test_run_removes_permissions(self):
         """Verify that adding a test run removes change permission.
@@ -745,6 +764,15 @@ class EnvironmentTestCase(TestCase):
             self.__class__.user.has_perm('results.change_environment', env))
         self.assertFalse(
             self.__class__.user.has_perm('results.delete_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_measurement',
+                                         env.measurements.first()))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.change_measurement',
+                                         env.measurements.first()))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.delete_measurement',
+                                         env.measurements.first()))
 
     def test_clone_works(self):
         """Verify that the clone() method works."""
@@ -763,6 +791,15 @@ class EnvironmentTestCase(TestCase):
                          new_env.contact_policy.email_owner)
         self.assertEqual(old_env.contact_policy.email_list,
                          new_env.contact_policy.email_list)
+
+        old_m = old_env.measurements.first()
+        new_m = new_env.measurements.first()
+        self.assertEqual(old_m.name, new_m.name)
+        self.assertEqual(old_m.unit, new_m.unit)
+        self.assertEqual(old_m.parameters.count(), new_m.parameters.count())
+
+        sub = Subscription.objects.get(pk=self.sub.pk)
+        self.assertEqual(sub.environment.pk, new_env.pk)
 
         self.assertTrue(
             self.__class__.user.has_perm('results.view_environment', new_env))
