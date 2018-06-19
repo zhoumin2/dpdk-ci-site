@@ -16,7 +16,7 @@ from .models import Patch, PatchSet, ContactPolicy, Environment, \
     Measurement, TestRun, TestResult, Tarball, Parameter, \
     Subscription, UserProfile
 from .serializers import PatchSerializer, EnvironmentSerializer, \
-    SubscriptionSerializer, TestRunSerializer
+    SubscriptionSerializer, TestRunSerializer, EnvironmentField
 
 
 def create_test_run(environment):
@@ -581,6 +581,44 @@ class SubscriptionSerializerTestCase(TestCase):
         serializer.save()
 
 
+class EnvironmentFieldTestCase(TestCase):
+    """Test the custom environment field."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user = User.objects.create(username='testuser', first_name='Test',
+                                       last_name='User')
+        cls.group1 = Group.objects.create(name="TestGroup1")
+        cls.group2 = Group.objects.create(name="TestGroup2")
+        cls.env1 = create_test_environment(owner=cls.group1)
+        cls.env2 = create_test_environment(owner=cls.group2)
+        cls.user.groups.add(cls.group1)
+        cls.admin = User.objects.create_superuser(
+            'admin', 'ad@example.com', "AbCdEfGh3")
+
+    def test_get_environment(self):
+        """Test that only one env shows up and not both."""
+        request = HttpRequest()
+        request.user = self.__class__.user
+
+        field = EnvironmentField()
+        field._context = dict(request=request)
+        self.assertQuerysetEqual(field.get_queryset(),
+            ['<Environment: IOL-IOL-1 (v0)>'])
+
+    def test_get_environment_admin(self):
+        """Test that both environments show up as an admin."""
+        request = HttpRequest()
+        request.user = self.__class__.admin
+
+        field = EnvironmentField()
+        field._context = dict(request=request)
+        self.assertQuerysetEqual(field.get_queryset(),
+            ['<Environment: IOL-IOL-1 (v0)>', '<Environment: IOL-IOL-1 (v0)>'],
+            ordered=False)
+
+
 class PatchSetModelTestCase(TestCase):
     """Test the PatchSet and Patch models."""
 
@@ -1032,8 +1070,6 @@ class SubscriptionViewSet(APITestCase):
             'environment': env.id, 'email_success': None, 'how': 'to'},
             format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data,
-            {'environment': ['You do not have access to this environment.']})
 
     def test_post_perm_environment(self):
         """Test user can add a subscription from view."""

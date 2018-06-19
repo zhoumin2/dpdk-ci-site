@@ -2,6 +2,7 @@
 
 import re
 from django.contrib.auth.models import Group, User
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Patch, Tarball, TestResult, TestRun, \
@@ -110,11 +111,24 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
                   'email_success', 'email_list')
 
 
+class EnvironmentField(serializers.PrimaryKeyRelatedField):
+    """Environment field to only show environments the user can access."""
+
+    def get_queryset(self):
+        """Only return environments the user can view."""
+        return get_objects_for_user(self.context['request'].user,
+            'view_environment',
+            Environment.objects.all(),
+            accept_global_perms=False)
+
+
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Serialize a user subscription entry.
 
     This serializer is designed to be used from within SubscriptionSerializer.
     """
+
+    environment = EnvironmentField()
 
     class Meta:
         """Define serializer model and fields."""
@@ -129,13 +143,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         """
         user_id = self.context['request'].user.results_profile.id
         return Subscription.objects.create(user_profile_id=user_id, **validated_data)
-
-    def validate_environment(self, value):
-        """Check if the user has access to the environment specified."""
-        user = self.context['request'].user
-        if user.has_perm('results.view_environment', value):
-            return value
-        raise serializers.ValidationError("You do not have access to this environment.")
 
 
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
