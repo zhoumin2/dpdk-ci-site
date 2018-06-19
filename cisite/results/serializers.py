@@ -123,10 +123,19 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = ('id', 'url', 'environment', 'email_success', 'how')
 
     def create(self, validated_data):
-        """Set the user profile to the user creating the subscription."""
-        validated_data['user_profile_id'] =\
-            self.context['request'].user.results_profile.id
-        return Subscription.objects.create(**validated_data)
+        """Set the user profile to the user creating the subscription.
+
+        This expects an HttpRequest context to set the appropriate user.
+        """
+        user_id = self.context['request'].user.results_profile.id
+        return Subscription.objects.create(user_profile_id=user_id, **validated_data)
+
+    def validate_environment(self, value):
+        """Check if the user has access to the environment specified."""
+        user = self.context['request'].user
+        if user.has_perm('results.view_environment', value):
+            return value
+        raise serializers.ValidationError("You do not have access to this environment.")
 
 
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):

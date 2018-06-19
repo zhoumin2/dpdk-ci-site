@@ -16,7 +16,7 @@
         <form autocomplete="off" data-environment="{{ env_sub.environment.id }}" {% if env_sub.subscription %}data-subscription="{{ env_sub.subscription.id }}"{% endif %}>
         {% csrf_token %}
           <div class="form-row">
-            <div class="col-xs-12 col-sm-4">
+            <div class="col-sm-4">
               <div class="form-check col-form-label">
                 <input type="checkbox" class="form-check-input subscribe" id="env-sub-{{ env_sub.environment.id }}" {{ env_sub.subscription|yesno:"checked," }}>
                 <label class="form-check-label" for="env-sub-{{ env_sub.environment.id }}">Subscribe</label>

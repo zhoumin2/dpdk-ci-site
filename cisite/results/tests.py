@@ -3,17 +3,20 @@
 from copy import deepcopy
 from datetime import datetime
 import pytz
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.core.exceptions import ValidationError
+from django.http.request import HttpRequest
 from django.test import TestCase
 from django.utils.dateparse import parse_datetime
 import rest_framework.exceptions
+from rest_framework import status
 from rest_framework.reverse import reverse
+from rest_framework.test import APITestCase
 from .models import Patch, PatchSet, ContactPolicy, Environment, \
     Measurement, TestRun, TestResult, Tarball, Parameter, \
     Subscription, UserProfile
 from .serializers import PatchSerializer, EnvironmentSerializer, \
-    TestRunSerializer
+    SubscriptionSerializer, TestRunSerializer
 
 
 def create_test_run(environment):
@@ -551,6 +554,33 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
             self.__class__.initial_data, run_data, nested_lists=['results'])
 
 
+class SubscriptionSerializerTestCase(TestCase):
+    """Test customized behavior of SubscriptionSerializer."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user = User.objects.create(username='testuser', first_name='Test',
+                                       last_name='User')
+        cls.group = Group.objects.create(name="TestGroup")
+        cls.env = create_test_environment(owner=cls.group)
+        cls.user.groups.add(cls.group)
+        cls.initial_data = dict(
+            user_profile=cls.user.results_profile.id,
+            environment=cls.env.id,
+            email_success=False)
+        request = HttpRequest()
+        request.user = cls.user
+        cls.context = dict(request=request)
+
+    def test_add_subscription(self):
+        """Test creating a custom subscription."""
+        serializer = SubscriptionSerializer(data=self.__class__.initial_data,
+                                            context=self.__class__.context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+
 class PatchSetModelTestCase(TestCase):
     """Test the PatchSet and Patch models."""
 
@@ -920,3 +950,98 @@ class SubscriptionTestCase(TestCase):
         self.assertTrue(profile.subscriptions.exists())
         user.groups.clear()
         self.assertFalse(profile.subscriptions.exists())
+
+
+class SubscriptionViewSet(APITestCase):
+    """Test the subscription view set."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user1 = User.objects.create_user('joevendor',
+                                            'joe@example.com', 'AbCdEfGh')
+        cls.user2 = User.objects.create_user('joevendor2',
+                                            'joe2@example.com', 'AbCdEfGh2')
+        add_subscription = Permission.objects.get(codename='add_subscription')
+        cls.user1.user_permissions.add(add_subscription)
+        cls.user2.user_permissions.add(add_subscription)
+        cls.grp1 = Group.objects.create(name='Group1')
+        cls.grp2 = Group.objects.create(name='Group2')
+        cls.user1.groups.add(cls.grp1)
+        cls.user2.groups.add(cls.grp2)
+
+        cls.admin = User.objects.create_superuser(
+            'admin', 'ad@example.com', "AbCdEfGh3")
+
+    def test_get_anonymous(self):
+        """Test that anonymous users can't see anything."""
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_regular_user(self):
+        """Test that regular users can't see other users subscriptions."""
+        env1 = create_test_environment(owner=self.__class__.grp1)
+        Subscription.objects.create(
+            user_profile=self.__class__.user1.results_profile, environment=env1,
+            email_success=False)
+
+        env2 = create_test_environment(owner=self.__class__.grp2)
+        Subscription.objects.create(
+            user_profile=self.__class__.user2.results_profile, environment=env2,
+            email_success=False)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['environment'], env1.id)
+
+        self.client.login(username=self.__class__.user2.username,
+                          password='AbCdEfGh2')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['environment'], env2.id)
+
+    def test_get_admin_user(self):
+        """Test that admin can see all subscriptions."""
+        env1 = create_test_environment(owner=self.__class__.grp1)
+        Subscription.objects.create(
+            user_profile=self.__class__.user1.results_profile,
+            environment=env1, email_success=False)
+
+        env2 = create_test_environment(owner=self.__class__.grp2)
+        Subscription.objects.create(
+            user_profile=self.__class__.user2.results_profile,
+            environment=env2, email_success=False)
+
+        self.client.login(username=self.__class__.admin.username,
+                          password='AbCdEfGh3')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_post_no_perm_environment(self):
+        """Test user cannot add a sub without env permissions from view."""
+        env = create_test_environment(owner=self.__class__.grp2)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.post(reverse('subscription-list'), {
+            'environment': env.id, 'email_success': None, 'how': 'to'},
+            format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data,
+            {'environment': ['You do not have access to this environment.']})
+
+    def test_post_perm_environment(self):
+        """Test user can add a subscription from view."""
+        env = create_test_environment(owner=self.__class__.grp1)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.post(reverse('subscription-list'), {
+            'environment': env.id, 'email_success': None, 'how': 'to'},
+            format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -147,7 +147,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     permission_classes = (permissions.UserProfileObjectPermission,)
     # this queryset is here to avoid the no "base_name" issue
-    queryset = Subscription.objects
+    queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
 
     def get_queryset(self):

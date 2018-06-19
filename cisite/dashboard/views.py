@@ -3,6 +3,7 @@ from django.views.generic import ListView, TemplateView
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 from results.models import PatchSet, TestRun, Environment
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def text_color_classes(bg_class):
@@ -71,7 +72,7 @@ class DashboardDetail(ListView):
         return context
 
 
-class Preferences(TemplateView):
+class Preferences(LoginRequiredMixin, TemplateView):
     """Show user preferences for the environments."""
 
     template_name = 'preferences.html'
