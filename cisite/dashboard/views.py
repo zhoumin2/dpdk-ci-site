@@ -53,7 +53,7 @@ class LoginView(auth_views.LoginView):
         endresp = super().form_valid(form)
 
         with api_session(self.request) as s:
-            login_url = urljoin(settings.API_BASE_URL, 'api-auth/login')
+            login_url = urljoin(settings.API_BASE_URL, 'api-auth/login/')
             r = s.get(login_url)
             if r.status_code >= 400:
                 return HttpResponseServerError(

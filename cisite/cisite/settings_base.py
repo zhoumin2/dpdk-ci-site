@@ -129,4 +129,6 @@ AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 # Defaults
 ENABLE_REST_API = True
 ENABLE_ADMIN = True
-LOGIN_URL = '/api-auth/login/'
+LOGIN_URL = '/dashboard/accounts/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/dashboard/'
