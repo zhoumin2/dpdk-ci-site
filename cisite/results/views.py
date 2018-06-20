@@ -13,11 +13,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .filters import PatchSetFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
-    Tarball, TestRun
+    Subscription, Tarball, TestRun
 from . import permissions
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
-    PatchSetSerializer, TarballSerializer, TestRunSerializer, UserSerializer
+    PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
+    TestRunSerializer, UserSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -140,3 +141,19 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound(self.kwargs['username'])
         self.check_object_permissions(self.request, user)
         return user
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    """Provide a read-write view of subscriptions."""
+
+    permission_classes = (permissions.UserProfileObjectPermission,)
+    # this queryset is here to avoid the no "base_name" issue
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+
+    def get_queryset(self):
+        """Only grab subscriptions of the user."""
+        user = self.request.user
+        if user.is_staff:
+            return Subscription.objects.all()
+        return user.results_profile.subscription_set.all()

@@ -1,8 +1,9 @@
 from django.conf import settings
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
-from results.models import PatchSet, TestRun
+from results.models import PatchSet, TestRun, Environment
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def text_color_classes(bg_class):
@@ -67,5 +68,34 @@ class DashboardDetail(ListView):
         context['patches'] = self.patchset.patches.all()
         context['status'] = self.patchset.status()
         context['status_classes'] = text_color_classes(self.patchset.status_class())
+        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+        return context
+
+
+class Preferences(LoginRequiredMixin, TemplateView):
+    """Show user preferences for the environments."""
+
+    template_name = 'preferences.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+        subscriptions =\
+            self.request.user.results_profile.subscription_set.all()
+        environments = get_objects_for_user(self.request.user,
+            'view_environment',
+            Environment.objects.all(),
+            accept_global_perms=False)
+
+        # [{"environment": Foo, "subscription": None}]
+        env_sub_pairs = []
+
+        for env in environments:
+            sub = subscriptions.filter(environment__exact=env).first()
+            # sub gets set to None if a subscription for the environment does
+            # not exist
+            env_sub_pairs.append({'environment': env, 'subscription': sub})
+
+        context['env_sub_pairs'] = env_sub_pairs
         context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
         return context
