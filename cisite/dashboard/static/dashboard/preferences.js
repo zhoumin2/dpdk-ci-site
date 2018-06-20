@@ -1,3 +1,5 @@
+const url = window.location.protocol + '//' + window.location.host + '/';
+
 /**
  * Create a toast that an error occurred and log the error to the console
  * @param {Object} e Any object related to the error.
@@ -63,11 +65,12 @@ class SubscriptionManager {
    * @param {!number} environment
    */
   add(csrftoken, form, environment) {
+    const env_url = url + 'environments/' + environment + '/';
     const request = new Request('/subscriptions/', {
       credentials: 'same-origin',
       headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
       method: 'POST',
-      body: JSON.stringify({'environment': environment, 'email_success': this.getSendValue(form), 'how': 'to'})
+      body: JSON.stringify({'environment': env_url, 'email_success': this.getSendValue(form), 'how': 'to'})
     });
 
     fetch(request).then(response => {
