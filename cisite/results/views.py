@@ -13,11 +13,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .filters import PatchSetFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
-    Tarball, TestRun
+    Subscription, Tarball, TestRun
 from . import permissions
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
-    PatchSetSerializer, TarballSerializer, TestRunSerializer, UserSerializer
+    PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
+    TestRunSerializer, UserSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -51,7 +52,7 @@ class TarballViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Tarball.objects.all()
     serializer_class = TarballSerializer
-    filter_fields = ('job_id', 'branch', 'commit_id', 'patchset')
+    filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
 
 
 class PatchViewSet(viewsets.ModelViewSet):
@@ -80,10 +81,11 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
         """
         env = self.get_object()
         clone = env.clone()
-        serializer = EnvironmentSerializer(clone)
+        serializer = EnvironmentSerializer(clone,
+                                           context={'request': request})
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,
-                        status_code=status.HTTP_201_CREATED,
+                        status=status.HTTP_201_CREATED,
                         headers=headers)
 
 
@@ -139,3 +141,19 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound(self.kwargs['username'])
         self.check_object_permissions(self.request, user)
         return user
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    """Provide a read-write view of subscriptions."""
+
+    permission_classes = (permissions.UserProfileObjectPermission,)
+    # this queryset is here to avoid the no "base_name" issue
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+
+    def get_queryset(self):
+        """Only grab subscriptions of the user."""
+        user = self.request.user
+        if user.is_staff:
+            return Subscription.objects.all()
+        return user.results_profile.subscription_set.all()

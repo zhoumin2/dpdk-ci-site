@@ -2,10 +2,14 @@
 
 from urllib.parse import urljoin
 from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
 from django.http import HttpResponseServerError
+from guardian.shortcuts import get_objects_for_user
+
+from results.models import Environment
 from .util import api_session
 
 
@@ -113,4 +117,33 @@ class DashboardDetail(TemplateView):
                 run['environment'] = s.get(run['environment']).json()
                 context['runs'].append(run)
         context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+        return context
+
+
+class Preferences(LoginRequiredMixin, TemplateView):
+    """Show user preferences for the environments."""
+
+    template_name = 'preferences.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+        subscriptions =\
+            self.request.user.results_profile.subscription_set.all()
+        environments = get_objects_for_user(self.request.user,
+            'view_environment',
+            Environment.objects.all(),
+            accept_global_perms=False)
+
+        # [{"environment": Foo, "subscription": None}]
+        env_sub_pairs = []
+
+        for env in environments:
+            sub = subscriptions.filter(environment__exact=env).first()
+            # sub gets set to None if a subscription for the environment does
+            # not exist
+            env_sub_pairs.append({'environment': env, 'subscription': sub})
+
+        context['env_sub_pairs'] = env_sub_pairs
+        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
         return context

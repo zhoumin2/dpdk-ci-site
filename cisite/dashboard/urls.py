@@ -12,4 +12,5 @@ urlpatterns = [
          name='logout'),
     path('patchsets/<int:id>/', views.DashboardDetail.as_view(),
          name='dashboard-detail'),
+    path('preferences/', views.Preferences.as_view(), name='preferences'),
 ]

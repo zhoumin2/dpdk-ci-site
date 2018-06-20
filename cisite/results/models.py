@@ -133,12 +133,13 @@ class Tarball(models.Model):
         help_text='DPDK branch that the patch set was applied to')
     commit_id = models.CharField('git commit hash', max_length=40, blank=False,
         help_text='git commit id that the patch set was applied to')
-    job_id = models.PositiveIntegerField('Jenkins job id',
+    job_name = models.CharField('Jenkins job name', max_length=128, blank=True,
+        help_text='Name of Jenkins job that generated this tarball. '
+        'This can be NULL if the tarball was manually created.')
+    build_id = models.PositiveIntegerField('Jenkins build id',
         null=True, blank=True,
-        help_text='''Jenkins job id that generated this tarball
-
-        This can be NULL if the tarball was manually created.
-        ''')
+        help_text='Jenkins build id that generated this tarball. '
+        'This can be NULL if the tarball was manually created.')
     tarball_url = models.URLField(max_length=1024,
         help_text='URL from which Jenkins can download this tarball')
     patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
@@ -358,6 +359,9 @@ class Environment(models.Model):
         new_obj.save()
         new_obj.contact_policy = self.contact_policy.clone(
             environment=new_obj)
+        for m in self.measurements.iterator():
+            m.clone(new_obj)
+        self.contacts.update(environment=new_obj)
         return new_obj
 
     def __str__(self):
@@ -399,6 +403,20 @@ class Measurement(models.Model):
     def __str__(self):
         """Return a string describing the measurement."""
         return '{name:s} ({unit:s})'.format(name=self.name, unit=self.unit)
+
+    def clone(self, environment):
+        """Return a clone of this measurement for a new environment."""
+        new_obj = Measurement.objects.get(pk=self.pk)
+
+        new_obj.pk = None
+        new_obj.environment = environment
+        new_obj.save()
+        for p in self.parameters.iterator():
+            new_p = Parameter.objects.get(pk=p.pk)
+            new_p.pk = None
+            new_p.measurement = new_obj
+            new_p.save()
+        return new_obj
 
 
 class Parameter(models.Model):

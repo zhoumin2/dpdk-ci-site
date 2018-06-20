@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Preferences</li>
+{% endblock %}
+
+{% block content %}
+  <h2>My environments</h2>
+  <div class="card">
+    <ul class="list-group list-group-flush">
+      {% for env_sub in env_sub_pairs %}
+      <li class="list-group-item">
+        <h5 class="card-title">{{ env_sub.environment.inventory_id }}</h5>
+        <form autocomplete="off" data-environment="{{ env_sub.environment.id }}" {% if env_sub.subscription %}data-subscription="{{ env_sub.subscription.id }}"{% endif %}>
+        {% csrf_token %}
+          <div class="form-row">
+            <div class="col-sm-4">
+              <div class="form-check col-form-label">
+                <input type="checkbox" class="form-check-input subscribe" id="env-sub-{{ env_sub.environment.id }}" {{ env_sub.subscription|yesno:"checked," }}>
+                <label class="form-check-label" for="env-sub-{{ env_sub.environment.id }}">Subscribe</label>
+              </div>
+            </div>
+            <div class="col-sm-4 text-sm-right">
+              <label class="col-form-label">Send method</label>
+            </div>
+            <div class="col-sm-4">
+              <select class="form-control send-method" name="send" id="send-{{ env_sub.environment.id }}" {{ env_sub.subscription|yesno:",disabled" }}>
+                {% if env_sub.subscription %}
+                <option value="unknown" {{ env_sub.subscription.email_success|yesno:",,selected" }}>Inherit (On failure)</option> {# TODO auto set the on failure text? #}
+                <option value="false" {{ env_sub.subscription.email_success|yesno:",selected," }}>On failure</option>
+                <option value="true" {{ env_sub.subscription.email_success|yesno:"selected,," }}>Always</option>
+                {% else %}
+                <option value="unknown">Inherit (On failure)</option>
+                <option value="false">On failure</option>
+                <option value="true">Always</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
+
+{% block js %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="{% static 'dashboard/preferences.js' %}"></script>
+{% endblock %}

@@ -3,17 +3,21 @@
 from copy import deepcopy
 from datetime import datetime
 import pytz
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.core.exceptions import ValidationError
+from django.http.request import HttpRequest
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 import rest_framework.exceptions
+from rest_framework import status
 from rest_framework.reverse import reverse
+from rest_framework.test import APITestCase
 from .models import Patch, PatchSet, ContactPolicy, Environment, \
     Measurement, TestRun, TestResult, Tarball, Parameter, \
     Subscription, UserProfile
 from .serializers import PatchSerializer, EnvironmentSerializer, \
-    TestRunSerializer
+    SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
 
 
 def create_test_run(environment):
@@ -41,6 +45,12 @@ def create_test_environment(**kwargs):
                     os_distro="Fedora26", bios_version="5.05")
     env_args.update(kwargs)
     return Environment.objects.create(**env_args)
+
+
+def reverse_url(view, pk):
+    """Create a url, like `http://testserver/environments/1/`."""
+    request = RequestFactory().get('/')
+    return reverse(view, args=(pk,), request=request)
 
 
 class SerializerAssertionMixin(object):
@@ -447,7 +457,10 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
+        user = User.objects.create(username='testuser', first_name='Test',
+                                   last_name='User')
         group = Group.objects.create(name="TestGroup")
+        user.groups.add(group)
         tarball = Tarball.objects.create(
             branch="master",
             commit_id="0000000000000000000000000000000000000000",
@@ -477,17 +490,22 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
                           difference=-0.85,
                           expected_value=None,
                           measurement=cls.m_url)])
+        request = HttpRequest()
+        request.user = user
+        cls.context = dict(request=request)
 
     def test_add_test_result(self):
         """Verify that adding a test result to a run works."""
-        serializer = TestRunSerializer(data=self.__class__.initial_data)
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
         run_data['results'].append(dict(
             result='FAIL', difference=-1.25, expected_value=None,
             measurement=self.__class__.m_url))
-        serializer = TestRunSerializer(run, data=run_data)
+        serializer = TestRunSerializer(run, data=run_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data2 = TestRunSerializer(run, context={'request': None}).data
@@ -498,12 +516,14 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
 
     def test_remove_test_result(self):
         """Verify that deleting a test result in a run works."""
-        serializer = TestRunSerializer(data=self.__class__.initial_data)
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
         run_data['results'].pop()
-        serializer = TestRunSerializer(run, data=run_data)
+        serializer = TestRunSerializer(run, data=run_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data2 = TestRunSerializer(run, context={'request': None}).data
@@ -514,12 +534,14 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
 
     def test_update_test_result(self):
         """Verify that updating a test result in a run works."""
-        serializer = TestRunSerializer(data=self.__class__.initial_data)
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
         run_data['results'][0]['difference'] = -0.75
-        serializer = TestRunSerializer(run, data=run_data)
+        serializer = TestRunSerializer(run, data=run_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data2 = TestRunSerializer(run, context={'request': None}).data
@@ -530,12 +552,14 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
 
     def test_update_test_run(self):
         """Verify that updating a test run field works."""
-        serializer = TestRunSerializer(data=self.__class__.initial_data)
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
         run_data['log_output_file'] = 'http://host.invalid/log_file_2.txt'
-        serializer = TestRunSerializer(run, data=run_data)
+        serializer = TestRunSerializer(run, data=run_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data2 = TestRunSerializer(run, context={'request': None}).data
@@ -546,7 +570,8 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
 
     def test_create_test_run(self):
         """Verify that deserializing a test run creates its results."""
-        serializer = TestRunSerializer(data=self.__class__.initial_data)
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+            context=self.__class__.context)
         serializer.is_valid(raise_exception=True)
         run = serializer.save()
         run_data = TestRunSerializer(run, context={'request': None}).data
@@ -556,6 +581,71 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertSerializedNestedEqual(
             self.__class__.initial_data, run_data, nested_lists=['results'],
             results_excludes=['result_class'])
+
+
+class SubscriptionSerializerTestCase(TestCase):
+    """Test customized behavior of SubscriptionSerializer."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user = User.objects.create(username='testuser', first_name='Test',
+                                       last_name='User')
+        cls.group = Group.objects.create(name="TestGroup")
+        cls.env = create_test_environment(owner=cls.group)
+        cls.user.groups.add(cls.group)
+        cls.initial_data = dict(
+            user_profile=cls.user.results_profile.id,
+            environment=reverse_url('environment-detail', cls.env.id),
+            email_success=False)
+        request = HttpRequest()
+        request.user = cls.user
+        cls.context = dict(request=request)
+
+    def test_add_subscription(self):
+        """Test creating a custom subscription."""
+        serializer = SubscriptionSerializer(data=self.__class__.initial_data,
+                                            context=self.__class__.context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+
+class EnvironmentHyperlinkedFieldTestCase(TestCase):
+    """Test the custom environment field."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user = User.objects.create(username='testuser', first_name='Test',
+                                       last_name='User')
+        cls.group1 = Group.objects.create(name="TestGroup1")
+        cls.group2 = Group.objects.create(name="TestGroup2")
+        cls.env1 = create_test_environment(owner=cls.group1)
+        cls.env2 = create_test_environment(owner=cls.group2)
+        cls.user.groups.add(cls.group1)
+        cls.admin = User.objects.create_superuser(
+            'admin', 'ad@example.com', "AbCdEfGh3")
+
+    def test_get_environment(self):
+        """Test that only one env shows up and not both."""
+        request = HttpRequest()
+        request.user = self.__class__.user
+
+        field = EnvironmentHyperlinkedField()
+        field._context = dict(request=request)
+        self.assertQuerysetEqual(field.get_queryset(),
+            ['<Environment: IOL-IOL-1 (v0)>'])
+
+    def test_get_environment_admin(self):
+        """Test that both environments show up as an admin."""
+        request = HttpRequest()
+        request.user = self.__class__.admin
+
+        field = EnvironmentHyperlinkedField()
+        field._context = dict(request=request)
+        self.assertQuerysetEqual(field.get_queryset(),
+            ['<Environment: IOL-IOL-1 (v0)>', '<Environment: IOL-IOL-1 (v0)>'],
+            ordered=False)
 
 
 class PatchSetModelTestCase(TestCase):
@@ -719,6 +809,14 @@ class EnvironmentTestCase(TestCase):
         env = create_test_environment(inventory_id=name,
                                       owner=self.__class__.grp)
         ContactPolicy.objects.create(environment=env)
+        m = Measurement.objects.create(name='throughput', unit='Mpps',
+                                       higher_is_better=True, environment=env)
+        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
+                                 measurement=m)
+        self.sub = Subscription.objects.create(
+            user_profile=self.__class__.user.results_profile,
+            environment=env)
+
         return env
 
     def test_initial_permissions(self):
@@ -732,6 +830,17 @@ class EnvironmentTestCase(TestCase):
             self.__class__.user.has_perm('results.change_environment', env))
         self.assertTrue(
             self.__class__.user.has_perm('results.delete_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.add_measurement'))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_measurement',
+                                         env.measurements.first()))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.change_measurement',
+                                         env.measurements.first()))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.delete_measurement',
+                                         env.measurements.first()))
 
     def test_add_test_run_removes_permissions(self):
         """Verify that adding a test run removes change permission.
@@ -752,6 +861,15 @@ class EnvironmentTestCase(TestCase):
             self.__class__.user.has_perm('results.change_environment', env))
         self.assertFalse(
             self.__class__.user.has_perm('results.delete_environment', env))
+        self.assertTrue(
+            self.__class__.user.has_perm('results.view_measurement',
+                                         env.measurements.first()))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.change_measurement',
+                                         env.measurements.first()))
+        self.assertFalse(
+            self.__class__.user.has_perm('results.delete_measurement',
+                                         env.measurements.first()))
 
     def test_clone_works(self):
         """Verify that the clone() method works."""
@@ -770,6 +888,15 @@ class EnvironmentTestCase(TestCase):
                          new_env.contact_policy.email_owner)
         self.assertEqual(old_env.contact_policy.email_list,
                          new_env.contact_policy.email_list)
+
+        old_m = old_env.measurements.first()
+        new_m = new_env.measurements.first()
+        self.assertEqual(old_m.name, new_m.name)
+        self.assertEqual(old_m.unit, new_m.unit)
+        self.assertEqual(old_m.parameters.count(), new_m.parameters.count())
+
+        sub = Subscription.objects.get(pk=self.sub.pk)
+        self.assertEqual(sub.environment.pk, new_env.pk)
 
         self.assertTrue(
             self.__class__.user.has_perm('results.view_environment', new_env))
@@ -927,3 +1054,98 @@ class SubscriptionTestCase(TestCase):
         self.assertTrue(profile.subscriptions.exists())
         user.groups.clear()
         self.assertFalse(profile.subscriptions.exists())
+
+
+class SubscriptionViewSet(APITestCase):
+    """Test the subscription view set."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        cls.user1 = User.objects.create_user('joevendor',
+                                            'joe@example.com', 'AbCdEfGh')
+        cls.user2 = User.objects.create_user('joevendor2',
+                                            'joe2@example.com', 'AbCdEfGh2')
+        add_subscription = Permission.objects.get(codename='add_subscription')
+        cls.user1.user_permissions.add(add_subscription)
+        cls.user2.user_permissions.add(add_subscription)
+        cls.grp1 = Group.objects.create(name='Group1')
+        cls.grp2 = Group.objects.create(name='Group2')
+        cls.user1.groups.add(cls.grp1)
+        cls.user2.groups.add(cls.grp2)
+
+        cls.admin = User.objects.create_superuser(
+            'admin', 'ad@example.com', "AbCdEfGh3")
+
+    def test_get_anonymous(self):
+        """Test that anonymous users can't see anything."""
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_regular_user(self):
+        """Test that regular users can't see other users subscriptions."""
+        env1 = create_test_environment(owner=self.__class__.grp1)
+        Subscription.objects.create(
+            user_profile=self.__class__.user1.results_profile, environment=env1,
+            email_success=False)
+
+        env2 = create_test_environment(owner=self.__class__.grp2)
+        Subscription.objects.create(
+            user_profile=self.__class__.user2.results_profile, environment=env2,
+            email_success=False)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['environment'],
+            reverse_url('environment-detail', env1.id))
+
+        self.client.login(username=self.__class__.user2.username,
+                          password='AbCdEfGh2')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['environment'],
+            reverse_url('environment-detail', env2.id))
+
+    def test_get_admin_user(self):
+        """Test that admin can see all subscriptions."""
+        env1 = create_test_environment(owner=self.__class__.grp1)
+        Subscription.objects.create(
+            user_profile=self.__class__.user1.results_profile,
+            environment=env1, email_success=False)
+
+        env2 = create_test_environment(owner=self.__class__.grp2)
+        Subscription.objects.create(
+            user_profile=self.__class__.user2.results_profile,
+            environment=env2, email_success=False)
+
+        self.client.login(username=self.__class__.admin.username,
+                          password='AbCdEfGh3')
+        response = self.client.get(reverse('subscription-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_post_no_perm_environment(self):
+        """Test user cannot add a sub without env permissions from view."""
+        env = create_test_environment(owner=self.__class__.grp2)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.post(reverse('subscription-list'), {
+            'environment': reverse_url('environment-detail', env.id),
+            'email_success': None, 'how': 'to'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_post_perm_environment(self):
+        """Test user can add a subscription from view."""
+        env = create_test_environment(owner=self.__class__.grp1)
+
+        self.client.login(username=self.__class__.user1.username,
+                          password='AbCdEfGh')
+        response = self.client.post(reverse('subscription-list'), {
+            'environment': reverse_url('environment-detail', env.id),
+            'email_success': None, 'how': 'to'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

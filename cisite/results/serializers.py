@@ -2,6 +2,7 @@
 
 import re
 from django.contrib.auth.models import Group, User
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Patch, Tarball, TestResult, TestRun, \
@@ -18,6 +19,24 @@ def qs_get_missing(queryset, data):
     qs_ids = [x['id'] for x in queryset.values('id')
               if x['id'] not in data_ids]
     return queryset.filter(pk__in=qs_ids)
+
+
+class EnvironmentHyperlinkedField(serializers.HyperlinkedRelatedField):
+    """Environment field to only show environments the user can access.
+
+    This expects an HttpRequest context to get the appropriate user.
+    """
+
+    def __init__(self, **kwargs):
+        """Set the default view_name since it should not change."""
+        super().__init__(view_name='environment-detail', **kwargs)
+
+    def get_queryset(self):
+        """Only return environments the user can view."""
+        return get_objects_for_user(self.context['request'].user,
+            'view_environment',
+            Environment.objects.all(),
+            accept_global_perms=False)
 
 
 class PatchSerializer(serializers.HyperlinkedModelSerializer):
@@ -115,19 +134,21 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Serialize a user subscription entry.
 
-    This serializer is designed to be used from within EnvironmentSerializer
-    and is read-only.
+    This serializer is designed to be used from within SubscriptionSerializer.
     """
 
-    display_name = serializers.CharField(source='user_profile.display_name')
-    email = serializers.EmailField(source='user_profile.user.email')
+    environment = EnvironmentHyperlinkedField()
 
     class Meta:
         """Define serializer model and fields."""
 
         model = Subscription
-        fields = ('display_name', 'email', 'email_success',
-                  'how')
+        fields = ('id', 'url', 'environment', 'email_success', 'how')
+
+    def create(self, validated_data):
+        """Set the user profile to the user creating the subscription."""
+        user_id = self.context['request'].user.results_profile.id
+        return Subscription.objects.create(user_profile_id=user_id, **validated_data)
 
 
 class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
@@ -289,6 +310,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize test run objects."""
 
     results = TestResultSerializer(many=True)
+    environment = EnvironmentHyperlinkedField()
 
     class Meta:
         """Specify how to serialize test runs."""
@@ -357,8 +379,8 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull from Tarball model."""
 
         model = Tarball
-        fields = ('url', 'patchset', 'branch', 'commit_id',
-                  'job_id', 'tarball_url', 'runs')
+        fields = ('url', 'patchset', 'branch', 'commit_id', 'job_name',
+                  'build_id', 'tarball_url', 'runs')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
