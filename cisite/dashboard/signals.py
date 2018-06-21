@@ -9,7 +9,7 @@ from .util import api_session
 
 
 @receiver(user_logged_out, sender=User)
-def on_logout(self, request, user, **kwarg):
+def on_logout(sender, request, user, **kwarg):
     """End API session for user when they log out."""
     with api_session(request) as s:
         s.get(urljoin(settings.API_BASE_URL, 'api-auth/logout'))
