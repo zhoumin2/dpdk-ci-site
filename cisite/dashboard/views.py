@@ -10,6 +10,7 @@ from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, HttpResponseServerError
 from django.urls import reverse
+from logging import getLogger
 
 from .util import api_session
 
@@ -72,6 +73,8 @@ class LoginView(auth_views.LoginView):
                 self.request.session['api_sessionid'] = r.cookies['sessionid']
                 return endresp
             except requests.exceptions.ConnectionError as e:
+                getLogger('dashboard').exception(
+                    'Connection closed into backend API')
                 auth_logout(self.request)
                 return HttpResponseRedirect(reverse('login'))
 
