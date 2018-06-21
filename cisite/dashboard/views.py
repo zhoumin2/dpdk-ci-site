@@ -1,12 +1,15 @@
 """Define dashboard views."""
 
+import requests.exceptions
 from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
+from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
-from django.http import HttpResponseServerError
+from django.http import HttpResponseRedirect, HttpResponseServerError
+from django.urls import reverse
 from guardian.shortcuts import get_objects_for_user
 
 from results.models import Environment
@@ -54,21 +57,25 @@ class LoginView(auth_views.LoginView):
 
         with api_session(self.request) as s:
             login_url = urljoin(settings.API_BASE_URL, 'api-auth/login/')
-            r = s.get(login_url)
-            if r.status_code >= 400:
-                return HttpResponseServerError(
-                    content='Unable to login to backend API')
-            r = s.post(login_url,
-                       data={'username': form.cleaned_data['username'],
-                             'password': form.cleaned_data['password'],
-                             'csrfmiddlewaretoken': r.cookies['csrftoken'],
-                             'next': '/'},
-                       allow_redirects=False)
-            if r.status_code >= 400:
-                return HttpResponseServerError(
-                    content='Unable to login to backend API')
-            self.request.session['api_sessionid'] = r.cookies['sessionid']
-            return endresp
+            try:
+                r = s.get(login_url)
+                if r.status_code >= 400:
+                    return HttpResponseServerError(
+                        content='Unable to login to backend API')
+                r = s.post(login_url,
+                           data={'username': form.cleaned_data['username'],
+                                 'password': form.cleaned_data['password'],
+                                 'csrfmiddlewaretoken': r.cookies['csrftoken'],
+                                 'next': '/'},
+                           allow_redirects=False)
+                if r.status_code >= 400:
+                    return HttpResponseServerError(
+                        content='Unable to login to backend API')
+                self.request.session['api_sessionid'] = r.cookies['sessionid']
+                return endresp
+            except requests.exceptions.ConnectionError as e:
+                auth_logout(self.request)
+                return HttpResponseRedirect(reverse('login'))
 
 
 class PatchSetList(TemplateView):
