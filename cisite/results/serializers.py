@@ -164,7 +164,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize environment."""
 
         model = Environment
-        fields = ('url', 'inventory_id', 'owner', 'motherboard_make',
+        fields = ('url', 'id', 'inventory_id', 'owner', 'motherboard_make',
                   'motherboard_model', 'motherboard_serial',
                   'cpu_socket_count', 'cpu_cores_per_socket',
                   'cpu_threads_per_core', 'ram_type', 'ram_size',

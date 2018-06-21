@@ -10,9 +10,7 @@ from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, HttpResponseServerError
 from django.urls import reverse
-from guardian.shortcuts import get_objects_for_user
 
-from results.models import Environment
 from .util import api_session
 
 
@@ -135,18 +133,21 @@ class Preferences(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
         context = super().get_context_data(**kwargs)
-        subscriptions =\
-            self.request.user.results_profile.subscription_set.all()
-        environments = get_objects_for_user(self.request.user,
-            'view_environment',
-            Environment.objects.all(),
-            accept_global_perms=False)
+        with api_session(self.request) as s:
+            api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                     'subscriptions/'))
+            subscriptions = api_resp.json()
+            api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                     'environments/'))
+            environments = api_resp.json()
 
         # [{"environment": Foo, "subscription": None}]
         env_sub_pairs = []
 
-        for env in environments:
-            sub = subscriptions.filter(environment__exact=env).first()
+        for env in environments['results']:
+            # grab first subscription that contains the current environment
+            sub = next(filter(lambda sub: sub['environment'] == env['url'],
+                              subscriptions['results']), None)
             # sub gets set to None if a subscription for the environment does
             # not exist
             env_sub_pairs.append({'environment': env, 'subscription': sub})

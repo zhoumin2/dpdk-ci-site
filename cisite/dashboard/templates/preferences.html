@@ -13,7 +13,7 @@
       {% for env_sub in env_sub_pairs %}
       <li class="list-group-item">
         <h5 class="card-title">{{ env_sub.environment.inventory_id }}</h5>
-        <form autocomplete="off" data-environment="{{ env_sub.environment.id }}" {% if env_sub.subscription %}data-subscription="{{ env_sub.subscription.id }}"{% endif %}>
+        <form autocomplete="off" data-environment="{{ env_sub.environment.id }}" data-url="{{ env_sub.environment.url }}" {% if env_sub.subscription %}data-subscription="{{ env_sub.subscription.id }}"{% endif %}>
         {% csrf_token %}
           <div class="form-row">
             <div class="col-sm-4">
