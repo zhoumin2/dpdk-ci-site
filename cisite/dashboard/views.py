@@ -101,7 +101,7 @@ class DashboardDetail(TemplateView):
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      'patchsets/' + str(self.kwargs['id'])))
             context['patchset'] = api_resp.json()
-        if 'tarballs' in context['patchset']:
+        if context['patchset'].get('tarballs', []):
             tarball = s.get(context['patchset']['tarballs'][-1]).json()
             context['runs'] = list()
             for url in tarball['runs']:
