@@ -89,7 +89,8 @@ class PatchSetList(TemplateView):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
         with api_session(self.request) as s:
-            resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets'))
+            resp = s.get(urljoin(settings.API_BASE_URL,
+                                 'patchsets?complete=true&ordering=-id'))
             resp.raise_for_status()
             context['patchsets'] = resp.json()['results']
         for ps in context['patchsets']:
