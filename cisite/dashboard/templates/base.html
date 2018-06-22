@@ -26,12 +26,12 @@
           <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ request.user }}</a>
           <div class="dropdown-menu dropdown-menu-right">
             <a class="dropdown-item" href="{% url 'preferences' %}">Preferences</a>
-            <a class="dropdown-item" href="{% url 'rest_framework:logout' %}?next={% url 'dashboard' %}">Logout</a>
+            <a class="dropdown-item" href="{% url 'logout' %}?next={{ next|default:request.path }}">Logout</a>
           </div>
           </li>
           {% else %}
           <li class="nav-item">
-          <a class="nav-link" href="{% url 'rest_framework:login' %}?next={% url 'dashboard' %}">Login</a>
+            <a class="nav-link" href="{% url 'login' %}?next={{ next|default:request.path }}">Login</a>
           </li>
           {% endif %}
         </ul>

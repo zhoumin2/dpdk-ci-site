@@ -6,16 +6,16 @@
 {% endblock %}
 
 {% block content %}
-  <h1>Patch Set {{ patchset_range|safe }}</h1>
+  <h1>Patch Set {{ patchset.patchset_range|safe }}</h1>
   <ul>
-    {% for p in patches.all %}
+    {% for p in patchset.patches.all %}
       <li>
         <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/" target="_blank">[PATCH {{ p.patch_number }}/{{ patches.count }}] {{ p.subject }}</a>
       </li>
     {% endfor %}
   </ul>
   <h1>Test Results</h1>
-  <p>Overall result: <span class="{{ status_classes }}">{{ status }}</span></p>
+  <p>Overall result: <span class="{{ status_classes }}">{{ patchset.status }}</span></p>
   {% for r in runs %}
     <h2>NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps</h2>
     <h3>Environment Info</h3>
@@ -34,33 +34,35 @@
       </div>
       <div class="row">
       <dt class="col">Fail/Total</dt>
-      <dd class="col-10">{{ r.failures.count }}/{{ r.results.count }}</dd>
+      <dd class="col-10">{{ r.failure_count }}/{{ r.results|length }}</dd>
       </div>
     </dl>
     <h3>Detailed performance results</h3>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th>Result</th>
-          {% for p in r.results.first.measurement.parameters.all %}
-            <th>{{ p.name }} ({{ p.unit }})</th>
+    <div class="table-responsive-sm">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Result</th>
+            {% for p in r.results.0.measurement.parameters %}
+              <th>{{ p.name }} ({{ p.unit }})</th>
+            {% endfor %}
+            <th>{{ r.results.0.measurement.name }} Difference
+            ({{ r.results.0.measurement.unit }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in r.results %}
+          <tr class="table-{{ item.result_class }}">
+            <td>{{ item.result }}</td>
+            {% for p in item.measurement.parameters %}
+              <td>{{ p.value }}</td>
+            {% endfor %}
+            <td>{{ item.difference|floatformat:"-5" }}</td>
+          </tr>
           {% endfor %}
-          <th>{{ r.results.first.measurement.name }} Difference
-          ({{ r.results.first.measurement.unit }})</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in r.results.all %}
-        <tr class="table-{{ item.result_class }}">
-          <td>{{ item.result }}</td>
-          {% for p in item.measurement.parameters.all %}
-            <td>{{ p.value }}</td>
-          {% endfor %}
-          <td>{{ item.difference|floatformat:"-5" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
     {% empty %}
     <p>There are not yet any runs for this patch set or you do not have
     permission to view detailed results for any test runs for this patch

@@ -85,8 +85,10 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
 
         model = PatchSet
         fields = ('url', 'patch_count', 'patches', 'complete', 'is_public',
-                  'apply_error', 'tarballs',)
-        read_only_fields = ('complete', 'tarballs',)
+                  'apply_error', 'tarballs', 'patchwork_range_str',
+                  'status', 'status_class')
+        read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
+                            'status', 'status_class')
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):
@@ -162,7 +164,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
         """Specify how to serialize environment."""
 
         model = Environment
-        fields = ('url', 'inventory_id', 'owner', 'motherboard_make',
+        fields = ('url', 'id', 'inventory_id', 'owner', 'motherboard_make',
                   'motherboard_model', 'motherboard_serial',
                   'cpu_socket_count', 'cpu_cores_per_socket',
                   'cpu_threads_per_core', 'ram_type', 'ram_size',
@@ -300,7 +302,8 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
 
         model = TestResult
         fields = ('id', 'result', 'difference', 'expected_value',
-                  'measurement')
+                  'measurement', 'result_class')
+        read_only_fields = ('result_class',)
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer):
