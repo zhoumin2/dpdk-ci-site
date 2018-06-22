@@ -130,7 +130,7 @@ AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 ENABLE_REST_API = True
 ENABLE_ADMIN = True
 # FIXME - Resolve DPDKLAB-313, then this can be set to True
-ENABLE_PREFERENCES = True
+ENABLE_PREFERENCES = False
 LOGIN_URL = '/dashboard/accounts/login/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'dashboard'
