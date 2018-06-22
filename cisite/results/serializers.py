@@ -84,9 +84,9 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull from PatchSet model."""
 
         model = PatchSet
-        fields = ('url', 'patch_count', 'patches', 'complete', 'is_public',
-                  'apply_error', 'tarballs', 'patchwork_range_str',
-                  'status', 'status_class')
+        fields = ('url', 'id', 'patch_count', 'patches', 'complete',
+                  'is_public', 'apply_error', 'tarballs',
+                  'patchwork_range_str', 'status', 'status_class')
         read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
                             'status', 'status_class')
 
@@ -131,19 +131,24 @@ class ContactPolicySerializer(serializers.HyperlinkedModelSerializer):
                   'email_success', 'email_list')
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize a user subscription entry.
 
     This serializer is designed to be used from within SubscriptionSerializer.
     """
 
+    display_name = serializers.CharField(source='user_profile.display_name',
+                                         read_only=True)
+    email = serializers.EmailField(source='user_profile.user.email',
+                                   read_only=True)
     environment = EnvironmentHyperlinkedField()
 
     class Meta:
         """Define serializer model and fields."""
 
         model = Subscription
-        fields = ('id', 'url', 'environment', 'email_success', 'how')
+        fields = ('id', 'url', 'environment', 'email_success', 'how',
+                  'display_name', 'email')
 
     def create(self, validated_data):
         """Set the user profile to the user creating the subscription."""

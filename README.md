@@ -34,6 +34,10 @@ without activating the virtual environment first, since it looks for
 * `API_BASE_URL`: The URL of the root of the REST API to be used by the
   dashboard.
 
+* `CA_CERT_BUNDLE`: File containing PEM-encoded CA certificates to be used
+  by the requests library for authenticating the REST API and other HTTPS
+  sites that may be accessed by this site.
+
 * `DASHBOARD_BANNER`: If present, expected to be a dictionary containing two
   elements: `bg_class` is the Bootstrap background color class for the banner
   at the top of the page, and `text` is the text to include in the banner.

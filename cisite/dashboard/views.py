@@ -9,7 +9,6 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, HttpResponseServerError
-from django.urls import reverse
 from logging import getLogger
 
 from .util import api_session
@@ -58,25 +57,27 @@ class LoginView(auth_views.LoginView):
             login_url = urljoin(settings.API_BASE_URL, 'api-auth/login/')
             try:
                 r = s.get(login_url)
-                if r.status_code >= 400:
-                    return HttpResponseServerError(
-                        content='Unable to login to backend API')
+                r.raise_for_status()
                 r = s.post(login_url,
                            data={'username': form.cleaned_data['username'],
                                  'password': form.cleaned_data['password'],
                                  'csrfmiddlewaretoken': r.cookies['csrftoken'],
                                  'next': '/'},
                            allow_redirects=False)
-                if r.status_code >= 400:
-                    return HttpResponseServerError(
-                        content='Unable to login to backend API')
+                r.raise_for_status()
                 self.request.session['api_sessionid'] = r.cookies['sessionid']
                 return endresp
             except requests.exceptions.ConnectionError as e:
                 getLogger('dashboard').exception(
                     'Connection closed into backend API')
                 auth_logout(self.request)
-                return HttpResponseRedirect(reverse('login'))
+                return HttpResponseRedirect(self.request.get_full_path())
+            except requests.exceptions.HTTPError as e:
+                getLogger('dashboard').exception('Unable to log into backend API: %s',
+                                                 e.response.text)
+                auth_logout(self.request)
+                return HttpResponseServerError(
+                    content='<p>Unable to login to backend API</p>')
 
 
 class PatchSetList(TemplateView):
@@ -88,7 +89,8 @@ class PatchSetList(TemplateView):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
         with api_session(self.request) as s:
-            resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets'))
+            resp = s.get(urljoin(settings.API_BASE_URL,
+                                 'patchsets?complete=true&ordering=-id'))
             resp.raise_for_status()
             context['patchsets'] = resp.json()['results']
         for ps in context['patchsets']:
