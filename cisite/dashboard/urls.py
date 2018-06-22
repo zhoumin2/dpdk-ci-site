@@ -1,5 +1,6 @@
 """Define URL Configuration for dashboard app."""
 
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.urls import path
 from . import views
@@ -12,5 +13,9 @@ urlpatterns = [
          name='logout'),
     path('patchsets/<int:id>/', views.DashboardDetail.as_view(),
          name='dashboard-detail'),
-    path('preferences/', views.Preferences.as_view(), name='preferences'),
 ]
+
+if getattr(settings, 'ENABLE_PREFERENCES', True):
+    urlpatterns.append(path('preferences/',
+                            views.Preferences.as_view(),
+                            name='preferences'))
