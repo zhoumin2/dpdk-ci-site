@@ -94,6 +94,7 @@ class PatchSetList(TemplateView):
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
         context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
 
 
@@ -125,6 +126,8 @@ class DashboardDetail(TemplateView):
                 run['environment'] = s.get(run['environment']).json()
                 context['runs'].append(run)
         context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
 
 
@@ -157,4 +160,5 @@ class Preferences(LoginRequiredMixin, TemplateView):
 
         context['env_sub_pairs'] = env_sub_pairs
         context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
