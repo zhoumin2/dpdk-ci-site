@@ -130,6 +130,10 @@ class DashboardDetail(TemplateView):
                         result['measurement'] = s.get(result['measurement']).json()
                         if result['result'].upper() == 'FAIL':
                             run['failure_count'] += 1
+
+                    # Get the latest version of the environment, since previous
+                    # versions won't show up in the list of active environments
+                    # that we obtained above
                     env_url = run['environment']
                     env = s.get(env_url).json()
                     while (env_url not in context['runs'].keys() and
@@ -138,6 +142,9 @@ class DashboardDetail(TemplateView):
                         env = s.get(env_url).json()
                     run['environment'] = env
                     context['runs'][env_url] = run
+
+            # Fill in details of missing environments so they can be displayed
+            # in the template
             for env_url, run in context['runs'].items():
                 if run is None:
                     context['runs'][env_url] = {
