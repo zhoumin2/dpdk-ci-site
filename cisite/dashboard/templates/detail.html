@@ -17,7 +17,9 @@
   <h1>Test Results</h1>
   <p>Overall result: <span class="{{ status_classes }}">{{ patchset.status }}</span></p>
   {% for env_url, r in runs.items %}
-    <h2>NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps</h2>
+    <h2 id="env-{{ r.environment.id }}">NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps
+      <a href="#env-{{ r.environment.id }}" class="text-dark">&#x1f517;</a>
+    </h2>
     {% if 'url' not in r %}
     <p>The tests were not run for this environment.</p>
     {% else %}
