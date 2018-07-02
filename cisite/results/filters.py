@@ -4,7 +4,29 @@ This file contains custom filter sets for the results application.
 """
 
 from django_filters.rest_framework import BooleanFilter, FilterSet
-from .models import PatchSet
+from .models import Environment, PatchSet
+
+
+class EnvironmentFilter(FilterSet):
+    """Supply an "active" filter for environments."""
+
+    active = BooleanFilter(
+        name='successor', label='active', lookup_expr='isnull',
+        help_text='If present, limits to active (if true) or inactive (if false) patchsets.')
+
+    class Meta:
+        """Set up model association."""
+
+        model = Environment
+        fields = ()
+
+    def active_filter(self, queryset, name, value):
+        """Filter based on whether this environment is active."""
+        assert name == 'active', 'Unexpected query field name'
+        if value is None:
+            return queryset
+        else:
+            return queryset.filter(successor__isnull=value)
 
 
 class PatchSetFilter(FilterSet):

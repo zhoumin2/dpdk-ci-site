@@ -1,7 +1,8 @@
 """Define dashboard views."""
 
-import requests.exceptions
+from logging import getLogger
 from urllib.parse import urljoin
+import requests.exceptions
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
@@ -9,7 +10,6 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, HttpResponseServerError
-from logging import getLogger
 
 from .util import api_session
 
@@ -112,25 +112,48 @@ class DashboardDetail(TemplateView):
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      'patchsets/' + str(self.kwargs['id'])))
             context['patchset'] = api_resp.json()
-        if context['patchset'].get('tarballs', []):
-            tarball = s.get(context['patchset']['tarballs'][-1]).json()
-            context['runs'] = list()
-            for url in tarball['runs']:
-                resp = s.get(url)
-                if resp.status_code >= 400:
-                    continue
-                run = resp.json()
-                run['failure_count'] = 0
-                for result in run['results']:
-                    result['measurement'] = s.get(result['measurement']).json()
-                    if result['result'].upper() == 'FAIL':
-                        run['failure_count'] += 1
-                run['environment'] = s.get(run['environment']).json()
-                context['runs'].append(run)
-        context['status_classes'] = text_color_classes(context['patchset']['status_class'])
-        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
-        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
-        return context
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
+                         params={'active': 'true'})
+            api_resp.raise_for_status()
+            envs = api_resp.json()['results']
+            envs = {x['url']: x for x in envs}
+            if context['patchset'].get('tarballs', []):
+                tarball = s.get(context['patchset']['tarballs'][-1]).json()
+                context['runs'] = {x: None for x in envs}
+                for url in tarball['runs']:
+                    resp = s.get(url)
+                    if resp.status_code >= 400:
+                        continue
+                    run = resp.json()
+                    run['failure_count'] = 0
+                    for result in run['results']:
+                        result['measurement'] = s.get(result['measurement']).json()
+                        if result['result'].upper() == 'FAIL':
+                            run['failure_count'] += 1
+
+                    # Get the latest version of the environment, since previous
+                    # versions won't show up in the list of active environments
+                    # that we obtained above
+                    env_url = run['environment']
+                    env = s.get(env_url).json()
+                    while (env_url not in context['runs'].keys() and
+                           env.get('successor', None)):
+                        env_url = env['successor']
+                        env = s.get(env_url).json()
+                    run['environment'] = env
+                    context['runs'][env_url] = run
+
+            # Fill in details of missing environments so they can be displayed
+            # in the template
+            for env_url, run in context['runs'].items():
+                if run is None:
+                    context['runs'][env_url] = {
+                        'environment': envs[env_url]
+                    }
+            context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+            context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+            context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
+            return context
 
 
 class Preferences(LoginRequiredMixin, TemplateView):

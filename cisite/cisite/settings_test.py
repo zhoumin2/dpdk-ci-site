@@ -23,3 +23,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend'
 )
+
+# This must be true for the relevant tests to pass
+# It cannot be overridden per-test because the urlconf is only processed
+# once as part of Django initialization.
+ENABLE_PREFERENCES = True

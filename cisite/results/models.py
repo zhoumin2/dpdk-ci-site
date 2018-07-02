@@ -2,6 +2,7 @@
 
 import json
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
@@ -79,6 +80,9 @@ class PatchSet(models.Model):
             return "Pending"
         else:
             trs = self.tarballs.last().runs
+            Environment = apps.get_model('results', 'Environment')
+            if trs.count() < Environment.objects.filter(successor__isnull=True).count():
+                return "Incomplete"
             if trs.filter(results__result="FAIL").exists():
                 return "Possible Regression"
             else:
@@ -94,7 +98,11 @@ class PatchSet(models.Model):
             return "primary"
         else:
             trs = self.tarballs.last().runs
-            if trs.filter(results__result="FAIL").exists():
+            Environment = apps.get_model('results', 'Environment')
+            if trs.count() < Environment.objects.filter(
+                    successor__isnull=True).count():
+                return "warning"
+            elif trs.filter(results__result="FAIL").exists():
                 return "danger"
             else:
                 return "success"
