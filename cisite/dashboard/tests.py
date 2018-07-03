@@ -13,17 +13,19 @@ from results.models import Subscription
 class PreferencesViewTests(LiveServerTestCase):
     """Test the preferences view."""
 
-    def setUp(cls):
+    def setUp(self):
         """Set up dummy test data."""
-        super().setUpClass()
-        cls.user1 = User.objects.create_user('joevendor',
-                                            'joe@example.com', 'AbCdEfGh')
-        cls.user2 = User.objects.create_user('joevendor2',
-                                            'joe2@example.com', 'AbCdEfGh2')
-        cls.grp1 = Group.objects.create(name='Group1')
-        cls.grp2 = Group.objects.create(name='Group2')
-        cls.user1.groups.add(cls.grp1)
-        cls.user2.groups.add(cls.grp2)
+        super().setUp()
+        self.user1 = User.objects.create_user('joevendor',
+                                              'joe@example.com',
+                                              'AbCdEfGh')
+        self.user2 = User.objects.create_user('joevendor2',
+                                              'joe2@example.com',
+                                              'AbCdEfGh2')
+        self.grp1 = Group.objects.create(name='Group1')
+        self.grp2 = Group.objects.create(name='Group2')
+        self.user1.groups.add(self.grp1)
+        self.user2.groups.add(self.grp2)
 
     def tearDown(self):
         """Clear cache to fix an IntegrityError bug."""
