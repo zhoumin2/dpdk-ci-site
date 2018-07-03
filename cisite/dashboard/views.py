@@ -120,6 +120,7 @@ class DashboardDetail(TemplateView):
                 api_resp.raise_for_status()
                 envs = api_resp.json()['results']
                 envs = {x['url']: x for x in envs}
+            context['runs'] = dict()
             if context['patchset'].get('tarballs', []):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
                 context['runs'] = {x: None for x in envs}
