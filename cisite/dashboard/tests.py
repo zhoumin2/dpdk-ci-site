@@ -1,29 +1,118 @@
 """Define tests for dashboard app."""
 
+from datetime import datetime
+import pytz
+
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.test import LiveServerTestCase
 from django.urls import reverse
 from results.tests import create_test_environment
-from results.models import Subscription
+from results.models import Patch, PatchSet, Measurement, Parameter, \
+    Subscription, Tarball, TestResult, TestRun
 
 # TODO(DPDKLAB-301): Add unit tests for dashboard views
+
+
+class DetailViewTests(LiveServerTestCase):
+    """Test the detail view."""
+
+    def setUp(self):
+        super().setUp()
+        grp = Group.objects.create(name='acme')
+        user = User.objects.create_user(username='acmevendor', first_name='John',
+                                   last_name='Vendor',
+                                   email='jvendor@example.com',
+                                   password='P@$$w0rd')
+        user.groups.add(grp)
+        self.env = create_test_environment(owner=grp)
+        self.m1 = Measurement.objects.create(name='throughput', unit='Mpps',
+                                             higher_is_better=True,
+                                             environment=self.env)
+        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
+                                 measurement=self.m1)
+        Parameter.objects.create(name='txd/rxd', unit='bytes', value=64,
+                                 measurement=self.m1)
+        self.m2 = Measurement.objects.create(name='throughput', unit='Mpps',
+                                             higher_is_better=True,
+                                             environment=self.env)
+        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
+                                 measurement=self.m2)
+        Parameter.objects.create(name='txd/rxd', unit='bytes', value=512,
+                                 measurement=self.m2)
+
+    def tearDown(self):
+        """Clear cache to fix an IntegrityError bug."""
+        ContentType.objects.clear_cache()
+        super().tearDown()
+
+    def make_test_patchset(self):
+        ps = PatchSet.objects.create(message_uid='20180601110742.11927',
+                                     patch_count=1)
+        Patch.objects.create(
+            patchworks_id=40574,
+            message_id='20180601110742.11927-1-thomas@monjalon.net',
+            submitter='Thomas Monjalon <thomas@monjalon.net>',
+            subject='version: 18.08-rc0', patchset=ps, version='v0',
+            patch_number=1, date='2018-06-01 11:07:42+00:00',
+            contacts='[{"display_name": "", "email": "dev@dpdk.org", '
+                     '"how": "to"}]')
+        tb = Tarball.objects.create(
+            branch='dpdk', build_id=914, job_name='Apply-One-Patch-Set',
+            commit_id='c6266cd55c3ab3bd13711ac0ae599fcf4a32ce84',
+            patchset=ps)
+
+        run = TestRun.objects.create(
+            timestamp=datetime(2018, 6, 1, 20, 27, 42, tzinfo=pytz.utc),
+            log_output_file='https://dpdklab.iol.unh.edu/jenkins/job/'
+                            'ACME1-Performance-Test/3/artifact/gamma.zip',
+            tarball=tb, environment=self.env)
+        TestResult.objects.create(result='PASS', difference=-0.185655863091204,
+                                  measurement=self.m1, run=run)
+        TestResult.objects.create(result='PASS', difference=-0.664055231513893,
+                                  measurement=self.m2, run=run)
+
+        return ps
+
+    def test_anon_load(self):
+        """Test that the anonymous page loads."""
+        ps = self.make_test_patchset()
+        with self.settings(API_BASE_URL=self.live_server_url):
+            response = self.client.get(reverse('dashboard-detail',
+                                               args=[ps.id]))
+            self.assertEqual(response.status_code, 200)
+
+    def test_auth_load(self):
+        """Test that the authenticated page loads."""
+        ps = self.make_test_patchset()
+        with self.settings(API_BASE_URL=self.live_server_url):
+            # Log in
+            response = self.client.post(reverse('login'),
+                dict(username='acmevendor', password='P@$$w0rd'), follow=True)
+            self.assertTrue(response.context['user'].is_active)
+
+            response = self.client.get(reverse('dashboard-detail',
+                                               args=[ps.id]),
+                                       follow=True)
+            self.assertEqual(response.status_code, 200)
 
 
 class PreferencesViewTests(LiveServerTestCase):
     """Test the preferences view."""
 
-    def setUp(cls):
+    def setUp(self):
         """Set up dummy test data."""
-        super().setUpClass()
-        cls.user1 = User.objects.create_user('joevendor',
-                                            'joe@example.com', 'AbCdEfGh')
-        cls.user2 = User.objects.create_user('joevendor2',
-                                            'joe2@example.com', 'AbCdEfGh2')
-        cls.grp1 = Group.objects.create(name='Group1')
-        cls.grp2 = Group.objects.create(name='Group2')
-        cls.user1.groups.add(cls.grp1)
-        cls.user2.groups.add(cls.grp2)
+        super().setUp()
+        self.user1 = User.objects.create_user('joevendor',
+                                              'joe@example.com',
+                                              'AbCdEfGh')
+        self.user2 = User.objects.create_user('joevendor2',
+                                              'joe2@example.com',
+                                              'AbCdEfGh2')
+        self.grp1 = Group.objects.create(name='Group1')
+        self.grp2 = Group.objects.create(name='Group2')
+        self.user1.groups.add(self.grp1)
+        self.user2.groups.add(self.grp2)
 
     def tearDown(self):
         """Clear cache to fix an IntegrityError bug."""
