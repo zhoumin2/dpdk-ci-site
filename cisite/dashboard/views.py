@@ -114,9 +114,12 @@ class DashboardDetail(TemplateView):
             context['patchset'] = api_resp.json()
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
-            api_resp.raise_for_status()
-            envs = api_resp.json()['results']
-            envs = {x['url']: x for x in envs}
+            if api_resp.status_code in [401, 403]:
+                envs = dict()
+            else:
+                api_resp.raise_for_status()
+                envs = api_resp.json()['results']
+                envs = {x['url']: x for x in envs}
             if context['patchset'].get('tarballs', []):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
                 context['runs'] = {x: None for x in envs}
