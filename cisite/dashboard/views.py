@@ -1,6 +1,7 @@
 """Define dashboard views."""
 
 from logging import getLogger
+from http import HTTPStatus
 from urllib.parse import urljoin
 import requests.exceptions
 from django.conf import settings
@@ -9,8 +10,8 @@ from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView, View
-from django.http import HttpResponseRedirect, HttpResponseServerError,\
-    HttpResponse, JsonResponse
+from django.http import Http404, HttpResponseRedirect, \
+    HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
 import json
 
@@ -149,6 +150,8 @@ class DashboardDetail(BaseDashboardView):
         with api_session(self.request) as s:
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      'patchsets/' + str(self.kwargs['id'])))
+            if api_resp.status_code == HTTPStatus.NOT_FOUND:
+                raise Http404
             context['patchset'] = api_resp.json()
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
