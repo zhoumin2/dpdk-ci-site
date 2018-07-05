@@ -1,6 +1,7 @@
 """Define dashboard views."""
 
 from logging import getLogger
+from http import HTTPStatus
 from urllib.parse import urljoin
 import requests.exceptions
 from django.conf import settings
@@ -9,8 +10,9 @@ from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
 from django.views.generic import TemplateView, View
-from django.http import HttpResponseRedirect, HttpResponseServerError,\
-    HttpResponse, JsonResponse
+from django.http import Http404, HttpResponseRedirect, \
+    HttpResponseServerError, HttpResponse, JsonResponse
+from django.template.response import TemplateResponse
 import json
 
 from .util import api_session
@@ -82,7 +84,44 @@ class LoginView(auth_views.LoginView):
                     content='<p>Unable to login to backend API</p>')
 
 
-class PatchSetList(TemplateView):
+class BaseDashboardView(TemplateView):
+    """Define a base view for all non-login dashboard template views."""
+
+    def add_static_context_data(self, context):
+        """Add static context data included with every dashboard view.
+
+        This is expected to not raise any exception; any exceptions raised
+        here may be ignored by the caller.
+        """
+        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
+        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
+        return context
+
+    def get_context_data(self, **kwargs):
+        """Get the static context data for all dashboard views."""
+        context = super().get_context_data(**kwargs)
+        return self.add_static_context_data(context)
+
+    def get(self, *args, **kwargs):
+        """Handle GET requests to the dashboard."""
+
+        try:
+            return super().get(*args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            getLogger('dashboard').exception(
+                'Backend connection error')
+            context = dict()
+            try:
+                self.add_static_context_data(context)
+            except Exception:
+                getLogger('dashboard').exception(
+                    'Unable to get static context data '
+                    'while rendering 503 view')
+            return TemplateResponse(self.request, '503.html', context=context,
+                                    status=HTTPStatus.SERVICE_UNAVAILABLE)
+
+
+class PatchSetList(BaseDashboardView):
     """Display the list of patches on the dashboard."""
 
     template_name = 'dashboard.html'
@@ -97,12 +136,10 @@ class PatchSetList(TemplateView):
             context['patchsets'] = resp.json()['results']
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
-        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
-        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
 
 
-class DashboardDetail(TemplateView):
+class DashboardDetail(BaseDashboardView):
     """Display the details for a particular patchset on the dashboard."""
 
     template_name = 'detail.html'
@@ -113,10 +150,13 @@ class DashboardDetail(TemplateView):
         with api_session(self.request) as s:
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      'patchsets/' + str(self.kwargs['id'])))
+            if api_resp.status_code == HTTPStatus.NOT_FOUND:
+                raise Http404
             context['patchset'] = api_resp.json()
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
-            if api_resp.status_code in [401, 403]:
+            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
+                                        HTTPStatus.FORBIDDEN]:
                 envs = dict()
             else:
                 api_resp.raise_for_status()
@@ -128,7 +168,7 @@ class DashboardDetail(TemplateView):
                 context['runs'] = {x: None for x in envs}
                 for url in tarball['runs']:
                     resp = s.get(url)
-                    if resp.status_code >= 400:
+                    if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     run = resp.json()
                     run['failure_count'] = 0
@@ -157,12 +197,10 @@ class DashboardDetail(TemplateView):
                         'environment': envs[env_url]
                     }
             context['status_classes'] = text_color_classes(context['patchset']['status_class'])
-            context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
-            context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
             return context
 
 
-class Preferences(LoginRequiredMixin, TemplateView):
+class Preferences(LoginRequiredMixin, BaseDashboardView):
     """Show user preferences for the environments."""
 
     template_name = 'preferences.html'
@@ -190,8 +228,6 @@ class Preferences(LoginRequiredMixin, TemplateView):
             env_sub_pairs.append({'environment': env, 'subscription': sub})
 
         context['env_sub_pairs'] = env_sub_pairs
-        context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
-        context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
 
 

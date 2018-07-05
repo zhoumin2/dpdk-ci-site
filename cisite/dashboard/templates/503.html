@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% comment %}
+This template does not receive any context information by design;
+everything in base.html that depends on any context item must be
+overriden in this template, or must be logically disabled when the
+item is not present.
+{% endcomment %}
+
+{% block navbar %}
+{% endblock %}
+
+{% block content %}
+    <h1>Backend Database Unavailable</h1>
+    <p>
+      Error accessing the backend database. This is likely due to a power
+      outage. We will work to restore service as soon as possible. Please try
+      again later.
+    </p>
+{% endblock %}
