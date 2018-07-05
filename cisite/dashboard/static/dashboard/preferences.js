@@ -45,14 +45,17 @@ class SubscriptionManager {
    * @param {!Event} e
    */
   handleSubscriptionCheckbox(e) {
+    // disable button until the request goes through
+    e.target.disabled = true;
+
     const subscription = e.target.form.dataset.subscription;
     const environment = e.target.form.dataset.environment;
     const csrftoken = e.target.form.elements.csrfmiddlewaretoken.value;
 
     if (subscription === undefined) {
-      this.add(csrftoken, e.target.form, environment);
+      this.add(csrftoken, e.target.form, e.target, environment);
     } else {
-      this.remove(csrftoken, e.target.form, environment, subscription);
+      this.remove(csrftoken, e.target.form, e.target, environment, subscription);
     }
   }
 
@@ -60,9 +63,10 @@ class SubscriptionManager {
    * Add a subscription.
    * @param {!string} csrftoken
    * @param {!HTMLFormsControlCollection} form
+   * @param {!HTMLInputElement} target
    * @param {!number} environment
    */
-  add(csrftoken, form, environment) {
+  add(csrftoken, form, target, environment) {
     const request = new Request('/dashboard/preferences/subscriptions/', {
       credentials: 'same-origin',
       headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
@@ -75,6 +79,7 @@ class SubscriptionManager {
         response.json().then(json => {
           form.dataset.subscription = json.id;
           document.getElementById('send-' + environment).disabled = false;
+          target.disabled = false;
         });
       }
     }).catch(errorPopup);
@@ -84,10 +89,11 @@ class SubscriptionManager {
    * Remove a subscription.
    * @param {!string} csrftoken
    * @param {!HTMLFormsControlCollection} form
+   * @param {!HTMLInputElement} target
    * @param {!number} environment
    * @param {!number} subscription
    */
-  remove(csrftoken, form, environment, subscription) {
+  remove(csrftoken, form, target, environment, subscription) {
     const request = new Request('/dashboard/preferences/subscriptions/' + subscription + '/', {
       credentials: 'same-origin',
       headers: {'X-CSRFToken': csrftoken},
@@ -98,6 +104,7 @@ class SubscriptionManager {
       if (handleResponse(response)) {
         delete form.dataset.subscription;
         document.getElementById('send-' + environment).disabled = true;
+        target.disabled = false;
       }
     }).catch(errorPopup);
   }
