@@ -19,3 +19,9 @@ if getattr(settings, 'ENABLE_PREFERENCES', True):
     urlpatterns.append(path('preferences/',
                             views.Preferences.as_view(),
                             name='preferences'))
+    urlpatterns.append(path('preferences/subscriptions/',
+                            views.Subscriptions.as_view(),
+                            name='subscriptions'))
+    urlpatterns.append(path('preferences/subscriptions/<int:subscription>/',
+                            views.Subscriptions.as_view(),
+                            name='subscriptions'))

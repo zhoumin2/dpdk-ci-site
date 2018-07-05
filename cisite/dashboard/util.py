@@ -11,6 +11,9 @@ def api_session(request):
     with Session() as s:
         s.mount('http://', HTTPAdapter(max_retries=2))
         s.mount('https://', HTTPAdapter(max_retries=2))
+        if 'csrftoken' in request.COOKIES:
+            s.cookies['csrftoken'] = request.COOKIES['csrftoken']
+            s.headers.update({'X-CSRFToken': request.META.get('CSRF_COOKIE')})
         s.headers.update({'Referer': request.build_absolute_uri()})
         if hasattr(settings, 'CA_CERT_BUNDLE'):
             s.verify = settings.CA_CERT_BUNDLE

@@ -8,8 +8,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
-from django.views.generic import TemplateView
-from django.http import HttpResponseRedirect, HttpResponseServerError
+from django.views.generic import TemplateView, View
+from django.http import HttpResponseRedirect, HttpResponseServerError,\
+    HttpResponse, JsonResponse
+import json
 
 from .util import api_session
 
@@ -191,3 +193,31 @@ class Preferences(LoginRequiredMixin, TemplateView):
         context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
         context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
+
+
+class Subscriptions(LoginRequiredMixin, View):
+    """Proxy subscription calls to REST API."""
+
+    def post(self, request, *args, **kwargs):
+        """Pass post request to REST API."""
+        with api_session(request) as s:
+            url = urljoin(settings.API_BASE_URL, 'subscriptions/')
+            response = s.post(url, data=json.loads(request.body))
+            # default response does not contain a GET
+            return JsonResponse(response.json(), status=response.status_code)
+
+    def delete(self, request, subscription, *args, **kwargs):
+        """Pass delete request to REST API."""
+        with api_session(request) as s:
+            url = urljoin(settings.API_BASE_URL, f'subscriptions/{subscription}/')
+            response = s.delete(url)
+            # default response does not contain a GET
+            return HttpResponse(status=response.status_code)
+
+    def patch(self, request, subscription, *args, **kwargs):
+        """Pass patch request to REST API."""
+        with api_session(request) as s:
+            url = urljoin(settings.API_BASE_URL, f'subscriptions/{subscription}/')
+            response = s.patch(url, data=json.loads(request.body))
+            # default response does not contain a GET
+            return JsonResponse(response.json(), status=response.status_code)
