@@ -22,7 +22,7 @@
           <td>{{ ps.patches.0.version }}</td>
           <td>{{ ps.patches.0.subject }}</td>
           <td>{{ ps.submitter }}</td>
-          <td>{{ ps.status }}</td>
+          <td title="{{ ps.status_tooltip }}">{{ ps.status }}</td>
         </tr>
         {% endfor %}
       </tbody>
