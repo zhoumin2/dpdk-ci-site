@@ -16,6 +16,8 @@ router.register(r'testruns', views.TestRunViewSet)
 router.register(r'group', views.GroupViewSet)
 router.register(r'users', views.UserViewSet)
 router.register(r'subscriptions', views.SubscriptionViewSet)
+router.register(r'statuses', views.StatusViewSet,
+                base_name=r'status')
 
 urlpatterns = [
     path('', include(router.urls)),

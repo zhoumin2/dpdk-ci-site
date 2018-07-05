@@ -134,6 +134,10 @@ class PatchSetList(BaseDashboardView):
                                  'patchsets?complete=true&ordering=-id'))
             resp.raise_for_status()
             context['patchsets'] = resp.json()['results']
+            resp = s.get(urljoin(settings.API_BASE_URL,
+                                 'statuses'))
+            resp.raise_for_status()
+            context['statuses'] = resp.json()['results']
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
             ps['submitter'] = ps.get('submitter_name', None) or '(unknown)'

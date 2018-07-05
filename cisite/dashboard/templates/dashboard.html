@@ -13,7 +13,9 @@
   <div class="table-responsive-sm">
     <table class="table table-hover">
       <thead>
-        <tr><th>ID</th><th>Ver</th><th>Title</th><th>Submitter</th><th>Status</th></tr>
+        <tr><th>ID</th><th>Ver</th><th>Title</th><th>Submitter</th>
+          <th>Status [<a href="#" data-toggle="popover" title="Status Legend" data-content="<dl>{% for s in statuses %}<dt><span class=&quot;bg-{{ s.class }}&quot;>&nbsp;&nbsp;&nbsp;</span>&nbsp;{{ s.name }}</dt><dd>{{ s.tooltip }}</dd>{% endfor %}</dl>" data-html="true">?</a>]</th>
+        </tr>
       </thead>
       <tbody>
         {% for ps in patchsets %}
@@ -28,4 +30,12 @@
       </tbody>
     </table>
   </div>
+{% endblock %}
+
+{% block js %}
+  <script>
+    $(function () {
+      $('[data-toggle="popover"]').popover()
+    })
+  </script>
 {% endblock %}
