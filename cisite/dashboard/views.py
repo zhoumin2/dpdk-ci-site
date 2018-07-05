@@ -113,7 +113,9 @@ class BaseDashboardView(TemplateView):
             try:
                 self.add_static_context_data(context)
             except Exception:
-                pass
+                getLogger('dashboard').exception(
+                    'Unable to get static context data '
+                    'while rendering 503 view')
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=503)
 
