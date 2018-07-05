@@ -19,7 +19,6 @@
   {% for env_url, r in runs.items %}
     <h2 id="env-{{ r.environment.id }}">
       NIC: {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps
-      <a href="#env-{{ r.environment.id }}" class="text-dark">&#x00a7;</a>
     </h2>
     {% if 'url' not in r %}
     <p>The tests were not run for this environment.</p>
@@ -75,4 +74,9 @@
     permission to view detailed results for any test runs for this patch
     set.</p>
   {% endfor %}
+{% endblock %}
+
+{% block js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.1/anchor.min.js"></script>
+  <script>anchors.add('h2');</script>
 {% endblock %}
