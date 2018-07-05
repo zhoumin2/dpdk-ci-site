@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% comment %}
+This template does not receive any context information by design;
+everything in base.html that depends on any context item must be
+overriden in this template, or must be logically disabled when the
+item is not present.
+{% endcomment %}
+
+{% block navbar %}
+{% endblock %}
+
+{% block content %}
+    <h1>Power Outage or Database Error</h1>
+    <p>
+      Error accessing the backend database. We are looking into the issue and
+      expect the dashboard to be made available again soon. Please try again
+      later.
+    </p>
+    <p>If the error persists for more than an hour, please send e-mail to
+      <a href="mailto:dpdklab@iol.unh.edu">dpdklab@iol.unh.edu</a>.</p>
+{% endblock %}
