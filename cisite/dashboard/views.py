@@ -118,7 +118,7 @@ class BaseDashboardView(TemplateView):
                     'Unable to get static context data '
                     'while rendering 503 view')
             return TemplateResponse(self.request, '503.html', context=context,
-                                    status=503)
+                                    status=HTTPStatus.SERVICE_UNAVAILABLE)
 
 
 class PatchSetList(BaseDashboardView):
@@ -155,7 +155,8 @@ class DashboardDetail(BaseDashboardView):
             context['patchset'] = api_resp.json()
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
-            if api_resp.status_code in [401, 403]:
+            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
+                                        HTTPStatus.FORBIDDEN]:
                 envs = dict()
             else:
                 api_resp.raise_for_status()
@@ -167,7 +168,7 @@ class DashboardDetail(BaseDashboardView):
                 context['runs'] = {x: None for x in envs}
                 for url in tarball['runs']:
                     resp = s.get(url)
-                    if resp.status_code >= 400:
+                    if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     run = resp.json()
                     run['failure_count'] = 0
