@@ -75,9 +75,10 @@ class PatchSet(models.Model):
         """Return the status string to be displayed on the dashboard."""
         if self.apply_error:
             return "Apply Error"
-        elif (not self.tarballs.exists() or
-              not self.tarballs.last().runs.exists()):
+        elif not self.tarballs.exists():
             return "Pending"
+        elif not self.tarballs.last().runs.exists():
+            return "Waiting"
         else:
             trs = self.tarballs.last().runs
             Environment = apps.get_model('results', 'Environment')
