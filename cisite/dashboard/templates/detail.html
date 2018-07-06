@@ -8,9 +8,11 @@
 {% block content %}
   <h1>Patch Set {{ patchset.patchset_range|safe }}</h1>
   <ul>
-    {% for p in patchset.patches.all %}
+    {% for p in patchset.patches %}
       <li>
-        <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/" target="_blank">[PATCH {{ p.patch_number }}/{{ patches.count }}] {{ p.subject }}</a>
+        <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/" target="_blank">
+          [PATCH {{ p.patch_number }}/{{ patchset.patches|length }}] {{ p.subject }}
+        </a>
       </li>
     {% endfor %}
   </ul>
