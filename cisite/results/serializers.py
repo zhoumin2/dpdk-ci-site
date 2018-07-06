@@ -78,7 +78,11 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer):
 class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize PatchSet objects."""
 
+    _SUBMITTER_RE = re.compile("(?P<name>.+) *<(?P<email>.+@.+)>")
+
     patches = PatchSerializer(many=True, read_only=True)
+    submitter_name = serializers.SerializerMethodField()
+    submitter_email = serializers.SerializerMethodField()
 
     class Meta:
         """Specify fields to pull from PatchSet model."""
@@ -86,9 +90,29 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         model = PatchSet
         fields = ('url', 'id', 'patch_count', 'patches', 'complete',
                   'is_public', 'apply_error', 'tarballs',
-                  'patchwork_range_str', 'status', 'status_class')
+                  'patchwork_range_str', 'status', 'status_class',
+                  'submitter_name', 'submitter_email')
         read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
                             'status', 'status_class')
+
+    def get_submitter_name(self, obj):
+        """Return the name of the submitter without the e-mail address."""
+
+        m = self._SUBMITTER_RE.match(obj.patches.first().submitter)
+        if m:
+            return m.group('name')
+        else:
+            return None
+
+    def get_submitter_email(self, obj):
+        """Return the e-mail address of the submitter."""
+
+        submitter = obj.patches.first().submitter
+        m = self._SUBMITTER_RE.match(submitter)
+        if m:
+            return m.group('email')
+        else:
+            return submitter
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):

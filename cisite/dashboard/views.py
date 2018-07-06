@@ -136,6 +136,10 @@ class PatchSetList(BaseDashboardView):
             context['patchsets'] = resp.json()['results']
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
+            ps['submitter'] = ps.get('submitter_name', None) or '(unknown)'
+            request = self.request
+            if request.user.is_authenticated and ps.get('submitter_email'):
+                ps['submitter'] += ' <' + ps['submitter_email'] + '>'
         return context
 
 
