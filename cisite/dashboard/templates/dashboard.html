@@ -20,7 +20,7 @@
           <td><a href="{% url 'dashboard-detail' ps.id %}">{{ ps.patchwork_range_str|safe }}</a></td>
           <td>{{ ps.patches.0.version }}</td>
           <td>{{ ps.patches.0.subject }}</td>
-          <td>{{ ps.patches.0.submitter }}</td>
+          <td>{{ ps.submitter }}</td>
           <td>{{ ps.status }}</td>
         </tr>
         {% endfor %}
