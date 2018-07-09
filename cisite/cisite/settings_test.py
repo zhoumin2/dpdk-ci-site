@@ -28,3 +28,5 @@ AUTHENTICATION_BACKENDS = (
 # It cannot be overridden per-test because the urlconf is only processed
 # once as part of Django initialization.
 ENABLE_PREFERENCES = True
+
+API_BASE_URL = 'http://example.com/'
