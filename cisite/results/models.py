@@ -43,6 +43,38 @@ class PatchSetManager(models.Manager):
 class PatchSet(models.Model):
     """Model a single patchset."""
 
+    statuses = {
+        'Pass': {
+            'class': 'success',
+            'tooltip': 'All test results were within the tolerance threshold '
+                       'from the expected result',
+        },
+        'Possible Regression': {
+            'class': 'danger',
+            'tooltip': 'At least one test result was below the tolerance '
+                       'threshold from the expected result',
+        },
+        'Apply Error': {
+            'class': 'warning',
+            'tooltip': 'The patch series could not be applied or built',
+        },
+        'Incomplete': {
+            'class': 'warning',
+            'tooltip': 'Not all test cases have been completed for this '
+                       'patch series',
+        },
+        'Waiting': {
+            'class': 'primary',
+            'tooltip': 'A tarball has been generated but no test results '
+                       'are available yet',
+        },
+        'Pending': {
+            'class': 'secondary',
+            'tooltip': 'A tarball has not yet been generated for this '
+                       'patch series',
+        },
+    }
+
     message_uid = models.CharField(max_length=255, unique=True,
         help_text="Subset of patch e-mail Message-Id to match on")
     patch_count = models.PositiveIntegerField(
@@ -75,9 +107,10 @@ class PatchSet(models.Model):
         """Return the status string to be displayed on the dashboard."""
         if self.apply_error:
             return "Apply Error"
-        elif (not self.tarballs.exists() or
-              not self.tarballs.last().runs.exists()):
+        elif not self.tarballs.exists():
             return "Pending"
+        elif not self.tarballs.last().runs.exists():
+            return "Waiting"
         else:
             trs = self.tarballs.last().runs
             Environment = apps.get_model('results', 'Environment')
@@ -90,22 +123,12 @@ class PatchSet(models.Model):
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
-        if self.apply_error:
-            return "warning"
-        elif not self.tarballs.exists():
-            return "secondary"
-        elif not self.tarballs.last().runs.exists():
-            return "primary"
-        else:
-            trs = self.tarballs.last().runs
-            Environment = apps.get_model('results', 'Environment')
-            if trs.count() < Environment.objects.filter(
-                    successor__isnull=True).count():
-                return "warning"
-            elif trs.filter(results__result="FAIL").exists():
-                return "danger"
-            else:
-                return "success"
+        return self.statuses.get(self.status(), dict()).get('class', 'warning')
+
+    def status_tooltip(self):
+        """Return the status tooltip to be used on the dashboard."""
+        return self.statuses.get(self.status(), dict()).get('tooltip',
+                                                            self.status())
 
 
 class Branch(models.Model):

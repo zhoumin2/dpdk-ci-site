@@ -1,8 +1,10 @@
 """Render views for results database objects."""
 
+from collections import OrderedDict
 from rest_framework import viewsets
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import detail_route
@@ -158,3 +160,29 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return Subscription.objects.all()
         return user.results_profile.subscription_set.all()
+
+
+class StatusViewSet(viewsets.ViewSet):
+
+    def get_data(self, request):
+        data = [dict({'name': x}, **y) for x, y
+                in sorted(PatchSet.statuses.items())]
+        for pk, elem in enumerate(data):
+            elem['url'] = self.reverse_action('detail', args=[pk + 1])
+        return data
+
+    def list(self, request):
+        data = self.get_data(request)
+        return Response(OrderedDict([
+            ('count', len(data)),
+            ('next', None),
+            ('previous', None),
+            ('results', data)
+        ]))
+
+    def retrieve(self, request, pk=None):
+        try:
+            id = int(pk) - 1
+            return Response(self.get_data(request)[id])
+        except IndexError:
+            raise Http404

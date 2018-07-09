@@ -7,12 +7,15 @@
 {% block content %}
   <p>Below is the current CI performance testing status for the patchsets
   currently active in the DPDK Patchwork instance. Possible statuses are
-  Pending, Apply Error, Incomplete, Possible Regression, and Pass. NIC vendors
-  may log in to view detailed performance results for their hardware.</p>
+  Pending, Waiting, Apply Error, Incomplete, Possible Regression, and
+  Pass. NIC vendors may log in to view detailed performance results for
+  their hardware.</p>
   <div class="table-responsive-sm">
     <table class="table table-hover">
       <thead>
-        <tr><th>ID</th><th>Ver</th><th>Title</th><th>Submitter</th><th>Status</th></tr>
+        <tr><th>ID</th><th>Ver</th><th>Title</th><th>Submitter</th>
+          <th>Status [<a href="#" data-toggle="popover" title="Status Legend" data-content="<dl>{% for s in statuses %}<dt><span class=&quot;bg-{{ s.class }}&quot;>&nbsp;&nbsp;&nbsp;</span>&nbsp;{{ s.name }}</dt><dd>{{ s.tooltip }}</dd>{% endfor %}</dl>" data-html="true">?</a>]</th>
+        </tr>
       </thead>
       <tbody>
         {% for ps in patchsets %}
@@ -21,10 +24,18 @@
           <td>{{ ps.patches.0.version }}</td>
           <td>{{ ps.patches.0.subject }}</td>
           <td>{{ ps.submitter }}</td>
-          <td>{{ ps.status }}</td>
+          <td title="{{ ps.status_tooltip }}">{{ ps.status }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+{% endblock %}
+
+{% block js %}
+  <script>
+    $(function () {
+      $('[data-toggle="popover"]').popover()
+    })
+  </script>
 {% endblock %}

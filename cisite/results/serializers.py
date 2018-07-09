@@ -91,9 +91,9 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'id', 'patch_count', 'patches', 'complete',
                   'is_public', 'apply_error', 'tarballs',
                   'patchwork_range_str', 'status', 'status_class',
-                  'submitter_name', 'submitter_email')
+                  'status_tooltip', 'submitter_name', 'submitter_email')
         read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
-                            'status', 'status_class')
+                            'status', 'status_class', 'status_tooltip')
 
     def get_submitter_name(self, obj):
         """Return the name of the submitter without the e-mail address."""
