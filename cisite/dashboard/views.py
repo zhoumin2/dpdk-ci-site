@@ -14,6 +14,7 @@ from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
 import json
+import math
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session
@@ -73,7 +74,7 @@ def paginate_rest(page, context, count):
     """
     page += 1
 
-    pages = int(count / getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE'])
+    pages = int(math.ceil(count / getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE']))
 
     # silently make page 0 equal to page 1
     if page == 0:
