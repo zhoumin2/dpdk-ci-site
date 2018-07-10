@@ -225,54 +225,60 @@ class PaginationTests(TestCase):
         """Test that nothing breaks under normal circumstances."""
         context = {}
         paginate_rest(parse_page(5), context, 20)
-        context['next'] = '?page=6'
-        context['previous'] = '?page=4'
+        self.assertEqual(context['next'], '?page=6')
+        self.assertEqual(context['previous'], '?page=4')
 
         context = {}
         paginate_rest(parse_page(10), context, 20)
-        context['next'] = None
-        context['previous'] = '?page=9'
+        self.assertIsNone(context['next'])
+        self.assertEqual(context['previous'], '?page=9')
 
         context = {}
         paginate_rest(parse_page(1), context, 20)
-        context['next'] = '?page=2'
-        context['previous'] = None
+        self.assertEqual(context['next'], '?page=2')
+        self.assertIsNone(context['previous'])
 
         context = {}
         paginate_rest(parse_page(1), context, 2)
-        context['next'] = None
-        context['previous'] = None
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
+
+        # check ceil properly
+        context = {}
+        paginate_rest(parse_page(1), context, 3)
+        self.assertEqual(context['next'], '?page=2')
+        self.assertIsNone(context['previous'])
 
     def test_zero_index(self):
         """Test that zero gets converted to page 1."""
         context = {}
         paginate_rest(parse_page(0), context, 20)
-        context['next'] = '?page=2'
+        self.assertEqual(context['next'], '?page=2')
 
         context = {}
         paginate_rest(parse_page(0), context, 2)
-        context['next'] = None
-        context['previous'] = None
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
 
     def test_negatives(self):
         """Test that wrapping occurs."""
         context = {}
         paginate_rest(parse_page(-1), context, 20)
-        context['previous'] = '?page=9'
+        self.assertEqual(context['previous'], '?page=9')
 
         context = {}
         paginate_rest(parse_page(-11), context, 20)
-        context['previous'] = '?page=9'
+        self.assertEqual(context['previous'], '?page=9')
 
         context = {}
         paginate_rest(parse_page(-1), context, 2)
-        context['next'] = None
-        context['previous'] = None
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
 
         context = {}
         paginate_rest(parse_page(-11), context, 2)
-        context['next'] = None
-        context['previous'] = None
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
 
     def test_pages_greater_than_page(self):
         """Test that we get a 404 if page > pages."""
