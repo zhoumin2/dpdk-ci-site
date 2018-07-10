@@ -14,7 +14,9 @@ from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
 import json
+import math
 
+from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session
 
 
@@ -37,6 +39,72 @@ def text_color_classes(bg_class):
     }
     return 'bg-{0:s} text-{1:s}'.format(
         bg_class, foregrounds.get(bg_class, 'dark'))
+
+
+def parse_page(page):
+    """Parse the page to a 0-indexed number."""
+    if page is None:
+        page = 0
+    else:
+        try:
+            page = int(page) - 1
+        except ValueError:
+            # fail silently, since this should not happen under normal
+            # conditions
+            page = 0
+    return page
+
+
+def paginate_rest(page, context, count):
+    """Create paginated context based on the REST API.
+
+    Since we are using the REST API, we don't have access to the models, so we
+    can't really use the built-in paginator view. However, we can utilize their
+    paginator methods.
+
+    `page` expectes to be a well formatted, zero-indexed number.
+    Pass to `parse_page` before passing to `paginate_rest`.
+
+    The `context` dictionary will get modified with the following:
+    {
+        next: url|None
+        previous: url|None
+        page_links: [{is_break, is_active, url, page}]
+    }
+    """
+    page += 1
+
+    pages = int(math.ceil(count / getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE']))
+
+    # silently make page 0 equal to page 1
+    if page == 0:
+        page = 1
+
+    # silently covert 0 pages to 1
+    if pages == 0:
+        pages = 1
+
+    # page wrapping
+    if page < 0:
+        page %= pages
+        page += 1
+
+    # _get_displayed_page_numbers() throws an assertion error, so just throw a
+    # 404 ourselves
+    if page > pages:
+        raise Http404
+
+    page_numbers = _get_displayed_page_numbers(page, pages)
+    context['page_links'] = _get_page_links(
+        page_numbers, page, lambda num: f'?page={num}')
+
+    context['next'] = None
+    if page != pages:
+        context['next'] = f'?page={page + 1}'
+
+    context['previous'] = None
+    if page > 1:
+        context['previous'] = f'?page={page - 1}'
 
 
 class AuthenticationForm(auth_forms.AuthenticationForm):
@@ -129,15 +197,23 @@ class PatchSetList(BaseDashboardView):
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
+
         with api_session(self.request) as s:
-            resp = s.get(urljoin(settings.API_BASE_URL,
-                                 'patchsets?complete=true&ordering=-id'))
+            page = parse_page(self.request.GET.get('page'))
+            resp = s.get(urljoin(
+                settings.API_BASE_URL,
+                'patchsets?complete=true&ordering=-id&offset={}'
+                .format(page *
+                        getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE'])))
             resp.raise_for_status()
-            context['patchsets'] = resp.json()['results']
+            resp_json = resp.json()
+            context['patchsets'] = resp_json['results']
+            paginate_rest(page, context, resp_json['count'])
             resp = s.get(urljoin(settings.API_BASE_URL,
                                  'statuses'))
             resp.raise_for_status()
             context['statuses'] = resp.json()['results']
+
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
             ps['submitter'] = ps.get('submitter_name', None) or '(unknown)'

@@ -14,6 +14,8 @@ DATABASES = {
     }
 }
 
+REST_FRAMEWORK['PAGE_SIZE'] = 2
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 

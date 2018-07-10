@@ -8,11 +8,14 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.http import Http404
+from django.test import TestCase
 from django.urls import reverse
 import requests_mock
 from results.tests import create_test_environment
 from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
     Parameter, Subscription, Tarball, TestResult, TestRun
+from .views import paginate_rest, parse_page
 
 
 class BaseTestCase(StaticLiveServerTestCase):
@@ -437,3 +440,77 @@ class PreferencesViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
         self.assertEqual(response.context['env_sub_pairs'][0]['subscription'], None)
+
+
+class PaginationTests(TestCase):
+    """Test the pagination.
+
+    These are somewhat minimal since we are utiling the Django REST methods.
+    """
+
+    def test_valid_case(self):
+        """Test that nothing breaks under normal circumstances."""
+        context = {}
+        paginate_rest(parse_page(5), context, 20)
+        self.assertEqual(context['next'], '?page=6')
+        self.assertEqual(context['previous'], '?page=4')
+
+        context = {}
+        paginate_rest(parse_page(10), context, 20)
+        self.assertIsNone(context['next'])
+        self.assertEqual(context['previous'], '?page=9')
+
+        context = {}
+        paginate_rest(parse_page(1), context, 20)
+        self.assertEqual(context['next'], '?page=2')
+        self.assertIsNone(context['previous'])
+
+        context = {}
+        paginate_rest(parse_page(1), context, 2)
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
+
+        # check ceil properly
+        context = {}
+        paginate_rest(parse_page(1), context, 3)
+        self.assertEqual(context['next'], '?page=2')
+        self.assertIsNone(context['previous'])
+
+    def test_zero_index(self):
+        """Test that zero gets converted to page 1."""
+        context = {}
+        paginate_rest(parse_page(0), context, 20)
+        self.assertEqual(context['next'], '?page=2')
+
+        context = {}
+        paginate_rest(parse_page(0), context, 2)
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
+
+    def test_negatives(self):
+        """Test that wrapping occurs."""
+        context = {}
+        paginate_rest(parse_page(-1), context, 20)
+        self.assertEqual(context['previous'], '?page=9')
+
+        context = {}
+        paginate_rest(parse_page(-11), context, 20)
+        self.assertEqual(context['previous'], '?page=9')
+
+        context = {}
+        paginate_rest(parse_page(-1), context, 2)
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
+
+        context = {}
+        paginate_rest(parse_page(-11), context, 2)
+        self.assertIsNone(context['next'])
+        self.assertIsNone(context['previous'])
+
+    def test_pages_greater_than_page(self):
+        """Test that we get a 404 if page > pages."""
+        with self.assertRaises(Http404):
+            paginate_rest(parse_page(11), {}, 20)
+
+        with self.assertRaises(Http404):
+            paginate_rest(parse_page(2), {}, 2)

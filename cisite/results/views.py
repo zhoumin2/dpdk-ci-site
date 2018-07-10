@@ -36,6 +36,8 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PatchSetFilter
+    ordering_fields = ('apply_error', 'cur_patch_count', 'id', 'is_public',
+                       'message_uid', 'patch_count', 'patches', 'tarballs')
 
 
 class BranchViewSet(viewsets.ModelViewSet):
@@ -65,6 +67,10 @@ class PatchViewSet(viewsets.ModelViewSet):
     serializer_class = PatchSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_fields = ('patchworks_id', 'is_rfc', 'submitter', 'pw_is_active')
+    ordering_fields = ('contacts', 'date', 'id', 'is_rfc', 'message_id',
+                       'patch_number', 'patchset', 'patchset_id',
+                       'patchworks_id', 'pw_is_active', 'subject', 'submitter',
+                       'version')
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
