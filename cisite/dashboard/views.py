@@ -141,7 +141,7 @@ class LoginView(auth_views.LoginView):
                 return endresp
             except requests.exceptions.ConnectionError as e:
                 getLogger('dashboard').exception(
-                    'Connection closed into backend API')
+                    'Connection closed into backend API: %s', login_url)
                 auth_logout(self.request)
                 return HttpResponseRedirect(self.request.get_full_path())
             except requests.exceptions.HTTPError as e:

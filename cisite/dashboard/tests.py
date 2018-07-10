@@ -2,21 +2,158 @@
 
 from datetime import datetime
 import pytz
+from urllib.parse import urljoin
 
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.http import Http404
-from django.test import LiveServerTestCase, TestCase
+from django.test import TestCase
 from django.urls import reverse
+import requests_mock
 from results.tests import create_test_environment
-from results.models import Patch, PatchSet, Measurement, Parameter, \
-    Subscription, Tarball, TestResult, TestRun
+from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
+    Parameter, Subscription, Tarball, TestResult, TestRun
 from .views import paginate_rest, parse_page
 
-# TODO(DPDKLAB-301): Add unit tests for dashboard views
+
+class BaseTestCase(StaticLiveServerTestCase):
+    """Base class for all dashboard test cases."""
+
+    def tearDown(self):
+        """Clear cache to fix an IntegrityError bug."""
+        ContentType.objects.clear_cache()
+        super().tearDown()
 
 
-class DetailViewTests(LiveServerTestCase):
+@requests_mock.Mocker()
+class PatchListViewTests(BaseTestCase):
+    """Test the patch list view."""
+
+    def setUp(self):
+        """Set up fake data into test database."""
+        super().setUp()
+        grp = Group.objects.create(name='acme')
+        user = User.objects.create_user(username='acmevendor', first_name='John',
+                                   last_name='Vendor',
+                                   email='jvendor@example.com',
+                                   password='P@$$w0rd')
+        user.groups.add(grp)
+
+    def setup_mock(self, m):
+        """Set up the mock appropriately."""
+        m.register_uri('GET', urljoin(settings.API_BASE_URL,
+                                      'api-auth/login/'),
+                       json='<html></html>',
+                       cookies={'csrftoken': 'abcdefg'})
+        m.register_uri('POST', urljoin(settings.API_BASE_URL,
+                                      'api-auth/login/'),
+                       json='<html></html>',
+                       cookies={'sessionid': '01234567'})
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'statuses?'),
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [
+                    {
+                        'name': 'Pass',
+                        'class': 'success',
+                        'tooltip': 'Pass'
+                    }
+                ]
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets?complete=true'),
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [
+                    {
+                        'url': urljoin(settings.API_BASE_URL,
+                                       'patchsets/1/'),
+                        'message_uid': '20180601110742.11927',
+                        'patch_count': 1,
+                        'patchwork_range_str': '40574',
+                        'submitter_name': 'Thomas Monjalon',
+                        'submitter_email': 'thomas@monjalon.net',
+                        'status': 'Pass',
+                        'status_class': 'success',
+                        'status_tooltip': 'Pass',
+                        'patches': [
+                            {
+                                'url': urljoin(settings.API_BASE_URL,
+                                               'patches/1/'),
+                                'patchworks_id': 40574,
+                                'message_id': '20180601110742.11927-1-thomas@monjalon.net',
+                                'subject': 'version: 18.08-rc0',
+                                'patchset': urljoin(settings.API_BASE_URL,
+                                                    'patchsets/1/'),
+                                'version': 'v0',
+                                'patch_number': 1,
+                                'date': '2018-06-01 11:07:42+00:00',
+                                'contacts': '[{"display_name": "", '
+                                            '"email": "dev@dpdk.org", '
+                                            '"how": "to"}]'
+                            }
+                        ]
+                    }
+                ]
+            })
+
+    def test_anon_active_legend(self, m):
+        """Verify that the status legend is populated properly in context."""
+        self.setup_mock(m)
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        legend = response.context['statuses']
+        self.assertEqual(legend[0]['name'], 'Pass')
+        self.assertEqual(legend[0]['class'], 'success')
+        self.assertEqual(legend[0]['tooltip'], 'Pass')
+
+    def test_anon_active_patchset(self, m):
+        """Verify that an active patch is shown in the anonymous view."""
+        self.setup_mock(m)
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchsets'][0]
+        self.assertEqual(ps['id'], 1)
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(ps['patches'][0]['version'], 'v0')
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['submitter'], 'Thomas Monjalon')
+        self.assertEqual(ps['status'], 'Pass')
+        self.assertEqual(ps['status_class'], 'success')
+        self.assertEqual(ps['status_tooltip'], 'Pass')
+
+    def test_auth_active_patchset(self, m):
+        """Verify that patchsets are shown properly in authenticated view.
+
+        """
+        self.setup_mock(m)
+        response = self.client.post(
+            reverse('login'),
+            dict(username='acmevendor', password='P@$$w0rd'), follow=True)
+        self.assertTrue(response.context['user'].is_active)
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchsets'][0]
+        self.assertEqual(ps['id'], 1)
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(ps['patches'][0]['version'], 'v0')
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['submitter'],
+                         'Thomas Monjalon <thomas@monjalon.net>')
+        self.assertEqual(ps['status'], 'Pass')
+        self.assertEqual(ps['status_class'], 'success')
+        self.assertEqual(ps['status_tooltip'], 'Pass')
+
+
+class DetailViewTests(BaseTestCase):
     """Test the detail view."""
 
     def setUp(self):
@@ -28,27 +165,24 @@ class DetailViewTests(LiveServerTestCase):
                                    password='P@$$w0rd')
         user.groups.add(grp)
         self.env = create_test_environment(owner=grp)
+        ContactPolicy.objects.create(environment=self.env)
         self.m1 = Measurement.objects.create(name='throughput', unit='Mpps',
                                              higher_is_better=True,
                                              environment=self.env)
         Parameter.objects.create(name='frame_size', unit='bytes', value=64,
                                  measurement=self.m1)
-        Parameter.objects.create(name='txd/rxd', unit='bytes', value=64,
+        Parameter.objects.create(name='txd/rxd', unit='descriptors', value=64,
                                  measurement=self.m1)
         self.m2 = Measurement.objects.create(name='throughput', unit='Mpps',
                                              higher_is_better=True,
                                              environment=self.env)
         Parameter.objects.create(name='frame_size', unit='bytes', value=64,
                                  measurement=self.m2)
-        Parameter.objects.create(name='txd/rxd', unit='bytes', value=512,
+        Parameter.objects.create(name='txd/rxd', unit='descriptors', value=512,
                                  measurement=self.m2)
 
-    def tearDown(self):
-        """Clear cache to fix an IntegrityError bug."""
-        ContentType.objects.clear_cache()
-        super().tearDown()
-
-    def make_test_patchset(self):
+    def make_test_patchset(self, result2='PASS'):
+        """Create a test patchset and test result."""
         ps = PatchSet.objects.create(message_uid='20180601110742.11927',
                                      patch_count=1)
         Patch.objects.create(
@@ -71,7 +205,7 @@ class DetailViewTests(LiveServerTestCase):
             tarball=tb, environment=self.env)
         TestResult.objects.create(result='PASS', difference=-0.185655863091204,
                                   measurement=self.m1, run=run)
-        TestResult.objects.create(result='PASS', difference=-0.664055231513893,
+        TestResult.objects.create(result=result2, difference=-0.664055231513893,
                                   measurement=self.m2, run=run)
 
         return ps
@@ -83,6 +217,47 @@ class DetailViewTests(LiveServerTestCase):
             response = self.client.get(reverse('dashboard-detail',
                                                args=[ps.id]))
             self.assertEqual(response.status_code, 200)
+            ps = response.context['patchset']
+            self.assertEqual(ps['patchwork_range_str'], '40574')
+            self.assertEqual(len(ps['patches']), 1)
+            self.assertEqual(ps['patches'][0]['patch_number'], 1)
+            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+            self.assertEqual(ps['status'], 'Pass')
+            self.assertEqual(len(response.context['runs'].items()), 0)
+
+    def test_auth_fail(self):
+        """Test a result with a failing result."""
+        ps = self.make_test_patchset(result2='FAIL')
+        with self.settings(API_BASE_URL=self.live_server_url):
+            # Log in
+            response = self.client.post(reverse('login'),
+                dict(username='acmevendor', password='P@$$w0rd'), follow=True)
+            self.assertTrue(response.context['user'].is_active)
+
+            response = self.client.get(reverse('dashboard-detail',
+                                               args=[ps.id]),
+                                       follow=True)
+            self.assertEqual(response.status_code, 200)
+            ps = response.context['patchset']
+            self.assertEqual(ps['patchwork_range_str'], '40574')
+            self.assertEqual(len(ps['patches']), 1)
+            self.assertEqual(ps['patches'][0]['patch_number'], 1)
+            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+            self.assertEqual(ps['status'], 'Possible Regression')
+            run = response.context['runs'][
+                urljoin(self.live_server_url, reverse('environment-detail',
+                                                      args=[self.env.id]))]
+            self.assertEqual(len(run['results']), 2)
+            self.assertIsNot(run, None)
+            self.assertEqual(run['environment']['id'], self.env.id)
+            self.assertEqual(run['environment']['nic_model'], 'XL710')
+            self.assertEqual(run['failure_count'], 1)
+            self.assertEqual(run['results'][0]['result'], 'PASS')
+            self.assertEqual(run['results'][1]['result'], 'FAIL')
+            self.assertAlmostEqual(run['results'][0]['difference'],
+                                   -0.185655, places=5)
+            self.assertAlmostEqual(run['results'][1]['difference'],
+                                   -0.664055, places=5)
 
     def test_auth_load(self):
         """Test that the authenticated page loads."""
@@ -97,9 +272,66 @@ class DetailViewTests(LiveServerTestCase):
                                                args=[ps.id]),
                                        follow=True)
             self.assertEqual(response.status_code, 200)
+            ps = response.context['patchset']
+            self.assertEqual(ps['patchwork_range_str'], '40574')
+            self.assertEqual(len(ps['patches']), 1)
+            self.assertEqual(ps['patches'][0]['patch_number'], 1)
+            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+            self.assertEqual(ps['status'], 'Pass')
+            run = response.context['runs'][
+                urljoin(self.live_server_url, reverse('environment-detail',
+                                                      args=[self.env.id]))]
+            self.assertEqual(len(run['results']), 2)
+            self.assertIsNot(run, None)
+            self.assertEqual(run['environment']['id'], self.env.id)
+            self.assertEqual(run['environment']['nic_model'], 'XL710')
+            self.assertEqual(run['failure_count'], 0)
+            self.assertEqual(run['results'][0]['result'], 'PASS')
+            self.assertAlmostEqual(run['results'][0]['difference'],
+                                   -0.185655, places=5)
+            self.assertAlmostEqual(run['results'][1]['difference'],
+                                   -0.664055, places=5)
+
+    def test_auth_successor(self):
+        """Verify that runs dictionary uses successor environment."""
+        oldenv = self.env
+        self.env = self.env.clone()
+        try:
+            ps = self.make_test_patchset()
+            with self.settings(API_BASE_URL=self.live_server_url):
+                # Log in
+                response = self.client.post(reverse('login'),
+                    dict(username='acmevendor', password='P@$$w0rd'), follow=True)
+                self.assertTrue(response.context['user'].is_active)
+
+                response = self.client.get(reverse('dashboard-detail',
+                                                   args=[ps.id]),
+                                           follow=True)
+                self.assertEqual(response.status_code, 200)
+                ps = response.context['patchset']
+                self.assertEqual(ps['patchwork_range_str'], '40574')
+                self.assertEqual(len(ps['patches']), 1)
+                self.assertEqual(ps['patches'][0]['patch_number'], 1)
+                self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+                self.assertEqual(ps['status'], 'Pass')
+                run = response.context['runs'][
+                    urljoin(self.live_server_url, reverse('environment-detail',
+                                                          args=[self.env.id]))]
+                self.assertEqual(len(run['results']), 2)
+                self.assertIsNot(run, None)
+                self.assertEqual(run['environment']['id'], self.env.id)
+                self.assertEqual(run['environment']['nic_model'], 'XL710')
+                self.assertEqual(run['failure_count'], 0)
+                self.assertEqual(run['results'][0]['result'], 'PASS')
+                self.assertAlmostEqual(run['results'][0]['difference'],
+                                       -0.185655, places=5)
+                self.assertAlmostEqual(run['results'][1]['difference'],
+                                       -0.664055, places=5)
+        finally:
+            self.env = oldenv
 
 
-class PreferencesViewTests(LiveServerTestCase):
+class PreferencesViewTests(BaseTestCase):
     """Test the preferences view."""
 
     def setUp(self):
@@ -115,11 +347,6 @@ class PreferencesViewTests(LiveServerTestCase):
         self.grp2 = Group.objects.create(name='Group2')
         self.user1.groups.add(self.grp1)
         self.user2.groups.add(self.grp2)
-
-    def tearDown(self):
-        """Clear cache to fix an IntegrityError bug."""
-        ContentType.objects.clear_cache()
-        super().tearDown()
 
     def test_anonymous_user(self):
         """Test the anonymous user gets redirected to the login page."""
