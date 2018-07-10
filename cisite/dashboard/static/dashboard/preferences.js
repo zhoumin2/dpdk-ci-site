@@ -67,7 +67,7 @@ class SubscriptionManager {
    * @param {!number} environment
    */
   add(csrftoken, form, target, environment) {
-    const request = new Request('/dashboard/preferences/subscriptions/', {
+    const request = new Request('subscriptions/', {
       credentials: 'same-origin',
       headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
       method: 'POST',
@@ -94,7 +94,7 @@ class SubscriptionManager {
    * @param {!number} subscription
    */
   remove(csrftoken, form, target, environment, subscription) {
-    const request = new Request('/dashboard/preferences/subscriptions/' + subscription + '/', {
+    const request = new Request('subscriptions/' + subscription + '/', {
       credentials: 'same-origin',
       headers: {'X-CSRFToken': csrftoken},
       method: 'DELETE'
@@ -133,7 +133,7 @@ class SubscriptionManager {
     const csrftoken = e.target.form.elements.csrfmiddlewaretoken.value;
 
     if (subscription !== undefined) {
-      const request = new Request('/dashboard/preferences/subscriptions/' + subscription + '/', {
+      const request = new Request('subscriptions/' + subscription + '/', {
         credentials: 'same-origin',
         headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
         method: 'PATCH',
