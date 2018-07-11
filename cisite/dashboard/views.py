@@ -305,6 +305,9 @@ class Preferences(LoginRequiredMixin, BaseDashboardView):
         env_sub_pairs = []
 
         for env in environments['results']:
+            # don't show old environments
+            if env['successor'] is not None:
+                continue
             # grab first subscription that contains the current environment
             sub = next(filter(lambda sub: sub['environment'] == env['url'],
                               subscriptions['results']), None)
