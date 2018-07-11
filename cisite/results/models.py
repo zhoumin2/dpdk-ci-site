@@ -182,6 +182,9 @@ class Tarball(models.Model):
     patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
         related_name='tarballs', null=True, blank=True,
         help_text='Patchset this tarball was constructed from')
+    date = models.DateTimeField(
+        null=True, auto_now_add=True,
+        help_text='When this tarball was generated')
 
     def __str__(self):
         """Return string representation of tarball record."""
@@ -374,6 +377,10 @@ class Environment(models.Model):
         'self', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='successor',
         help_text='Environment that this was cloned from')
+    date = models.DateTimeField(
+        auto_now_add=True, null=True,
+        help_text='Date that this version of the environment was added to '
+                  'the test lab')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -497,6 +504,9 @@ class TestRun(models.Model):
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
         help_text='Environment that this test run was executed on',
         related_name='runs')
+    report_timestamp = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Date and time of last e-mail report of this test run')
 
     def clean(self):
         """Check that all expected measurements' environment matches."""

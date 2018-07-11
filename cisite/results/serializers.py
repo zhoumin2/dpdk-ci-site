@@ -206,8 +206,9 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
-                  'predecessor', 'successor')
-        read_only_fields = ('contacts', 'predecessor', 'successor')
+                  'predecessor', 'successor', 'date')
+        read_only_fields = ('contacts', 'predecessor', 'successor',
+                            'date')
 
     def validate(self, data):
         """Validate environment modification for inactive objects.
@@ -348,7 +349,8 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
 
         model = TestRun
         fields = ('url', 'timestamp', 'log_output_file',
-                  'tarball', 'results', 'environment')
+                  'tarball', 'results', 'environment',
+                  'report_timestamp')
 
     def update(self, instance, validated_data):
         """Update a test run based on the validated POST data.
@@ -411,8 +413,8 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer):
 
         model = Tarball
         fields = ('url', 'patchset', 'branch', 'commit_id', 'job_name',
-                  'build_id', 'tarball_url', 'runs', 'commit_url')
-        read_only_fields = ('commit_url',)
+                  'build_id', 'tarball_url', 'runs', 'date', 'commit_url')
+        read_only_fields = ('date', 'commit_url')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
