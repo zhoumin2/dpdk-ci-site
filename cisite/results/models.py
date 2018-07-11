@@ -96,6 +96,12 @@ class PatchSet(models.Model):
             uid=self.message_uid, actual=self.patches.count(),
             expected=self.patch_count)
 
+    @property
+    def time_to_last_test(self):
+        """Return the time from submission to last test run."""
+        tarball = self.tarballs.last()
+        return tarball.runs.last().timestamp - self.patches.first().date
+
     def patchwork_range_str(self):
         """Return the range of patchwork IDs as an HTML string."""
         res = str(self.patches.first().patchworks_id)
@@ -180,6 +186,10 @@ class Tarball(models.Model):
     def __str__(self):
         """Return string representation of tarball record."""
         return self.tarball_url
+
+    @property
+    def commit_url(self):
+        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
 
 def validate_contact_list(value):

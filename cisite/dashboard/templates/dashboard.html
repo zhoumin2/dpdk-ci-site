@@ -15,6 +15,9 @@
       <thead>
         <tr><th>ID</th><th>Ver</th><th>Title</th><th>Submitter</th>
           <th>Status [<a href="#" data-toggle="popover" title="Status Legend" data-content="<dl>{% for s in statuses %}<dt><span class=&quot;bg-{{ s.class }}&quot;>&nbsp;&nbsp;&nbsp;</span>&nbsp;{{ s.name }}</dt><dd>{{ s.tooltip }}</dd>{% endfor %}</dl>" data-html="true">?</a>]</th>
+          {% if request.user.is_superuser %}
+          <th>Time [<a href="#" data-toggle="popover" title="Time to Completion" data-content="The time it took from when the patchset was submitted to when the last test run completed.">?</a>]</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -25,6 +28,9 @@
           <td>{{ ps.patches.0.subject }}</td>
           <td>{{ ps.submitter }}</td>
           <td title="{{ ps.status_tooltip }}">{{ ps.status }}</td>
+          {% if request.user.is_superuser %}
+          <td class="text-nowrap">{{ ps.time_to_last_test }}</td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>

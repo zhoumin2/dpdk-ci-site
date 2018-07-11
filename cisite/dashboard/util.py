@@ -20,3 +20,9 @@ def api_session(request):
         if request.user.is_authenticated and 'api_sessionid' in request.session:
             s.cookies['sessionid'] = request.session['api_sessionid']
         yield s
+
+
+def format_timedelta(delta):
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f'{hours}h {minutes}m {seconds}s'
