@@ -294,7 +294,7 @@ class Preferences(LoginRequiredMixin, BaseDashboardView):
         context = super().get_context_data(**kwargs)
         with api_session(self.request) as s:
             api_resp = s.get(urljoin(settings.API_BASE_URL,
-                                     'subscriptions/'))
+                                     'subscriptions/?mine=true'))
             api_resp.raise_for_status()
             subscriptions = api_resp.json()
             api_resp = s.get(urljoin(settings.API_BASE_URL,

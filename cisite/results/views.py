@@ -13,7 +13,7 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from .filters import EnvironmentFilter, PatchSetFilter
+from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
     Subscription, Tarball, TestRun
 from . import permissions
@@ -159,6 +159,8 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     # this queryset is here to avoid the no "base_name" issue
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = SubscriptionFilter
 
     def get_queryset(self):
         """Only grab subscriptions of the user."""
