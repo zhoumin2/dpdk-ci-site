@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{% extends "preferences_base.html" %}
 {% load static %}
 
-{% block breadcrumb_items %}
-  <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-  <li class="breadcrumb-item active" aria-current="page">Preferences</li>
+{% block breadcrumb_preference %}
+  <li class="breadcrumb-item"><a href="{% url 'preferences' %}">Preferences</a></li>
+  <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
 {% endblock %}
 
-{% block content %}
-  <h2>My environments</h2>
+{% block preference %}
+  <h2>{{ title }}</h2>
   <div class="card">
     <ul class="list-group list-group-flush">
       {% for env_sub in env_sub_pairs %}
@@ -49,5 +49,5 @@
 {% block js %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-  <script src="{% static 'dashboard/preferences.js' %}"></script>
+  <script src="{% static 'dashboard/subscriptions.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+  {% block breadcrumb_preference %}
+  {% endblock %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-sm-4 col-lg-3">
+      <div class="nav flex-column nav-pills" role="tablist" aria-orientation="vertical">
+        <a class="nav-link{% if title == 'Subscriptions' %} active{% endif %}" href="{% url 'subscriptions' %}" role="tab">Subscriptions</a>
+      </div>
+    </div>
+    <div class="col">
+      <div class="tab-content">
+      {% block preference %}
+      {% endblock %}
+      </div>
+    </div>
+  </div>
+  <br>
+{% endblock %}

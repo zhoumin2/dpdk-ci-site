@@ -14,6 +14,7 @@ from django.views.generic import TemplateView, View
 from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 import json
 import math
@@ -309,10 +310,21 @@ class DashboardDetail(BaseDashboardView):
             return context
 
 
-class Preferences(LoginRequiredMixin, BaseDashboardView):
-    """Show user preferences for the environments."""
+class Preferences(LoginRequiredMixin, View):
+    """Show user preferences."""
 
-    template_name = 'preferences.html'
+    def get(self, *args, **kwargs):
+        """Redirect the user to the subscriptions page for now."""
+        return HttpResponseRedirect(reverse('subscriptions'))
+
+
+class Subscriptions(LoginRequiredMixin, BaseDashboardView):
+    """Show subscription preferences.
+
+    DELETE, PATCH, and POST are proxy subscription calls to REST API.
+    """
+
+    template_name = 'subscriptions.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -341,11 +353,8 @@ class Preferences(LoginRequiredMixin, BaseDashboardView):
             env_sub_pairs.append({'environment': env, 'subscription': sub})
 
         context['env_sub_pairs'] = env_sub_pairs
+        context['title'] = 'Subscriptions'
         return context
-
-
-class Subscriptions(LoginRequiredMixin, View):
-    """Proxy subscription calls to REST API."""
 
     def post(self, request, *args, **kwargs):
         """Pass post request to REST API."""
