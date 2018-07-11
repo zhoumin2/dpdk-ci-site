@@ -379,3 +379,28 @@ class Subscriptions(LoginRequiredMixin, BaseDashboardView):
             response = s.patch(url, data=json.loads(request.body))
             # default response does not contain a GET
             return JsonResponse(response.json(), status=response.status_code)
+
+
+class PasswordChangeForm(auth_forms.PasswordChangeForm):
+    """Bootstrap-themed password change form."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['old_password'].widget.attrs.update({'class': 'form-control'})
+        self.fields['new_password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['new_password2'].widget.attrs.update({'class': 'form-control'})
+
+
+class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
+    """Change password view."""
+
+    form_class = PasswordChangeForm
+
+    def form_valid(self, form):
+        """Force a login to refresh the API session."""
+        form.save()
+        return super(auth_views.PasswordChangeView, self).form_valid(form)
+
+
+class PasswordChangeDoneView(BaseDashboardView, auth_views.PasswordChangeDoneView):
+    """Inherit BaseDashboardView for context."""

@@ -25,3 +25,9 @@ if getattr(settings, 'ENABLE_PREFERENCES', True):
     urlpatterns.append(path('preferences/subscriptions/<int:subscription>/',
                             views.Subscriptions.as_view(),
                             name='subscriptions-detail'))
+    urlpatterns.append(path('preferences/password_change/',
+                            views.PasswordChangeView.as_view(),
+                            name='password_change'))
+    urlpatterns.append(path('preferences/password_change_done/',
+                            views.PasswordChangeDoneView.as_view(),
+                            name='password_change_done'))
