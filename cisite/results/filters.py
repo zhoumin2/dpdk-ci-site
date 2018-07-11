@@ -4,7 +4,7 @@ This file contains custom filter sets for the results application.
 """
 
 from django_filters.rest_framework import BooleanFilter, FilterSet
-from .models import Environment, PatchSet
+from .models import Environment, PatchSet, Subscription
 
 
 class EnvironmentFilter(FilterSet):
@@ -66,3 +66,31 @@ class PatchSetFilter(FilterSet):
             return queryset.with_tarball()
         else:
             return queryset.without_tarball()
+
+
+class SubscriptionFilter(FilterSet):
+    """Supply a "mine" filter for patch sets.
+
+    This filter create a "mine" parameter that only shows subscriptions where
+    the requesting user matches the subscriptions. This is only useful for
+    admins since they can see all subscriptions.
+    """
+
+    mine = BooleanFilter(
+        name='mine', label='mine', method='mine_filter',
+        help_text='If present, limits to only your subscriptions.')
+
+    class Meta:
+        """Set up class fields automatically."""
+        model = Subscription
+        fields = ()
+
+    def mine_filter(self, queryset, name, value):
+        """Filter based on the value of the mine query field."""
+        assert name == 'mine', 'Unexpected query field name'
+        if value:
+            return queryset.filter(
+                user_profile__exact=self.request.user.results_profile)
+        else:
+            return queryset.exclude(
+                user_profile__exact=self.request.user.results_profile)
