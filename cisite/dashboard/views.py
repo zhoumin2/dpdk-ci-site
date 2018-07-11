@@ -1,5 +1,6 @@
 """Define dashboard views."""
 
+from datetime import timedelta
 from logging import getLogger
 from http import HTTPStatus
 from urllib.parse import urljoin
@@ -13,11 +14,12 @@ from django.views.generic import TemplateView, View
 from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
+from django.utils.dateparse import parse_datetime
 import json
 import math
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
-from .util import api_session
+from .util import api_session, format_timedelta
 
 
 def text_color_classes(bg_class):
@@ -155,6 +157,19 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
+    def get_patchset_submitter(self, ps):
+        """Returns the patchset submitter as it should be output.
+
+        The output will be just the name for an anonymous user or the name
+        plus e-mail for a logged in user. This should prevent spambots from
+        harvesting e-mails off of our dashboard.
+        """
+        ret = ps.get('submitter_name') or '(unknown)'
+        request = self.request
+        if request.user.is_authenticated and ps.get('submitter_email'):
+            ret += ' <' + ps['submitter_email'] + '>'
+        return ret
+
     def add_static_context_data(self, context):
         """Add static context data included with every dashboard view.
 
@@ -216,10 +231,10 @@ class PatchSetList(BaseDashboardView):
 
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
-            ps['submitter'] = ps.get('submitter_name', None) or '(unknown)'
-            request = self.request
-            if request.user.is_authenticated and ps.get('submitter_email'):
-                ps['submitter'] += ' <' + ps['submitter_email'] + '>'
+            ps['submitter'] = self.get_patchset_submitter(ps)
+            if 'time_to_last_test' in ps:
+                ps['time_to_last_test'] = format_timedelta(
+                    timedelta(seconds=float(ps['time_to_last_test'])))
         return context
 
 
@@ -237,6 +252,10 @@ class DashboardDetail(BaseDashboardView):
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
                 raise Http404
             context['patchset'] = api_resp.json()
+            context['patchset']['date'] = parse_datetime(
+                context['patchset']['patches'][0]['date'])
+            context['patchset']['submitter'] = self.get_patchset_submitter(
+                context['patchset'])
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
             if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
@@ -249,12 +268,18 @@ class DashboardDetail(BaseDashboardView):
             context['runs'] = dict()
             if context['patchset'].get('tarballs', []):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
+                if tarball.get('date'):
+                    tarball['date'] = parse_datetime(tarball['date'])
+                context['tarball'] = tarball
                 context['runs'] = {x: None for x in envs}
                 for url in tarball['runs']:
                     resp = s.get(url)
                     if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     run = resp.json()
+                    run['timestamp'] = parse_datetime(run['timestamp'])
+                    delta = run['timestamp'] - context['patchset']['date']
+                    run['timedelta'] = format_timedelta(delta)
                     run['failure_count'] = 0
                     for result in run['results']:
                         result['measurement'] = s.get(result['measurement']).json()
@@ -267,7 +292,7 @@ class DashboardDetail(BaseDashboardView):
                     env_url = run['environment']
                     env = s.get(env_url).json()
                     while (env_url not in context['runs'].keys() and
-                           env.get('successor', None)):
+                           env.get('successor')):
                         env_url = env['successor']
                         env = s.get(env_url).json()
                     run['environment'] = env

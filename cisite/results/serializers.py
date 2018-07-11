@@ -91,9 +91,11 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'id', 'patch_count', 'patches', 'complete',
                   'is_public', 'apply_error', 'tarballs',
                   'patchwork_range_str', 'status', 'status_class',
-                  'status_tooltip', 'submitter_name', 'submitter_email')
+                  'status_tooltip', 'submitter_name', 'submitter_email',
+                  'time_to_last_test')
         read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
-                            'status', 'status_class', 'status_tooltip')
+                            'status', 'status_class', 'status_tooltip',
+                            'time_to_last_test')
 
     def get_submitter_name(self, obj):
         """Return the name of the submitter without the e-mail address."""
@@ -204,8 +206,9 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
-                  'predecessor', 'successor')
-        read_only_fields = ('contacts', 'predecessor', 'successor')
+                  'predecessor', 'successor', 'date')
+        read_only_fields = ('contacts', 'predecessor', 'successor',
+                            'date')
 
     def validate(self, data):
         """Validate environment modification for inactive objects.
@@ -346,7 +349,8 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer):
 
         model = TestRun
         fields = ('url', 'timestamp', 'log_output_file',
-                  'tarball', 'results', 'environment')
+                  'tarball', 'results', 'environment',
+                  'report_timestamp')
 
     def update(self, instance, validated_data):
         """Update a test run based on the validated POST data.
@@ -409,7 +413,8 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer):
 
         model = Tarball
         fields = ('url', 'patchset', 'branch', 'commit_id', 'job_name',
-                  'build_id', 'tarball_url', 'runs')
+                  'build_id', 'tarball_url', 'runs', 'date', 'commit_url')
+        read_only_fields = ('date', 'commit_url')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):

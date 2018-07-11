@@ -42,7 +42,8 @@ def create_test_environment(**kwargs):
                     nic_device_bustype="PCI", nic_pmd="i40e",
                     nic_firmware_version="5.05", kernel_version="4.14",
                     compiler_name="gcc", compiler_version="7.1",
-                    os_distro="Fedora26", bios_version="5.05")
+                    os_distro="Fedora26", bios_version="5.05",
+                    date=datetime.now(tz=pytz.utc))
     env_args.update(kwargs)
     return Environment.objects.create(**env_args)
 
@@ -307,7 +308,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         env_data2 = EnvironmentSerializer(env, context={'request': None}).data
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -325,7 +326,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         env_data2 = EnvironmentSerializer(env, context={'request': None}).data
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -344,7 +345,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertEqual(len(env_data2['measurements']), 1)
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -372,7 +373,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertEqual(len(env_data2['measurements']), 2)
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -394,7 +395,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertEqual(len(env_data2['measurements'][0]['parameters']), 3)
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -413,7 +414,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertEqual(len(env_data2['measurements'][0]['parameters']), 2)
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -432,7 +433,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertEqual(len(env_data2['measurements'][0]['parameters']), 1)
         self.assertSerializedNestedEqual(
             env_data, env_data2, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -446,7 +447,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
         self.assertIs(data['successor'], None)
         self.assertSerializedNestedEqual(
             self.__class__.initial_data, data, nested_lists=['measurements'],
-            excludes=['contacts', 'predecessor', 'successor'],
+            excludes=['contacts', 'predecessor', 'successor', 'date'],
             measurements_excludes=['environment'],
             measurements_nested_lists=['parameters'])
 
@@ -486,6 +487,7 @@ class TestRunSerializerTestCase(TestCase, SerializerAssertionMixin):
             log_output_file='http://host.invalid/log_file.txt',
             timestamp=datetime.now(tz=pytz.utc),
             environment=cls.env_url,
+            report_timestamp=None,
             results=[dict(result='PASS',
                           difference=-0.85,
                           expected_value=None,
