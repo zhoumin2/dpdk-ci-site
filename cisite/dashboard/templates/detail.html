@@ -13,6 +13,17 @@
       <dd class="col-10">{{ patchset.submitter }}</dd>
     </div>
     <div class="row">
+      <dt class="col">Baseline</dt>
+      <dd class="col-10">
+        {% if tarball.branch == 'dpdk' %}
+        master
+        {% else %}
+        {{ tarball.branch }}
+        {% endif %}
+        (<a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a>)
+      </dd>
+    </div>
+    <div class="row">
       <dt class="col">Date Submitted</dt>
       <dd class="col-10">{{ patchset.date|date:"DATETIME_FORMAT" }}</dd>
     </div>
