@@ -1,0 +1,156 @@
+#!/usr/bin/env python3.6
+
+"""Configure the DPDK CI site for local development purposes.
+
+Do *not* run this on the live site; that should be managed via Ansible.
+"""
+
+from datetime import datetime
+import logging
+import os
+import subprocess
+import shutil
+import sys
+
+REQUIREMENTS = 'requirements/local.txt'
+
+
+def log_checking(msg):
+    """Output a check header to standard out and the log file.
+
+    This is expected to be followed by a call to log_result() or run().
+    """
+    logging.info('%s', msg)
+    print(msg + '...', end='')
+
+
+def log_result(msg):
+    """Output a check result to standard out and the log file.
+
+    This is expected to be preceded by a call to log_checking().
+    """
+    logging.info('result: %s', msg)
+    print(msg)
+
+
+def which(cmd):
+    """Return the first occurrence of cmd in the user's PATH.
+
+    If there is no such executable, return None.
+    """
+    for d in os.getenv('PATH'):
+        path = os.path.join(d, cmd)
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def run(*args):
+    """Run the given command and log the result.
+
+    Takes the command as a sequence of words directly in the argument list.
+    This is expected to be preceded by a call to log_checking(). If the command
+    fails, this function raises subprocess.CalledProcessException.
+    """
+    logging.info('run command: %s', ' '.join(args))
+    p = subprocess.run(args, stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT)
+    logging.info('result: %d\n%s\n', p.returncode, p.stdout.decode('utf-8'))
+    try:
+        p.check_returncode()
+        print('success')
+    except subprocess.CalledProcessError:
+        print('failure')
+        raise
+
+
+def main():
+    """Run the main entry point of the configure script."""
+    if len(sys.argv) > 1:
+        print('Usage: configure', file=sys.stderr)
+        print('This script takes no arguments', file=sys.stderr)
+        if sys.argv[1].lower() in ['--help', '-help', '-h']:
+            sys.exit(0)
+        else:
+            sys.exit(1)
+
+    if os.geteuid() == 0 or os.getuid() == 0:
+        print('Do not run this script as root', file=sys.stderr)
+        sys.exit(1)
+
+    logging.basicConfig(filename='config.log', filemode='w',
+                        level=logging.INFO)
+
+    logging.info(f'configure for DPDK cisite run at {datetime.now()}')
+    if os.path.isdir('.git'):
+        version = subprocess.run(['git', 'describe'], stdout=subprocess.PIPE)
+        if version.returncode == 0:
+            logging.info(f'DPDK cisite version {version.stdout}')
+    logging.info(f'command line: {" ".join(sys.argv)}')
+
+    log_checking('Checking for pre-commit tool in PATH')
+    pre_commit_exe = which('pre-commit')
+    if pre_commit_exe:
+        log_result(pre_commit_exe)
+        log_checking('Install pre-commit hook')
+        run('pre-commit', 'install', '--hook-type', 'pre-commit')
+        log_checking('Install commit-msg hook')
+        run('pre-commit', 'install', '--hook-type', 'commit-msg')
+    else:
+        log_result('not found')
+
+    log_checking('Checking for Python 3.6 in PATH')
+    py_exe = which('python3.6')
+    if py_exe:
+        log_result(py_exe)
+    else:
+        log_result('not found')
+
+    log_checking('Creating virtual environment in env')
+    if os.path.isdir('venv'):
+        log_result('already exists')
+    else:
+        run(py_exe, '-m', 'venv', 'venv')
+        log_result('done')
+
+    curdir = os.path.realpath(os.curdir)
+    py_exe = os.path.join(curdir, 'venv/bin/python3')
+    pip_exe = os.path.join(curdir, 'venv/bin/pip3')
+
+    log_checking('Installing latest version of pip and setuptools')
+    run(pip_exe, 'install', '--upgrade', 'pip', 'setuptools')
+
+    log_checking('Installing project requirements')
+    run(pip_exe, 'install', '-r', REQUIREMENTS)
+
+    log_checking('Installing settings.py')
+    if os.path.isfile('cisite/cisite/settings.py'):
+        log_result('already present')
+    else:
+        shutil.copy('cisite/cisite/settings_dev_default.py',
+                    'cisite/cisite/settings.py')
+        log_result('installed')
+
+    os.chdir('cisite')
+    log_checking('Check if database exists')
+    have_db = os.path.isfile('db.sqlite3')
+    log_result('yes' if have_db else 'no')
+
+    log_checking('Create database if needed and apply migrations')
+    run(py_exe, 'manage.py', 'migrate')
+
+    if not have_db:
+        log_checking('Load sample data into database')
+        run(py_exe, 'manage.py', 'loaddata', 'demo')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except SystemExit:
+        # Let a sys.exit() progress as normal
+        raise
+    except Exception:
+        print('Read config.log for more detailed log information.',
+              file=sys.stderr)
+        sys.exit(1)
