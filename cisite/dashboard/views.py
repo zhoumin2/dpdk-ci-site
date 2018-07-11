@@ -157,6 +157,19 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
+    def get_patchset_submitter(self, ps):
+        """Returns the patchset submitter as it should be output.
+
+        The output will be just the name for an anonymous user or the name
+        plus e-mail for a logged in user. This should prevent spambots from
+        harvesting e-mails off of our dashboard.
+        """
+        ret = ps.get('submitter_name', None) or '(unknown)'
+        request = self.request
+        if request.user.is_authenticated and ps.get('submitter_email'):
+            ret += ' <' + ps['submitter_email'] + '>'
+        return ret
+
     def add_static_context_data(self, context):
         """Add static context data included with every dashboard view.
 
@@ -218,10 +231,7 @@ class PatchSetList(BaseDashboardView):
 
         for ps in context['patchsets']:
             ps['id'] = int(ps['url'].split('/')[-2])
-            ps['submitter'] = ps.get('submitter_name', None) or '(unknown)'
-            request = self.request
-            if request.user.is_authenticated and ps.get('submitter_email'):
-                ps['submitter'] += ' <' + ps['submitter_email'] + '>'
+            ps['submitter'] = self.get_patchset_submitter(ps)
             if 'time_to_last_test' in ps:
                 ps['time_to_last_test'] = format_timedelta(
                     timedelta(seconds=float(ps['time_to_last_test'])))
@@ -244,12 +254,8 @@ class DashboardDetail(BaseDashboardView):
             context['patchset'] = api_resp.json()
             context['patchset']['date'] = parse_datetime(
                 context['patchset']['patches'][0]['date'])
-            context['patchset']['submitter'] = context['patchset'].get(
-                'submitter_name', None) or '(unknown)'
-            if self.request.user.is_authenticated and \
-                    context['patchset'].get('submitter_email'):
-                context['patchset']['submitter'] += (
-                    ' <' + context['patchset']['submitter_email'] + '>')
+            context['patchset']['submitter'] = self.get_patchset_submitter(
+                context['patchset'])
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
                          params={'active': 'true'})
             if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
