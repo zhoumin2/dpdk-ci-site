@@ -164,7 +164,7 @@ class BaseDashboardView(TemplateView):
         plus e-mail for a logged in user. This should prevent spambots from
         harvesting e-mails off of our dashboard.
         """
-        ret = ps.get('submitter_name', None) or '(unknown)'
+        ret = ps.get('submitter_name') or '(unknown)'
         request = self.request
         if request.user.is_authenticated and ps.get('submitter_email'):
             ret += ' <' + ps['submitter_email'] + '>'
@@ -292,7 +292,7 @@ class DashboardDetail(BaseDashboardView):
                     env_url = run['environment']
                     env = s.get(env_url).json()
                     while (env_url not in context['runs'].keys() and
-                           env.get('successor', None)):
+                           env.get('successor')):
                         env_url = env['successor']
                         env = s.get(env_url).json()
                     run['environment'] = env
