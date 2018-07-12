@@ -115,17 +115,22 @@ class PatchSet(models.Model):
             return "Apply Error"
         elif not self.tarballs.exists():
             return "Pending"
-        elif not self.tarballs.last().runs.exists():
+
+        tarball = self.tarballs.last()
+        if not tarball.runs.exists():
             return "Waiting"
+
+        Environment = apps.get_model('results', 'Environment')
+        active_envs = Environment.objects.filter(successor__isnull=True)
+        my_trs = {env.id: env.all_runs.filter(tarball__id=tarball.id).last()
+                  for env in active_envs.iterator()}
+        if None in my_trs.values():
+            return "Incomplete"
+        if True in [tr.results.filter(result="FAIL").exists()
+                    for tr in my_trs.values()]:
+            return "Possible Regression"
         else:
-            trs = self.tarballs.last().runs
-            Environment = apps.get_model('results', 'Environment')
-            if trs.count() < Environment.objects.filter(successor__isnull=True).count():
-                return "Incomplete"
-            if trs.filter(results__result="FAIL").exists():
-                return "Possible Regression"
-            else:
-                return "Pass"
+            return "Pass"
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
@@ -423,6 +428,23 @@ class Environment(models.Model):
                 generation += 1
                 p = p.predecessor
         return '{0:s} (v{1:d})'.format(self.inventory_id, generation)
+
+    @property
+    def all_ids(self):
+        """Return a list containing id of this and all predecessors."""
+        ids = []
+        pred = getattr(self, 'predecessor', None)
+        if pred:
+            ids = pred.all_ids
+        ids.append(self.id)
+        return ids
+
+    @property
+    def all_runs(self):
+        """Return queryset containing runs of this and all predecessors."""
+        TestRun = apps.get_model('results', 'TestRun')
+        qs = TestRun.objects.filter(environment__id__in=self.all_ids)
+        return qs
 
 
 class Measurement(models.Model):
