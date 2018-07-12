@@ -5,7 +5,9 @@ from logging import getLogger
 from http import HTTPStatus
 from urllib.parse import urljoin
 import requests.exceptions
+from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import views as auth_views
@@ -20,7 +22,7 @@ import json
 import math
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
-from .util import api_session, format_timedelta
+from .util import api_session, format_timedelta, ipa_session
 
 
 def text_color_classes(bg_class):
@@ -382,13 +384,35 @@ class Subscriptions(LoginRequiredMixin, BaseDashboardView):
 
 
 class PasswordChangeForm(auth_forms.PasswordChangeForm):
-    """Bootstrap-themed password change form."""
+    """Password change form with IPA and bootstrap integration."""
 
     def __init__(self, *args, **kwargs):
+        """Bootstrap-themed password change form."""
         super().__init__(*args, **kwargs)
         self.fields['old_password'].widget.attrs.update({'class': 'form-control'})
         self.fields['new_password1'].widget.attrs.update({'class': 'form-control'})
         self.fields['new_password2'].widget.attrs.update({'class': 'form-control'})
+
+    def clean_old_password(self):
+        """Verify password differently when using ldap for authentication.
+
+        Verify the old password is valid by trying to create a session to IPAs
+        REST API.
+        """
+        if 'django_auth_ldap.backend.LDAPBackend' in\
+                settings.AUTHENTICATION_BACKENDS:
+            with ipa_session(self.user.username,
+                             self.cleaned_data['old_password']) as\
+                    (session, resp, ipa_url):
+                if resp.ok:
+                    return self.cleaned_data['old_password']
+                else:
+                    raise forms.ValidationError(
+                        self.error_messages['password_incorrect'],
+                        code='password_incorrect',
+                    )
+        else:
+            return super().clean_old_password()
 
 
 class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
@@ -397,8 +421,41 @@ class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
     form_class = PasswordChangeForm
 
     def form_valid(self, form):
-        """Force a login to refresh the API session."""
-        form.save()
+        """Handle changing password through IPA.
+
+        Also force a login to refresh the API session. (by removing the
+        `update_session_auth_hash` method that is in super())
+        """
+        if 'django_auth_ldap.backend.LDAPBackend' in\
+                settings.AUTHENTICATION_BACKENDS:
+
+            with ipa_session(self.request.user.username,
+                             form.cleaned_data['old_password']) as\
+                    (session, resp, ipa_url):
+                resp.raise_for_status()
+
+                data = {
+                    'method': 'user_mod',
+                    'params': [
+                        [self.request.user.username],
+                        {
+                            'version': '2.215',
+                            'userpassword': form.cleaned_data['new_password1']
+                        }
+                    ]
+                }
+                resp = session.post(urljoin(ipa_url, 'session/json'),
+                                    json=data)
+                resp.raise_for_status()
+
+                resp_json = resp.json()
+                if resp_json['error']:
+                    messages.error(self.request, resp_json['error']['message'])
+                    return HttpResponseRedirect(reverse('password_change'))
+                else:
+                    return HttpResponseRedirect(self.get_success_url())
+        else:
+            form.save()
         return super(auth_views.PasswordChangeView, self).form_valid(form)
 
 

@@ -49,6 +49,10 @@ without activating the virtual environment first, since it looks for
 * `ENABLE_ADMIN`: If False, remove the URL route for the Django admin Web
   interface.
 
+* `IPA_URL`: If IPA LDAP authentication is used, then while changing the
+  password, it will use this url to change the password via IPA's REST API.
+  `CA_CERT_BUNDLE` also needs to be set.
+
 ## Running the server
 
 ```
