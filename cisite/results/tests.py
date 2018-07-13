@@ -4,9 +4,10 @@ from copy import deepcopy
 from datetime import datetime
 import pytz
 from django.contrib.auth.models import User, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.http.request import HttpRequest
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 import rest_framework.exceptions
@@ -20,11 +21,13 @@ from .serializers import PatchSerializer, EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
 
 
-def create_test_run(environment):
+def create_test_run(environment, tarball=None):
     """Create a dummy test run object for use by tests."""
-    tb = Tarball.objects.create(
-        branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
-        commit_id="0000000000000000000000000000000000000000")
+    tb = tarball
+    if not tb:
+        tb = Tarball.objects.create(
+            branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
+            commit_id="0" * 40)
     return TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
                                   log_output_file='/foo/bar',
                                   tarball=tb, environment=environment)
@@ -651,19 +654,19 @@ class EnvironmentHyperlinkedFieldTestCase(TestCase):
             ordered=False)
 
 
-class PatchSetModelTestCase(TestCase):
+class PatchSetModelTestCase(TransactionTestCase):
     """Test the PatchSet and Patch models."""
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up dummy test data."""
-        cls.test_ps = PatchSet.objects.create(patch_count=3,
+    def setUp(self):
+        """Reset model properties."""
+        super().setUp()
+        self.test_ps = PatchSet.objects.create(patch_count=3,
             message_uid='20171023231534.90996')
         Patch.objects.create(patchworks_id=30741,
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               message_id='20171023231534.90996-1-ferruh.yigit@intel.com',
               subject='ethdev: extract xstat basic stat count calculation',
-              patchset=cls.test_ps,
+              patchset=self.test_ps,
               version='v2',
               patch_number=1,
               date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=pytz.utc))
@@ -671,25 +674,37 @@ class PatchSetModelTestCase(TestCase):
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               message_id='20171023231534.90996-2-ferruh.yigit@intel.com',
               subject='ethdev: fix xstats get by id APIS',
-              patchset=cls.test_ps,
+              patchset=self.test_ps,
               version='v2',
               patch_number=2,
               date=datetime(2017, 10, 23, 23, 15, 33, tzinfo=pytz.utc))
+        self.env1 = create_test_environment(inventory_id='IOL-IOL-1')
+        Measurement.objects.create(name='throughput', unit='Mpps',
+                                   higher_is_better=True,
+                                   environment=self.env1)
+        self.env2 = create_test_environment(inventory_id='IOL-IOL-2')
+        Measurement.objects.create(name='throughput', unit='Mpps',
+                                   higher_is_better=True,
+                                   environment=self.env2)
 
-    @classmethod
-    def add_last_patch(cls):
+    def tearDown(self):
+        """Clear cache to fix an IntegrityError bug."""
+        ContentType.objects.clear_cache()
+        super().tearDown()
+
+    def add_last_patch(self):
         Patch.objects.create(patchworks_id=30743,
               message_id='20171023231534.90996-3-ferruh.yigit@intel.com',
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               subject='ethdev: fix xstats get by id APIS',
-              patchset=cls.test_ps,
+              patchset=self.test_ps,
               version='v2',
               patch_number=2,
               date=datetime(2017, 10, 23, 23, 15, 34, tzinfo=pytz.utc))
 
     def test_incomplete_property(self):
         """Test that complete returns False for an incomplete patch set."""
-        self.assertFalse(self.__class__.test_ps.complete)
+        self.assertFalse(self.test_ps.complete)
 
     def test_incomplete_query_works(self):
         """Test that the PatchSetQuerySet incomplete query works."""
@@ -701,29 +716,102 @@ class PatchSetModelTestCase(TestCase):
 
     def test_incomplete_str(self):
         """Test string representation of incomplete patch set."""
-        self.assertEqual(str(self.__class__.test_ps),
+        self.assertEqual(str(self.test_ps),
                          '20171023231534.90996 2/3')
 
     def test_complete_property(self):
         """Test string representation of incomplete patch set."""
-        self.__class__.add_last_patch()
-        self.assertTrue(self.__class__.test_ps.complete)
+        self.add_last_patch()
+        self.assertTrue(self.test_ps.complete)
 
     def test_complete_query_works(self):
         """Test that the PatchSetQuerySet complete query works."""
-        self.__class__.add_last_patch()
+        self.add_last_patch()
         self.assertTrue(PatchSet.objects.complete().exists())
 
     def test_complete_incomplete_query(self):
         """Test that incomplete query does not return complete patch set."""
-        self.__class__.add_last_patch()
+        self.add_last_patch()
         self.assertFalse(PatchSet.objects.incomplete().exists())
 
     def test_complete_str(self):
         """Test string representation of complete patch set."""
-        self.__class__.add_last_patch()
-        self.assertEqual(str(self.__class__.test_ps),
+        self.add_last_patch()
+        self.assertEqual(str(self.test_ps),
                          '20171023231534.90996 3/3')
+
+    def test_status_pending(self):
+        """Verify that status with no tarball is Pending."""
+        self.assertEqual(self.test_ps.status, 'Pending')
+
+    def test_status_apply_error(self):
+        """Verify that status shows Apply Error if that is the case."""
+        ps = PatchSet.objects.create(patch_count=1, apply_error=True,
+                                     message_uid='20180712203921.12742')
+        self.assertEqual(ps.status, 'Apply Error')
+
+    def test_status_waiting(self):
+        """Verify that status with tarball but no results is Waiting."""
+        Tarball.objects.create(branch="master", commit_id="0" * 40,
+                               tarball_url='http://host.invalid/dpdk.tar.gz',
+                               patchset=self.test_ps)
+        self.assertEqual(self.test_ps.status, 'Waiting')
+
+    def test_status_incomplete(self):
+        """Verify that status is Incomplete where needed."""
+        run = create_test_run(self.env1)
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        self.assertEqual(self.test_ps.status, 'Incomplete')
+
+    def test_status_pass(self):
+        """Verify that status is Pass where needed."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, run.tarball)
+        TestResult.objects.create(result='PASS', difference=-0.021,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        self.assertEqual(self.test_ps.status, 'Pass')
+
+    def test_status_fail(self):
+        """Verify that status is Possible Regression where needed."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='FAIL', difference=-1.576,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        self.assertEqual(self.test_ps.status, 'Possible Regression')
+
+    def test_status_use_latest(self):
+        """Verify that only uses latest test run for each environment."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='FAIL', difference=-1.576,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='PASS', difference=0.017,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        self.assertEqual(self.test_ps.status, 'Pass')
 
 
 class OwnerTestCase(TestCase):

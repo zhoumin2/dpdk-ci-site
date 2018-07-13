@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q, F, Count
+from django.utils.functional import cached_property
 
 
 def get_admin_group():
@@ -109,32 +110,39 @@ class PatchSet(models.Model):
             res += '&ndash;' + str(self.patches.last().patchworks_id)
         return res
 
+    @cached_property
     def status(self):
         """Return the status string to be displayed on the dashboard."""
         if self.apply_error:
             return "Apply Error"
         elif not self.tarballs.exists():
             return "Pending"
-        elif not self.tarballs.last().runs.exists():
+
+        tarball = self.tarballs.last()
+        if not tarball.runs.exists():
             return "Waiting"
-        else:
-            trs = self.tarballs.last().runs
-            Environment = apps.get_model('results', 'Environment')
-            if trs.count() < Environment.objects.filter(successor__isnull=True).count():
+
+        Environment = apps.get_model('results', 'Environment')
+        active_envs = Environment.objects.filter(successor__isnull=True)
+        my_trs = {env.id: env.all_runs.filter(tarball__id=tarball.id).last()
+                  for env in active_envs.iterator()}
+        for x in my_trs.values():
+            if x is None:
                 return "Incomplete"
-            if trs.filter(results__result="FAIL").exists():
-                return "Possible Regression"
-            else:
-                return "Pass"
+        if True in [tr.results.filter(result="FAIL").exists()
+                    for tr in my_trs.values()]:
+            return "Possible Regression"
+        else:
+            return "Pass"
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
-        return self.statuses.get(self.status(), dict()).get('class', 'warning')
+        return self.statuses.get(self.status, dict()).get('class', 'warning')
 
     def status_tooltip(self):
         """Return the status tooltip to be used on the dashboard."""
-        return self.statuses.get(self.status(), dict()).get('tooltip',
-                                                            self.status())
+        return self.statuses.get(self.status, dict()).get('tooltip',
+                                                          self.status)
 
 
 class Branch(models.Model):
@@ -423,6 +431,23 @@ class Environment(models.Model):
                 generation += 1
                 p = p.predecessor
         return '{0:s} (v{1:d})'.format(self.inventory_id, generation)
+
+    @property
+    def all_ids(self):
+        """Return a list containing id of this and all predecessors."""
+        ids = []
+        pred = getattr(self, 'predecessor', None)
+        if pred:
+            ids = pred.all_ids
+        ids.append(self.id)
+        return ids
+
+    @property
+    def all_runs(self):
+        """Return queryset containing runs of this and all predecessors."""
+        TestRun = apps.get_model('results', 'TestRun')
+        qs = TestRun.objects.filter(environment__id__in=self.all_ids)
+        return qs
 
 
 class Measurement(models.Model):
