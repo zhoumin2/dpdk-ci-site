@@ -46,7 +46,7 @@
     {% if 'url' not in r %}
     <p>The tests were not run for this environment.</p>
     {% else %}
-    {% if not r.environment.live_since or r.environment.live_since <= r.timestamp %}
+    {% if not r.environment.live_since or r.environment.live_since > r.timestamp %}
     <p>Note: This run does not affect the overall result above.</p>
     {% endif %}
     <h3>Environment Info</h3>

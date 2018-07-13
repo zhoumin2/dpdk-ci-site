@@ -295,6 +295,8 @@ class DashboardDetail(BaseDashboardView):
                            env.get('successor')):
                         env_url = env['successor']
                         env = s.get(env_url).json()
+                    if env.get('live_since'):
+                        env['live_since'] = parse_datetime(env['live_since'])
                     run['environment'] = env
                     context['runs'][env_url] = run
 
