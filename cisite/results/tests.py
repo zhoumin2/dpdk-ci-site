@@ -181,6 +181,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
             compiler_name="gcc",
             compiler_version="7.2.1-2",
             bios_version="4.2",
+            live_since=None,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
