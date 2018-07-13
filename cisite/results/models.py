@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q, F, Count
+from django.utils.functional import cached_property
 
 
 def get_admin_group():
@@ -109,6 +110,7 @@ class PatchSet(models.Model):
             res += '&ndash;' + str(self.patches.last().patchworks_id)
         return res
 
+    @cached_property
     def status(self):
         """Return the status string to be displayed on the dashboard."""
         if self.apply_error:
@@ -124,8 +126,9 @@ class PatchSet(models.Model):
         active_envs = Environment.objects.filter(successor__isnull=True)
         my_trs = {env.id: env.all_runs.filter(tarball__id=tarball.id).last()
                   for env in active_envs.iterator()}
-        if None in my_trs.values():
-            return "Incomplete"
+        for x in my_trs.values():
+            if x is None:
+                return "Incomplete"
         if True in [tr.results.filter(result="FAIL").exists()
                     for tr in my_trs.values()]:
             return "Possible Regression"
@@ -134,12 +137,12 @@ class PatchSet(models.Model):
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
-        return self.statuses.get(self.status(), dict()).get('class', 'warning')
+        return self.statuses.get(self.status, dict()).get('class', 'warning')
 
     def status_tooltip(self):
         """Return the status tooltip to be used on the dashboard."""
-        return self.statuses.get(self.status(), dict()).get('tooltip',
-                                                            self.status())
+        return self.statuses.get(self.status, dict()).get('tooltip',
+                                                          self.status)
 
 
 class Branch(models.Model):
