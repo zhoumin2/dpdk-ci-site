@@ -122,8 +122,11 @@ class PatchSet(models.Model):
         if not tarball.runs.exists():
             return "Waiting"
 
+        date = self.patches.first().date
         Environment = apps.get_model('results', 'Environment')
-        active_envs = Environment.objects.filter(successor__isnull=True)
+        active_envs = Environment.objects.filter(
+            Q(live_since__isnull=True) | Q(live_since__lte=date),
+            successor__isnull=True)
         my_trs = {env.id: env.all_runs.filter(tarball__id=tarball.id).last()
                   for env in active_envs.iterator()}
         for x in my_trs.values():
@@ -391,6 +394,10 @@ class Environment(models.Model):
         auto_now_add=True, null=True,
         help_text='Date that this version of the environment was added to '
                   'the test lab')
+    live_since = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Date since which results should be included in the '
+                  'overall result on the dashboard')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
