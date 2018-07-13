@@ -32,7 +32,7 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
-    queryset = PatchSet.objects.all()
+    queryset = PatchSetSerializer.setup_eager_loading(PatchSet.objects.all())
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PatchSetFilter
@@ -54,7 +54,7 @@ class TarballViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of tarballs for testing."""
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
-    queryset = Tarball.objects.all()
+    queryset = TarballSerializer.setup_eager_loading(Tarball.objects.all())
     serializer_class = TarballSerializer
     filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
 
@@ -63,7 +63,7 @@ class PatchViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of patches."""
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
-    queryset = Patch.objects.all()
+    queryset = PatchSerializer.setup_eager_loading(Patch.objects.all())
     serializer_class = PatchSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_fields = ('patchworks_id', 'is_rfc', 'submitter', 'pw_is_active')
@@ -78,7 +78,8 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
 
     filter_backends = (DjangoFilterBackend, OrderingFilter, DjangoObjectPermissionsFilter,)
     permission_classes = (permissions.OwnerReadCreateOnly,)
-    queryset = Environment.objects.all()
+    queryset = EnvironmentSerializer.setup_eager_loading(
+        Environment.objects.all())
     serializer_class = EnvironmentSerializer
     filter_class = EnvironmentFilter
 
@@ -103,7 +104,8 @@ class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
 
     filter_backends = (DjangoObjectPermissionsFilter,)
     permission_classes = (permissions.OwnerReadCreateOnly,)
-    queryset = Measurement.objects.all()
+    queryset = MeasurementSerializer.setup_eager_loading(
+        Measurement.objects.all())
     serializer_class = MeasurementSerializer
 
 
@@ -112,7 +114,7 @@ class TestRunViewSet(viewsets.ModelViewSet):
 
     filter_backends = (DjangoObjectPermissionsFilter,)
     permission_classes = (permissions.OwnerReadCreateOnly,)
-    queryset = TestRun.objects.all()
+    queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
     serializer_class = TestRunSerializer
 
 
@@ -137,7 +139,8 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
 
     lookup_field = 'username'
     permission_classes = (IsAdminUser,)
-    queryset = User.objects.exclude(username__in=('AnonymousUser',))
+    queryset = UserSerializer.setup_eager_loading(
+        User.objects.exclude(username__in=('AnonymousUser',)))
     serializer_class = UserSerializer
 
     def get_object(self):
