@@ -21,6 +21,31 @@ def qs_get_missing(queryset, data):
     return queryset.filter(pk__in=qs_ids)
 
 
+class EagerLoadingMixin:
+    """Set up eager loading.
+
+    When using this mixin, the following attributes will be used:
+    _SELECT_RELATED_FIELDS: Fields that the serializer uses that have a
+        to-one relation.
+    _PREFETCH_RELATED_FIELDS: Fields that the serializer uses that have a
+        to-many relation.
+
+    Taken from: https://ses4j.github.io/2015/11/23/optimizing-slow-django-rest-framework-performance/
+    """
+
+    @classmethod
+    def setup_eager_loading(cls, queryset):
+        """Set eager loading to prefetch requests.
+
+        Call this method when getting the queryset.
+        """
+        if hasattr(cls, "_SELECT_RELATED_FIELDS"):
+            queryset = queryset.select_related(*cls._SELECT_RELATED_FIELDS)
+        if hasattr(cls, "_PREFETCH_RELATED_FIELDS"):
+            queryset = queryset.prefetch_related(*cls._PREFETCH_RELATED_FIELDS)
+        return queryset
+
+
 class EnvironmentHyperlinkedField(serializers.HyperlinkedRelatedField):
     """Environment field to only show environments the user can access.
 
@@ -39,8 +64,11 @@ class EnvironmentHyperlinkedField(serializers.HyperlinkedRelatedField):
             accept_global_perms=False)
 
 
-class PatchSerializer(serializers.HyperlinkedModelSerializer):
+class PatchSerializer(serializers.HyperlinkedModelSerializer,
+                      EagerLoadingMixin):
     """Serialize Patch objects."""
+
+    _SELECT_RELATED_FIELDS = ('patchset',)
 
     patchset_count = serializers.IntegerField(default=1,
         help_text='Number of patches in the patchset')
@@ -75,10 +103,12 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer):
         return patch
 
 
-class PatchSetSerializer(serializers.HyperlinkedModelSerializer):
+class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
+                         EagerLoadingMixin):
     """Serialize PatchSet objects."""
 
     _SUBMITTER_RE = re.compile("(?P<name>.+) *<(?P<email>.+@.+)>")
+    _PREFETCH_RELATED_FIELDS = ('patches', 'tarballs')
 
     patches = PatchSerializer(many=True, read_only=True)
     submitter_name = serializers.SerializerMethodField()
@@ -130,8 +160,11 @@ class ParameterSerializer(serializers.HyperlinkedModelSerializer):
         filter_fields = ('name', 'unit')
 
 
-class MeasurementSerializer(serializers.HyperlinkedModelSerializer):
+class MeasurementSerializer(serializers.HyperlinkedModelSerializer,
+                            EagerLoadingMixin):
     """Serialize measurement objects."""
+
+    _PREFETCH_RELATED_FIELDS = ('parameters',)
 
     id = serializers.IntegerField(required=False)
     parameters = ParameterSerializer(many=True, required=False)
@@ -182,8 +215,13 @@ class SubscriptionSerializer(serializers.HyperlinkedModelSerializer):
         return Subscription.objects.create(user_profile_id=user_id, **validated_data)
 
 
-class EnvironmentSerializer(serializers.HyperlinkedModelSerializer):
+class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
+                            EagerLoadingMixin):
     """Serialize environment objects."""
+
+    _SELECT_RELATED_FIELDS = ('contact_policy',)
+    _PREFETCH_RELATED_FIELDS = ('measurements', 'measurements__parameters',
+                                'contacts')
 
     READONLY_FMT = "cannot {verb} {object} if environment has test runs"
 
@@ -338,8 +376,12 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ('result_class',)
 
 
-class TestRunSerializer(serializers.HyperlinkedModelSerializer):
+class TestRunSerializer(serializers.HyperlinkedModelSerializer,
+                        EagerLoadingMixin):
     """Serialize test run objects."""
+
+    _SELECT_RELATED_FIELDS = ('environment', 'tarball')
+    _PREFETCH_RELATED_FIELDS = ('results',)
 
     results = TestResultSerializer(many=True)
     environment = EnvironmentHyperlinkedField()
@@ -402,8 +444,12 @@ class BranchSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 
-class TarballSerializer(serializers.HyperlinkedModelSerializer):
+class TarballSerializer(serializers.HyperlinkedModelSerializer,
+                        EagerLoadingMixin):
     """Serialize Tarball objects."""
+
+    _SELECT_RELATED_FIELDS = ('patchset',)
+    _PREFETCH_RELATED_FIELDS = ('runs',)
 
     runs = serializers.HyperlinkedRelatedField(many=True, read_only=True,
                                                view_name='testrun-detail')
@@ -427,8 +473,11 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.HyperlinkedModelSerializer,
+                     EagerLoadingMixin):
     """Serialize user objects."""
+
+    _PREFETCH_RELATED_FIELDS = ('groups',)
 
     class Meta:
         """Specify metadata for group serializer."""
