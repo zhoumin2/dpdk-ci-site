@@ -38,12 +38,12 @@ def create_test_environment(**kwargs):
                     cpu_cores_per_socket=1, cpu_threads_per_core=1,
                     ram_type="DDR4", ram_size=65536, ram_channel_count=2,
                     ram_frequency=2400, nic_make="Intel",
-                    nic_model="XL710", nic_device_id="01:00.0",
-                    nic_device_bustype="PCI", nic_pmd="i40e",
-                    nic_firmware_version="5.05", kernel_version="4.14",
-                    compiler_name="gcc", compiler_version="7.1",
-                    os_distro="Fedora26", bios_version="5.05",
-                    date=datetime.now(tz=pytz.utc))
+                    nic_model="XL710", nic_dtscodename="fortville",
+                    nic_device_id="01:00.0", nic_device_bustype="PCI",
+                    nic_pmd="i40e", nic_firmware_version="5.05",
+                    kernel_version="4.14", compiler_name="gcc",
+                    compiler_version="7.1", os_distro="Fedora26",
+                    bios_version="5.05", date=datetime.now(tz=pytz.utc))
     env_args.update(kwargs)
     return Environment.objects.create(**env_args)
 
@@ -165,6 +165,7 @@ class EnvironmentSerializerTestCase(TestCase, SerializerAssertionMixin):
             nic_make="Vendor",
             nic_model="Model S",
             nic_speed=10000,
+            nic_dtscodename="models",
             nic_device_id="07:00.0",
             nic_device_bustype="PCI",
             nic_pmd="models",

@@ -345,8 +345,10 @@ class Environment(models.Model):
         help_text='RAM frequency in megahertz for Device Under Test')
     nic_make = models.CharField(max_length=64,
         help_text='Manufaturer of NIC under test')
-    nic_model = models.CharField(max_length=64,
-        help_text='Model of NIC under test')
+    nic_model = models.CharField(max_length=191,
+        help_text='Official model name of NIC under test')
+    nic_dtscodename = models.CharField(max_length=64, blank=True,
+        help_text='Codename of NIC under test as defined by DTS')
     nic_speed = models.PositiveIntegerField(default=10000,
         help_text='Speed of NIC link(s) used for testing')
     nic_device_id = models.CharField(max_length=64,
