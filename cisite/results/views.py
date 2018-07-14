@@ -15,12 +15,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
-    Subscription, Tarball, TestRun
+    Subscription, Tarball, TestCase, TestRun
 from . import permissions
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
-    TestRunSerializer, UserSerializer
+    TestCaseSerializer, TestRunSerializer, UserSerializer
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
@@ -99,8 +99,15 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
                         headers=headers)
 
 
+class TestCaseViewSet(viewsets.ReadOnlyModelViewSet):
+    """Display the available test cases."""
+
+    queryset = TestCase.objects.all()
+    serializer_class = TestCaseSerializer
+
+
 class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
-    """Provide a read-write view of measurements."""
+    """Provide a read-only view of measurements."""
 
     filter_backends = (DjangoObjectPermissionsFilter,)
     permission_classes = (permissions.OwnerReadCreateOnly,)
