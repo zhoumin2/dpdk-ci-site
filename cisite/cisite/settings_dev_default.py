@@ -32,6 +32,12 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend'
 )
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 #DASHBOARD_BANNER = {
 #    'bg_class': 'warning',
 #    'text': 'hello world'
