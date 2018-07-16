@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from .models import Branch, ContactPolicy, Environment, Measurement, \
-    Parameter, PatchSet, Patch, Tarball, TestResult, TestRun, \
+    Parameter, PatchSet, Patch, Tarball, TestCase, TestResult, TestRun, \
     Subscription
 
 
@@ -160,6 +160,16 @@ class ParameterSerializer(serializers.HyperlinkedModelSerializer):
         filter_fields = ('name', 'unit')
 
 
+class TestCaseSerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize test case objects."""
+
+    class Meta:
+        """Define how to serialize test cases."""
+
+        model = TestCase
+        fields = ('url', 'name', 'description_url')
+
+
 class MeasurementSerializer(serializers.HyperlinkedModelSerializer,
                             EagerLoadingMixin):
     """Serialize measurement objects."""
@@ -174,7 +184,7 @@ class MeasurementSerializer(serializers.HyperlinkedModelSerializer,
 
         model = Measurement
         fields = ('url', 'id', 'name', 'unit', 'higher_is_better',
-                  'environment', 'parameters')
+                  'environment', 'parameters', 'testcase')
         read_only_fields = ('environment', )
         filter_fields = ('name', 'unit', 'environment')
 

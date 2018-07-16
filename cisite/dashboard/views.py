@@ -284,10 +284,16 @@ class DashboardDetail(BaseDashboardView):
                     delta = run['timestamp'] - context['patchset']['date']
                     run['timedelta'] = format_timedelta(delta)
                     run['failure_count'] = 0
+                    run['testcases'] = {}
                     for result in run['results']:
                         result['measurement'] = s.get(result['measurement']).json()
                         if result['result'].upper() == 'FAIL':
                             run['failure_count'] += 1
+                        tc = result['measurement']['testcase']
+                        if not run['testcases'].get(tc):
+                            run['testcases'][tc] = s.get(tc).json()
+                            run['testcases'][tc]['results'] = []
+                        run['testcases'][tc]['results'].append(result)
 
                     # Get the latest version of the environment, since previous
                     # versions won't show up in the list of active environments

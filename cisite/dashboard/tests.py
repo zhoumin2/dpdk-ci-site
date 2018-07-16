@@ -9,12 +9,12 @@ from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.http import Http404
-from django.test import TestCase
+from django import test
 from django.urls import reverse
 import requests_mock
 from results.tests import create_test_environment
 from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
-    Parameter, Subscription, Tarball, TestResult, TestRun
+    Parameter, Subscription, Tarball, TestCase, TestResult, TestRun
 from .views import paginate_rest, parse_page
 
 
@@ -158,6 +158,9 @@ class DetailViewTests(BaseTestCase):
 
     def setUp(self):
         super().setUp()
+        tc = TestCase.objects.create(
+            name='nic_single_core_perf',
+            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
         grp = Group.objects.create(name='acme')
         user = User.objects.create_user(username='acmevendor', first_name='John',
                                    last_name='Vendor',
@@ -168,6 +171,7 @@ class DetailViewTests(BaseTestCase):
         ContactPolicy.objects.create(environment=self.env)
         self.m1 = Measurement.objects.create(name='throughput', unit='Mpps',
                                              higher_is_better=True,
+                                             testcase=tc,
                                              environment=self.env)
         Parameter.objects.create(name='frame_size', unit='bytes', value=64,
                                  measurement=self.m1)
@@ -175,6 +179,7 @@ class DetailViewTests(BaseTestCase):
                                  measurement=self.m1)
         self.m2 = Measurement.objects.create(name='throughput', unit='Mpps',
                                              higher_is_better=True,
+                                             testcase=tc,
                                              environment=self.env)
         Parameter.objects.create(name='frame_size', unit='bytes', value=64,
                                  measurement=self.m2)
@@ -442,7 +447,7 @@ class SubscriptionsViewTests(BaseTestCase):
         self.assertEqual(response.context['env_sub_pairs'][0]['subscription'], None)
 
 
-class PaginationTests(TestCase):
+class PaginationTests(test.TestCase):
     """Test the pagination.
 
     These are somewhat minimal since we are utiling the Django REST methods.

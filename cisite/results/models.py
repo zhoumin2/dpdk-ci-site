@@ -457,6 +457,19 @@ class Environment(models.Model):
         return qs
 
 
+class TestCase(models.Model):
+    """Test case to be run by environment."""
+
+    name = models.CharField(
+        max_length=128, help_text='Name of test case as defined in DTS')
+    description_url = models.URLField(
+        help_text='External URL describing test case')
+
+    def __str__(self):
+        """Return the name of the test case."""
+        return self.name
+
+
 class Measurement(models.Model):
     """Model a single measurement to be taken during a test run."""
 
@@ -469,6 +482,9 @@ class Measurement(models.Model):
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,
         help_text='Environment that measurement applies to',
         related_name='measurements')
+    testcase = models.ForeignKey(
+        TestCase, on_delete=models.CASCADE,
+        help_text='Test case that this measurement applies to')
 
     @property
     def owner(self):
