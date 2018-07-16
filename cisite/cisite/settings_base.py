@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import ldap
 import os
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,6 +95,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Convert message tags to Bootstrap color classes
+MESSAGE_TAGS = {
+    messages.DEBUG: 'info',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -131,8 +140,7 @@ AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 # Defaults
 ENABLE_REST_API = True
 ENABLE_ADMIN = True
-# FIXME - Resolve DPDKLAB-313, then this can be set to True
-ENABLE_PREFERENCES = False
+ENABLE_PREFERENCES = True
 LOGIN_URL = '/dashboard/accounts/login/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'dashboard'

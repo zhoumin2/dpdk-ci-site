@@ -331,7 +331,7 @@ class DetailViewTests(BaseTestCase):
             self.env = oldenv
 
 
-class PreferencesViewTests(BaseTestCase):
+class SubscriptionsViewTests(BaseTestCase):
     """Test the preferences view."""
 
     def setUp(self):
@@ -350,7 +350,7 @@ class PreferencesViewTests(BaseTestCase):
 
     def test_anonymous_user(self):
         """Test the anonymous user gets redirected to the login page."""
-        response = self.client.get(reverse('preferences'))
+        response = self.client.get(reverse('subscriptions'))
         self.assertEqual(response.status_code, 302)
 
     def test_no_env(self):
@@ -360,7 +360,7 @@ class PreferencesViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('preferences'))
+            response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(response.context['env_sub_pairs'], [])
@@ -374,7 +374,7 @@ class PreferencesViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('preferences'))
+            response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
@@ -394,7 +394,7 @@ class PreferencesViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('preferences'))
+            response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'], [])
@@ -411,7 +411,7 @@ class PreferencesViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('preferences'))
+            response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
@@ -435,7 +435,7 @@ class PreferencesViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('preferences'))
+            response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
