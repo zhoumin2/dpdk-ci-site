@@ -16,6 +16,7 @@ from results.tests import create_test_environment
 from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
     Parameter, Subscription, Tarball, TestCase, TestResult, TestRun
 from .views import paginate_rest, parse_page
+from .util import ParseIPAChangePassword
 
 
 class BaseTestCase(StaticLiveServerTestCase):
@@ -519,3 +520,46 @@ class PaginationTests(test.TestCase):
 
         with self.assertRaises(Http404):
             paginate_rest(parse_page(2), {}, 2)
+
+
+class ParseIPAChangePasswordTests(TestCase):
+    """Test password change parser from IPA."""
+
+    def setUp(self):
+        """Set up parser."""
+        super().setUp()
+        self.parser = ParseIPAChangePassword()
+
+    def test_successful(self):
+        """Test a successful password change."""
+        html = """<html>
+<head>
+<title>200 Success</title>
+</head>
+<body>
+<h1>Password change successful</h1>
+<p>
+<strong>Password was changed.</strong>
+</p>
+</body>
+</html>"""
+        self.parser.feed(html)
+        self.assertEqual(self.parser.header, 'Password change successful')
+        self.assertEqual(self.parser.message, 'Password was changed.')
+
+    def test_bad_password(self):
+        """Test a wrong password change."""
+        html = """<html>
+<head>
+<title>200 Success</title>
+</head>
+<body>
+<h1>Password change rejected</h1>
+<p>
+<strong>The old password or username is not correct.</strong>
+</p>
+</body>
+</html>"""
+        self.parser.feed(html)
+        self.assertEqual(self.parser.header, 'Password change rejected')
+        self.assertEqual(self.parser.message, 'The old password or username is not correct.')

@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 from django.conf import settings
+from html.parser import HTMLParser
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib.parse import urljoin
@@ -48,3 +49,44 @@ def ipa_session(username, password):
         resp = session.post(urljoin(ipa_url, 'session/login_password'),
                             data=data)
         yield session, resp, ipa_url
+
+
+class ParseIPAChangePassword(HTMLParser):
+    """Parse password change page from IPA.
+
+    (session/change_password)
+    """
+
+    _record_header = False
+    _record_message = False
+
+    def handle_starttag(self, tag, attrs):
+        """Handle HTML start tags."""
+        if tag == 'h1':
+            self._record_header = True
+        elif tag == 'strong':
+            self._record_message = True
+
+    def handle_endtag(self, tag):
+        """Handle HTML end tags."""
+        if tag == 'h1':
+            self._record_header = False
+        elif tag == 'strong':
+            self._record_message = False
+
+    def handle_data(self, data):
+        """Handle HTML data between tags."""
+        if self._record_header:
+            self._header = data
+        elif self._record_message:
+            self._message = data
+
+    @property
+    def header(self):
+        """Get the header."""
+        return self._header
+
+    @property
+    def message(self):
+        """Get the message."""
+        return self._message
