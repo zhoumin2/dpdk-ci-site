@@ -42,6 +42,9 @@ INSTALLED_APPS = [
 
     # Provides per object permission
     'guardian',
+
+    # Provides permission checking during file access
+    'private_storage',
 ]
 
 MIDDLEWARE = [

@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import datetime
 import pytz
+from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -16,9 +17,10 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 from .models import Patch, PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
-    Subscription, UserProfile
+    Subscription, UserProfile, upload_model_path
 from .serializers import PatchSerializer, EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
+from .urls import upload_model_path as upload_model_path_url
 
 
 def create_test_run(environment, tarball=None):
@@ -187,6 +189,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             compiler_version="7.2.1-2",
             bios_version="4.2",
             live_since=None,
+            hardware_description=None,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
@@ -1267,3 +1270,24 @@ class SubscriptionViewSet(APITestCase):
             'environment': reverse_url('environment-detail', env.id),
             'email_success': None, 'how': 'to'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class TestDownloadURL(test.TestCase):
+    """Test the download/upload urls/locations."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        create_test_environment()
+
+    def test_verify_sameness(self):
+        """Verify that the methods in models and urls match."""
+        path = upload_model_path_url(Environment, 'hardware_description')
+        self.assertEqual(path, settings.PRIVATE_STORAGE_URL[1:] +
+                         'environments/<pk>/hardware_description/<filename>')
+        path = upload_model_path('hardware_description',
+                                 Environment.objects.first(), 'test.pdf')
+        self.assertEqual(path, 'environments/1/hardware_description/test.pdf')
+        # now the actual sameness verification
+        url = reverse('hardware_description', args=('1', 'test.pdf'))
+        self.assertEqual(settings.PRIVATE_STORAGE_URL + path, url)

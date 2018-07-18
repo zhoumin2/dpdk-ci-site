@@ -19,6 +19,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.schemas import get_schema_view
+import private_storage.urls
 
 urlpatterns = []
 
@@ -33,3 +34,4 @@ if getattr(settings, 'ENABLE_ADMIN', True):
     urlpatterns.append(path('admin/', admin.site.urls))
 
 urlpatterns.append(path('dashboard/', include('dashboard.urls')))
+urlpatterns.append(path(settings.PRIVATE_STORAGE_URL[1:], include(private_storage.urls)))

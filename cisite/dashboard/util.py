@@ -2,10 +2,11 @@
 
 from contextlib import contextmanager
 from django.conf import settings
+from django.urls import reverse
 from html.parser import HTMLParser
 from requests import Session
 from requests.adapters import HTTPAdapter
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 
 @contextmanager
@@ -90,3 +91,9 @@ class ParseIPAChangePassword(HTMLParser):
     def message(self):
         """Get the message."""
         return self._message
+
+
+def build_upload_url(request, real_url):
+    """Returns a url based on the app and to-proxy url."""
+    return request.build_absolute_uri(
+        reverse('dashboard') + urlparse(real_url).path[1:])

@@ -9,11 +9,24 @@ from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q, F, Count
 from django.utils.functional import cached_property
+from functools import partial
+from private_storage.fields import PrivateFileField
 
 
 def get_admin_group():
     """Return a group of admin users."""
     return Group.objects.get_or_create(name='admins')[0]
+
+
+def upload_model_path(field, instance, filename):
+    """Upload files based on their model name, primary key, and field.
+
+    NOTE: the `partial` method needs to be used to pass in the field.
+
+    This is utilized for private storage. urls.upload_model_path will also
+    have to be updated if this gets changed.
+    """
+    return f'{instance.__class__._meta.verbose_name_plural}/{instance.pk}/{field}/{filename}'
 
 
 class PatchSetQuerySet(models.QuerySet):
@@ -398,6 +411,11 @@ class Environment(models.Model):
         null=True, blank=True,
         help_text='Date since which results should be included in the '
                   'overall result on the dashboard')
+    hardware_description = PrivateFileField(
+        null=True, upload_to=partial(upload_model_path, 'hardware_description'),
+        help_text='External hardware description provided by the member. '
+                  'This can include setup configuration, topology, and '
+                  'general hardware environment information.')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)

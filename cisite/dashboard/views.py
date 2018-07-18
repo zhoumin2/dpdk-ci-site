@@ -22,8 +22,8 @@ import json
 import math
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
-from .util import api_session, format_timedelta, ipa_session, \
-    ParseIPAChangePassword
+from .util import api_session, build_upload_url, format_timedelta, \
+    ipa_session, ParseIPAChangePassword
 
 
 def text_color_classes(bg_class):
@@ -320,6 +320,10 @@ class DashboardDetail(BaseDashboardView):
                         env = s.get(env_url).json()
                     if env.get('live_since'):
                         env['live_since'] = parse_datetime(env['live_since'])
+                    # parse the absolute url to our proxied url
+                    if env.get('hardware_description'):
+                        env['hardware_description'] = build_upload_url(
+                            self.request, env['hardware_description'])
                     run['environment'] = env
                     context['runs'][env_url] = run
 
@@ -474,3 +478,20 @@ class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
 
 class PasswordChangeDoneView(BaseDashboardView, auth_views.PasswordChangeDoneView):
     """Inherit BaseDashboardView for context."""
+
+
+class UploadView(View):
+    """Proxy media storage calls."""
+
+    def get(self, request, path):
+        """Proxy media storage get request.
+
+        `path` is the relative path to the media (does not include
+        PRIVATE_STORAGE_URL). This then gets appended to
+        API_BASE_URL + PRIVATE_STORAGE_URL.
+        """
+        with api_session(self.request) as s:
+            url = urljoin(settings.API_BASE_URL,
+                          settings.PRIVATE_STORAGE_URL[1:] + path)
+            r = s.get(url)
+            return HttpResponse(r, content_type=r.headers['content-type'])
