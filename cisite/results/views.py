@@ -2,10 +2,13 @@
 
 from collections import OrderedDict
 from rest_framework import viewsets
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
+from guardian.shortcuts import get_perms
+from private_storage.views import PrivateStorageDetailView
 from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
@@ -21,6 +24,34 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer
+
+
+class DownloadPermissionView(PrivateStorageDetailView):
+    """Check custom permissions for file access and verify file names.
+
+    This class is meant to be extending by filling the `model` and
+    `model_file_field` as described by Django Private Storage.
+    """
+
+    def can_access_file(self, private_file):
+        """Check if the user can view the model.
+
+        Since private storage gets the file based on the field and not the
+        path, this will also verify that the path is correct.
+        """
+        # remove the url prefix to get the relative path
+        path = self.request.path[len(settings.PRIVATE_STORAGE_URL):]
+        if path != private_file.relative_name:
+            raise Http404("File not found")
+        return 'view_' + self.object._meta.verbose_name in \
+            get_perms(self.request.user, self.object)
+
+
+class HardwareDescriptionDownloadView(DownloadPermissionView):
+    """Allow access to the download if the user can access the environment."""
+
+    model = Environment
+    model_file_field = 'hardware_description'
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):

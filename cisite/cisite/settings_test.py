@@ -20,6 +20,8 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 STATIC_URL = '/static/'
+PRIVATE_STORAGE_URL = '/uploads/'
+PRIVATE_STORAGE_ROOT = 'uploads/'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

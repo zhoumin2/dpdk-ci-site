@@ -2,7 +2,7 @@
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
@@ -13,6 +13,8 @@ urlpatterns = [
          name='logout'),
     path('patchsets/<int:id>/', views.DashboardDetail.as_view(),
          name='dashboard-detail'),
+    re_path(settings.PRIVATE_STORAGE_URL[1:] + '(?P<path>.*)',
+            views.UploadView.as_view(), name='dashboard-uploads'),
 ]
 
 if getattr(settings, 'ENABLE_PREFERENCES', True):

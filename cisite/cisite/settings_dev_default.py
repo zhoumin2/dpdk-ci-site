@@ -22,6 +22,8 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 STATIC_URL = '/static/'
+PRIVATE_STORAGE_ROOT = 'uploads/'
+PRIVATE_STORAGE_URL = '/uploads/'
 
 REST_FRAMEWORK['PAGE_SIZE'] = 100
 

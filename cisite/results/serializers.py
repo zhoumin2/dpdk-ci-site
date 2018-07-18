@@ -254,7 +254,8 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                   'kernel_name', 'kernel_version', 'compiler_name',
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
-                  'predecessor', 'successor', 'date', 'live_since')
+                  'predecessor', 'successor', 'date', 'live_since',
+                  'hardware_description')
         read_only_fields = ('contacts', 'predecessor', 'successor',
                             'date')
 
@@ -274,7 +275,8 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
             return data
 
         for k, v in data.items():
-            if k in ['url', 'contact_policy', 'measurements']:
+            if k in ['url', 'contact_policy', 'measurements',
+                     'hardware_description']:
                 continue
             if v != getattr(self.instance, k):
                 raise serializers.ValidationError(self.READONLY_FMT.format(
