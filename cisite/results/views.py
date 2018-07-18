@@ -43,7 +43,7 @@ class DownloadPermissionView(PrivateStorageDetailView):
         path = self.request.path[len(settings.PRIVATE_STORAGE_URL):]
         if path != private_file.relative_name:
             raise Http404("File not found")
-        return 'view_' + self.object._meta.verbose_name in \
+        return 'view_' + self.object._meta.model_name in \
             get_perms(self.request.user, self.object)
 
 
@@ -52,6 +52,13 @@ class HardwareDescriptionDownloadView(DownloadPermissionView):
 
     model = Environment
     model_file_field = 'hardware_description'
+
+
+class TestRunLogDownloadView(DownloadPermissionView):
+    """Allow access to the download if the user can access the environment."""
+
+    model = TestRun
+    model_file_field = 'log_upload_file'
 
 
 class PatchSetViewSet(viewsets.ModelViewSet):
