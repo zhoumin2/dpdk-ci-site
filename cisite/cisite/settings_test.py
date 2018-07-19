@@ -28,6 +28,12 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend'
 )
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 # This must be true for the relevant tests to pass
 # It cannot be overridden per-test because the urlconf is only processed
 # once as part of Django initialization.
