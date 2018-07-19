@@ -85,7 +85,7 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer,
         model = Patch
         fields = ('url', 'patchworks_id', 'message_id', 'submitter', 'subject',
                   'version', 'is_rfc', 'patch_number', 'date', 'patchset',
-                  'patchset_count', 'contacts', 'pw_is_active')
+                  'patchset_count', 'contacts', 'pw_is_active', 'series_id')
         read_only_fields = ('patchset',)
 
     def create(self, validated_data):
@@ -98,7 +98,8 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer,
             validated_data['patchworks_id'] is not None)
         patchset, created = PatchSet.objects.get_or_create(message_uid=message_uid,
             defaults=dict(patch_count=validated_data.pop('patchset_count'),
-                          is_public=is_public))
+                          is_public=is_public,
+                          series_id=validated_data.pop('series_id', None)))
         patch = Patch.objects.create(patchset=patchset, **validated_data)
         return patch
 
@@ -122,7 +123,7 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                   'is_public', 'apply_error', 'tarballs',
                   'patchwork_range_str', 'status', 'status_class',
                   'status_tooltip', 'submitter_name', 'submitter_email',
-                  'time_to_last_test')
+                  'time_to_last_test', 'series_id')
         read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
                             'status', 'status_class', 'status_tooltip',
                             'time_to_last_test')
