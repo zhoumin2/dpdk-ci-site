@@ -131,26 +131,8 @@ class PatchSet(models.Model):
             return "Apply Error"
         elif not self.tarballs.exists():
             return "Pending"
-
-        tarball = self.tarballs.last()
-        if not tarball.runs.exists():
-            return "Waiting"
-
-        date = self.patches.first().date
-        Environment = apps.get_model('results', 'Environment')
-        active_envs = Environment.objects.filter(
-            Q(live_since__isnull=True) | Q(live_since__lte=date),
-            successor__isnull=True)
-        my_trs = {env.id: env.all_runs.filter(tarball__id=tarball.id).last()
-                  for env in active_envs.iterator()}
-        for x in my_trs.values():
-            if x is None:
-                return "Incomplete"
-        if True in [tr.results.filter(result="FAIL").exists()
-                    for tr in my_trs.values()]:
-            return "Possible Regression"
         else:
-            return "Pass"
+            return self.tarballs.last().status
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
@@ -218,6 +200,28 @@ class Tarball(models.Model):
     @property
     def commit_url(self):
         return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
+
+    @cached_property
+    def status(self):
+        """Return a status string to be displayed on the dashboard."""
+        if not self.runs.exists():
+            return "Waiting"
+
+        date = self.patchset.patches.first().date
+        Environment = apps.get_model('results', 'Environment')
+        active_envs = Environment.objects.filter(
+            Q(live_since__isnull=True) | Q(live_since__lte=date),
+            successor__isnull=True)
+        my_trs = {env.id: env.all_runs.filter(tarball__id=self.id).last()
+                  for env in active_envs.iterator()}
+        for x in my_trs.values():
+            if x is None:
+                return "Incomplete"
+        if True in [tr.results.filter(result="FAIL").exists()
+                    for tr in my_trs.values()]:
+            return "Possible Regression"
+        else:
+            return "Pass"
 
 
 def validate_contact_list(value):
