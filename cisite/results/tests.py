@@ -23,16 +23,20 @@ from .serializers import PatchSerializer, EnvironmentSerializer, \
 from .urls import upload_model_path as upload_model_path_url
 
 
-def create_test_run(environment, tarball=None):
+def create_test_run(environment, **kwargs):
     """Create a dummy test run object for use by tests."""
-    tb = tarball
+    tb = kwargs.pop('tarball', None)
     if not tb:
         tb = Tarball.objects.create(
             branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
             commit_id="0" * 40)
-    return TestRun.objects.create(timestamp=now(),
-                                  log_output_file='/foo/bar',
-                                  tarball=tb, environment=environment)
+    tr_kwargs = {
+        'timestamp': now(),
+        'log_output_file': 'http://foo.invalid/bar'
+    }
+    tr_kwargs.update(kwargs)
+    return TestRun.objects.create(tarball=tb, environment=environment,
+                                  **tr_kwargs)
 
 
 def create_test_environment(**kwargs):
@@ -791,6 +795,38 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         run.tarball.save()
         self.assertEqual(self.test_ps.status, 'Incomplete')
 
+    def test_status_incomplete_null_date(self):
+        """Verify that status is Incomplete if environment date is null."""
+        self.env2.date = None
+        self.env2.save()
+        run = create_test_run(self.env1)
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        self.assertEqual(self.test_ps.status, 'Incomplete')
+
+    def test_status_ignore_incomplete(self):
+        """Test that adding a new environment does not trigger Incomplete."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='PASS', difference=-0.021,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        env3 = create_test_environment(inventory_id='IOL-IOL-3',
+                                       date=now(), live_since=now())
+        Measurement.objects.create(name='throughput', unit='Mpps',
+                                   higher_is_better=True,
+                                   environment=env3,
+                                   testcase=TestCase.objects.first())
+        self.assertEqual(self.test_ps.status, 'Pass')
+
     def test_status_pass(self):
         """Verify that status is Pass where needed."""
         run = create_test_run(self.env1)
@@ -799,7 +835,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, run.tarball)
+        run = create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='PASS', difference=-0.021,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -818,6 +854,37 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                   measurement=self.env2.measurements.first(),
                                   run=run)
         self.assertEqual(self.test_ps.status, 'Possible Regression')
+
+    def test_status_ignore_fail_null(self):
+        """Verify that status is Pass for null live_since."""
+        self.env2.live_since = None
+        self.env2.save()
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='FAIL', difference=-1.576,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        self.assertEqual(self.test_ps.status, 'Pass')
+
+    def test_status_ignore_fail(self):
+        """Verify that status is Pass if failing result is old."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=self.env1.measurements.first(),
+                                  run=run)
+        run = create_test_run(self.env2, tarball=run.tarball,
+                              timestamp=datetime(2016, 1, 1, tzinfo=utc))
+        TestResult.objects.create(result='FAIL', difference=-1.576,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
+        self.assertEqual(self.test_ps.status, 'Pass')
 
     def test_status_use_latest(self):
         """Verify that only uses latest test run for each environment."""
