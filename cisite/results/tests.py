@@ -504,6 +504,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
         cls.initial_data = dict(
             tarball=cls.tarball_url,
             log_output_file='http://host.invalid/log_file.txt',
+            log_upload_file=None,
             timestamp=datetime.now(tz=pytz.utc),
             environment=cls.env_url,
             report_timestamp=None,

@@ -1139,40 +1139,40 @@
     email_list: pmacarth@iol.unh.edu, environment: 4}
 - model: results.measurement
   pk: 1
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1, testcase_id: 1}
 - model: results.measurement
   pk: 2
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1, testcase_id: 1}
 - model: results.measurement
   pk: 3
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1, testcase_id: 1}
 - model: results.measurement
   pk: 4
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2, testcase_id: 1}
 - model: results.measurement
   pk: 5
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2, testcase_id: 1}
 - model: results.measurement
   pk: 6
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 2, testcase_id: 1}
 - model: results.measurement
   pk: 7
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3, testcase_id: 1}
 - model: results.measurement
   pk: 8
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3, testcase_id: 1}
 - model: results.measurement
   pk: 9
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 3, testcase_id: 1}
 - model: results.measurement
   pk: 10
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4, testcase_id: 1}
 - model: results.measurement
   pk: 11
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4, testcase_id: 1}
 - model: results.measurement
   pk: 12
-  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4}
+  fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 4, testcase_id: 1}
 - model: results.parameter
   pk: 1
   fields: {name: frame_size, unit: bytes, value: 64, measurement: 1}
@@ -1247,359 +1247,359 @@
   fields: {name: txd/rxd, unit: descriptors, value: 2048, measurement: 12}
 - model: results.testrun
   pk: 1
-  fields: {timestamp: !!timestamp '2018-05-04 16:12:08+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/7/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:12:08+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 2
-  fields: {timestamp: !!timestamp '2018-05-04 16:13:48+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/8/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:13:48+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 3
-  fields: {timestamp: !!timestamp '2018-05-04 16:17:23+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/9/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:17:23+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 4
-  fields: {timestamp: !!timestamp '2018-05-04 16:18:43+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/10/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:18:43+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 5
-  fields: {timestamp: !!timestamp '2018-05-04 16:23:24+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/11/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:23:24+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 6
-  fields: {timestamp: !!timestamp '2018-05-04 16:25:18+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/12/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-04 16:25:18+00:00', log_output_file: null,
     tarball: 1, environment: 1}
 - model: results.testrun
   pk: 7
-  fields: {timestamp: !!timestamp '2018-05-09 21:46:41+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/13/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-09 21:46:41+00:00', log_output_file: null,
     tarball: 2, environment: 1}
 - model: results.testrun
   pk: 8
-  fields: {timestamp: !!timestamp '2018-05-10 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/14/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-10 21:46:35+00:00', log_output_file: null,
     tarball: 3, environment: 1}
 - model: results.testrun
   pk: 9
-  fields: {timestamp: !!timestamp '2018-05-11 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/15/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-11 21:46:34+00:00', log_output_file: null,
     tarball: 4, environment: 1}
 - model: results.testrun
   pk: 10
-  fields: {timestamp: !!timestamp '2018-05-12 21:46:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/16/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-12 21:46:32+00:00', log_output_file: null,
     tarball: 5, environment: 1}
 - model: results.testrun
   pk: 11
-  fields: {timestamp: !!timestamp '2018-05-13 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/17/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-13 21:46:35+00:00', log_output_file: null,
     tarball: 6, environment: 1}
 - model: results.testrun
   pk: 12
-  fields: {timestamp: !!timestamp '2018-05-14 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/18/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-14 21:46:34+00:00', log_output_file: null,
     tarball: 7, environment: 1}
 - model: results.testrun
   pk: 13
-  fields: {timestamp: !!timestamp '2018-05-15 21:46:33+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/19/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-15 21:46:33+00:00', log_output_file: null,
     tarball: 8, environment: 1}
 - model: results.testrun
   pk: 14
-  fields: {timestamp: !!timestamp '2018-05-17 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/20/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-17 21:46:34+00:00', log_output_file: null,
     tarball: 9, environment: 1}
 - model: results.testrun
   pk: 15
-  fields: {timestamp: !!timestamp '2018-05-18 21:46:33+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/21/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-18 21:46:33+00:00', log_output_file: null,
     tarball: 10, environment: 1}
 - model: results.testrun
   pk: 16
-  fields: {timestamp: !!timestamp '2018-05-21 21:46:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/22/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-21 21:46:32+00:00', log_output_file: null,
     tarball: 11, environment: 1}
 - model: results.testrun
   pk: 17
-  fields: {timestamp: !!timestamp '2018-05-22 21:46:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/23/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-22 21:46:31+00:00', log_output_file: null,
     tarball: 12, environment: 1}
 - model: results.testrun
   pk: 18
-  fields: {timestamp: !!timestamp '2018-05-23 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/24/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-23 21:46:35+00:00', log_output_file: null,
     tarball: 13, environment: 1}
 - model: results.testrun
   pk: 19
-  fields: {timestamp: !!timestamp '2018-05-24 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/25/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-24 21:46:34+00:00', log_output_file: null,
     tarball: 14, environment: 1}
 - model: results.testrun
   pk: 20
-  fields: {timestamp: !!timestamp '2018-05-25 21:46:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/26/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-25 21:46:32+00:00', log_output_file: null,
     tarball: 15, environment: 1}
 - model: results.testrun
   pk: 21
-  fields: {timestamp: !!timestamp '2018-05-28 21:46:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/27/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-28 21:46:32+00:00', log_output_file: null,
     tarball: 16, environment: 1}
 - model: results.testrun
   pk: 22
-  fields: {timestamp: !!timestamp '2018-05-29 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/28/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-29 21:46:35+00:00', log_output_file: null,
     tarball: 17, environment: 1}
 - model: results.testrun
   pk: 23
-  fields: {timestamp: !!timestamp '2018-05-30 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Performance%20Test/29/artifact/TestNic.zip',
+  fields: {timestamp: !!timestamp '2018-05-30 21:46:34+00:00', log_output_file: null,
     tarball: 18, environment: 1}
 - model: results.testrun
   pk: 24
-  fields: {timestamp: !!timestamp '2018-06-01 20:27:42+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/32/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:27:42+00:00', log_output_file: null,
     tarball: 19, environment: 1}
 - model: results.testrun
   pk: 25
-  fields: {timestamp: !!timestamp '2018-06-01 20:27:43+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/3/artifact/gunblade.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:27:43+00:00', log_output_file: null,
     tarball: 19, environment: 2}
 - model: results.testrun
   pk: 26
-  fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/3/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: null,
     tarball: 19, environment: 3}
 - model: results.testrun
   pk: 27
-  fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/3/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: null,
     tarball: 19, environment: 4}
 - model: results.testrun
   pk: 28
-  fields: {timestamp: !!timestamp '2018-06-01 20:44:08+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/33/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:44:08+00:00', log_output_file: null,
     tarball: 20, environment: 1}
 - model: results.testrun
   pk: 29
-  fields: {timestamp: !!timestamp '2018-06-01 20:44:09+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/4/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:44:09+00:00', log_output_file: null,
     tarball: 20, environment: 3}
 - model: results.testrun
   pk: 30
-  fields: {timestamp: !!timestamp '2018-06-01 20:44:10+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/4/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 20:44:10+00:00', log_output_file: null,
     tarball: 20, environment: 4}
 - model: results.testrun
   pk: 31
-  fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/34/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: null,
     tarball: 21, environment: 1}
 - model: results.testrun
   pk: 32
-  fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/8/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: null,
     tarball: 21, environment: 2}
 - model: results.testrun
   pk: 33
-  fields: {timestamp: !!timestamp '2018-06-01 21:01:29+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/5/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:01:29+00:00', log_output_file: null,
     tarball: 21, environment: 3}
 - model: results.testrun
   pk: 34
-  fields: {timestamp: !!timestamp '2018-06-01 21:01:30+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/5/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:01:30+00:00', log_output_file: null,
     tarball: 21, environment: 4}
 - model: results.testrun
   pk: 35
-  fields: {timestamp: !!timestamp '2018-06-01 21:08:03+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/35/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:08:03+00:00', log_output_file: null,
     tarball: 22, environment: 1}
 - model: results.testrun
   pk: 36
-  fields: {timestamp: !!timestamp '2018-06-01 21:08:04+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/9/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:08:04+00:00', log_output_file: null,
     tarball: 22, environment: 2}
 - model: results.testrun
   pk: 37
-  fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/6/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: null,
     tarball: 22, environment: 3}
 - model: results.testrun
   pk: 38
-  fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/6/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: null,
     tarball: 22, environment: 4}
 - model: results.testrun
   pk: 39
-  fields: {timestamp: !!timestamp '2018-06-01 21:22:18+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/36/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:22:18+00:00', log_output_file: null,
     tarball: 23, environment: 1}
 - model: results.testrun
   pk: 40
-  fields: {timestamp: !!timestamp '2018-06-01 21:22:19+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/10/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:22:19+00:00', log_output_file: null,
     tarball: 23, environment: 2}
 - model: results.testrun
   pk: 41
-  fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/7/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: null,
     tarball: 23, environment: 3}
 - model: results.testrun
   pk: 42
-  fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/7/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: null,
     tarball: 23, environment: 4}
 - model: results.testrun
   pk: 43
-  fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/37/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: null,
     tarball: 24, environment: 1}
 - model: results.testrun
   pk: 44
-  fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/11/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: null,
     tarball: 24, environment: 2}
 - model: results.testrun
   pk: 45
-  fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/8/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: null,
     tarball: 24, environment: 3}
 - model: results.testrun
   pk: 46
-  fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/8/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: null,
     tarball: 24, environment: 4}
 - model: results.testrun
   pk: 47
-  fields: {timestamp: !!timestamp '2018-06-01 23:36:30+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/38/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 23:36:30+00:00', log_output_file: null,
     tarball: 25, environment: 1}
 - model: results.testrun
   pk: 48
-  fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/12/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: null,
     tarball: 25, environment: 2}
 - model: results.testrun
   pk: 49
-  fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/9/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: null,
     tarball: 25, environment: 3}
 - model: results.testrun
   pk: 50
-  fields: {timestamp: !!timestamp '2018-06-01 23:36:33+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/9/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-01 23:36:33+00:00', log_output_file: null,
     tarball: 25, environment: 4}
 - model: results.testrun
   pk: 51
-  fields: {timestamp: !!timestamp '2018-06-04 04:36:19+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/39/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 04:36:19+00:00', log_output_file: null,
     tarball: 26, environment: 1}
 - model: results.testrun
   pk: 52
-  fields: {timestamp: !!timestamp '2018-06-04 04:36:20+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/13/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 04:36:20+00:00', log_output_file: null,
     tarball: 26, environment: 2}
 - model: results.testrun
   pk: 53
-  fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/10/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: null,
     tarball: 26, environment: 3}
 - model: results.testrun
   pk: 54
-  fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/10/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: null,
     tarball: 26, environment: 4}
 - model: results.testrun
   pk: 55
-  fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/40/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: null,
     tarball: 27, environment: 1}
 - model: results.testrun
   pk: 56
-  fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/14/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: null,
     tarball: 27, environment: 2}
 - model: results.testrun
   pk: 57
-  fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/11/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: null,
     tarball: 27, environment: 3}
 - model: results.testrun
   pk: 58
-  fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/11/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: null,
     tarball: 27, environment: 4}
 - model: results.testrun
   pk: 59
-  fields: {timestamp: !!timestamp '2018-06-04 06:06:30+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/41/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:06:30+00:00', log_output_file: null,
     tarball: 28, environment: 1}
 - model: results.testrun
   pk: 60
-  fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/15/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: null,
     tarball: 28, environment: 2}
 - model: results.testrun
   pk: 61
-  fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/12/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: null,
     tarball: 28, environment: 3}
 - model: results.testrun
   pk: 62
-  fields: {timestamp: !!timestamp '2018-06-04 06:06:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/12/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:06:32+00:00', log_output_file: null,
     tarball: 28, environment: 4}
 - model: results.testrun
   pk: 63
-  fields: {timestamp: !!timestamp '2018-06-04 06:36:30+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/42/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:36:30+00:00', log_output_file: null,
     tarball: 29, environment: 1}
 - model: results.testrun
   pk: 64
-  fields: {timestamp: !!timestamp '2018-06-04 06:36:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/16/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:36:31+00:00', log_output_file: null,
     tarball: 29, environment: 2}
 - model: results.testrun
   pk: 65
-  fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/13/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: null,
     tarball: 29, environment: 3}
 - model: results.testrun
   pk: 66
-  fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/13/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: null,
     tarball: 29, environment: 4}
 - model: results.testrun
   pk: 67
-  fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/43/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: null,
     tarball: 30, environment: 1}
 - model: results.testrun
   pk: 68
-  fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/17/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: null,
     tarball: 30, environment: 2}
 - model: results.testrun
   pk: 69
-  fields: {timestamp: !!timestamp '2018-06-04 07:06:37+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/14/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 07:06:37+00:00', log_output_file: null,
     tarball: 30, environment: 3}
 - model: results.testrun
   pk: 70
-  fields: {timestamp: !!timestamp '2018-06-04 07:06:38+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/14/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 07:06:38+00:00', log_output_file: null,
     tarball: 30, environment: 4}
 - model: results.testrun
   pk: 71
-  fields: {timestamp: !!timestamp '2018-06-04 09:06:26+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/44/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:06:26+00:00', log_output_file: null,
     tarball: 31, environment: 1}
 - model: results.testrun
   pk: 72
-  fields: {timestamp: !!timestamp '2018-06-04 09:06:27+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/18/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:06:27+00:00', log_output_file: null,
     tarball: 31, environment: 2}
 - model: results.testrun
   pk: 73
-  fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/15/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: null,
     tarball: 31, environment: 3}
 - model: results.testrun
   pk: 74
-  fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/15/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: null,
     tarball: 31, environment: 4}
 - model: results.testrun
   pk: 75
-  fields: {timestamp: !!timestamp '2018-06-04 09:36:16+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/45/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:36:16+00:00', log_output_file: null,
     tarball: 32, environment: 1}
 - model: results.testrun
   pk: 76
-  fields: {timestamp: !!timestamp '2018-06-04 09:36:17+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/19/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:36:17+00:00', log_output_file: null,
     tarball: 32, environment: 2}
 - model: results.testrun
   pk: 77
-  fields: {timestamp: !!timestamp '2018-06-04 09:36:18+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/16/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:36:18+00:00', log_output_file: null,
     tarball: 32, environment: 3}
 - model: results.testrun
   pk: 78
-  fields: {timestamp: !!timestamp '2018-06-04 09:36:19+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/16/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 09:36:19+00:00', log_output_file: null,
     tarball: 32, environment: 4}
 - model: results.testrun
   pk: 79
-  fields: {timestamp: !!timestamp '2018-06-04 10:36:22+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/46/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 10:36:22+00:00', log_output_file: null,
     tarball: 33, environment: 1}
 - model: results.testrun
   pk: 80
-  fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/20/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: null,
     tarball: 33, environment: 2}
 - model: results.testrun
   pk: 81
-  fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/17/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: null,
     tarball: 33, environment: 3}
 - model: results.testrun
   pk: 82
-  fields: {timestamp: !!timestamp '2018-06-04 10:36:24+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/17/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 10:36:24+00:00', log_output_file: null,
     tarball: 33, environment: 4}
 - model: results.testrun
   pk: 83
-  fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/47/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: null,
     tarball: 34, environment: 1}
 - model: results.testrun
   pk: 84
-  fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/21/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: null,
     tarball: 34, environment: 2}
 - model: results.testrun
   pk: 85
-  fields: {timestamp: !!timestamp '2018-06-04 18:06:25+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME1-Performance-Test/18/artifact/gamma.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 18:06:25+00:00', log_output_file: null,
     tarball: 34, environment: 3}
 - model: results.testrun
   pk: 86
-  fields: {timestamp: !!timestamp '2018-06-04 18:06:26+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/18/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 18:06:26+00:00', log_output_file: null,
     tarball: 34, environment: 4}
 - model: results.testrun
   pk: 87
-  fields: {timestamp: !!timestamp '2018-06-04 20:06:29+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech1-Performance-Test/48/artifact/ultimatem.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 20:06:29+00:00', log_output_file: null,
     tarball: 35, environment: 1}
 - model: results.testrun
   pk: 88
-  fields: {timestamp: !!timestamp '2018-06-04 20:06:30+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/Hextech2-Performance-Test/22/artifact/glp.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 20:06:30+00:00', log_output_file: null,
     tarball: 35, environment: 2}
 - model: results.testrun
   pk: 89
-  fields: {timestamp: !!timestamp '2018-06-04 20:06:31+00:00', log_output_file: 'https://dpdklab.iol.unh.edu/jenkins/job/ACME2-Performance-Test/19/artifact/epsilon.zip',
+  fields: {timestamp: !!timestamp '2018-06-04 20:06:31+00:00', log_output_file: null,
     tarball: 35, environment: 4}
 - model: results.testresult
   pk: 1
@@ -9488,178 +9488,8 @@
     content_type: [results, testresult]
     object_pk: '221'
     group: [acme]
-- model: admin.logentry
+- model: results.testcase
   pk: 1
   fields:
-    action_time: 2018-05-04 14:05:18+00:00
-    user: [jplsek]
-    content_type: [authtoken, token]
-    object_id: 8a81b5e5c0f449947ceddd1b8c0c956d18df8893
-    object_repr: 8a81b5e5c0f449947ceddd1b8c0c956d18df8893
-    action_flag: 1
-    change_message: '[{"added": {}}]'
-- model: admin.logentry
-  pk: 2
-  fields:
-    action_time: 2018-05-04 16:22:47+00:00
-    user: [jplsek]
-    content_type: [results, environment]
-    object_id: '1'
-    object_repr: Test Environment (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["nic_speed"]}}]'
-- model: admin.logentry
-  pk: 3
-  fields:
-    action_time: 2018-05-15 20:54:36+00:00
-    user: [pmacarth]
-    content_type: [authtoken, token]
-    object_id: c70ee3ccc40c6837b27bbffb24c9d4054b1d562d
-    object_repr: c70ee3ccc40c6837b27bbffb24c9d4054b1d562d
-    action_flag: 1
-    change_message: '[{"added": {}}]'
-- model: admin.logentry
-  pk: 4
-  fields:
-    action_time: 2018-06-01 18:30:18+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '1'
-    object_repr: Test Environment (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["nic_make", "nic_model", "nic_device_id",
-      "nic_device_bustype", "nic_pmd", "nic_firmware_source_id", "nic_firmware_version",
-      "kernel_cmdline"]}}]'
-- model: admin.logentry
-  pk: 5
-  fields:
-    action_time: 2018-06-01 18:30:35+00:00
-    user: [pmacarth]
-    content_type: [results, measurement]
-    object_id: '1'
-    object_repr: throughput (Mpps)
-    action_flag: 2
-    change_message: '[{"added": {"name": "parameter", "object": "txd/rxd: 128 descriptors"}}]'
-- model: admin.logentry
-  pk: 6
-  fields:
-    action_time: 2018-06-01 18:31:17+00:00
-    user: [pmacarth]
-    content_type: [results, measurement]
-    object_id: '2'
-    object_repr: throughput (Mpps)
-    action_flag: 1
-    change_message: '[{"added": {}}, {"added": {"name": "parameter", "object": "frame_size:
-      64 bytes"}}, {"added": {"name": "parameter", "object": "txd/rxd: 512 descriptors"}}]'
-- model: admin.logentry
-  pk: 7
-  fields:
-    action_time: 2018-06-01 18:31:43+00:00
-    user: [pmacarth]
-    content_type: [results, measurement]
-    object_id: '3'
-    object_repr: throughput (Mpps)
-    action_flag: 1
-    change_message: '[{"added": {}}, {"added": {"name": "parameter", "object": "frame_size:
-      64 bytes"}}, {"added": {"name": "parameter", "object": "txd/rxd: 2048 descriptors"}}]'
-- model: admin.logentry
-  pk: 8
-  fields:
-    action_time: 2018-06-01 18:32:30+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '1'
-    object_repr: IOL-HEXTECH-00001 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["inventory_id"]}}, {"changed": {"name":
-      "contact policy", "object": "Send mail to pmacarth@iol.unh.edu", "fields": ["email_list"]}}]'
-- model: admin.logentry
-  pk: 9
-  fields:
-    action_time: 2018-06-01 18:51:06+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '1'
-    object_repr: IOL-HEXTECH-00001 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["owner"]}}]'
-- model: admin.logentry
-  pk: 10
-  fields:
-    action_time: 2018-06-01 18:51:13+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '2'
-    object_repr: IOL-HEXTECH-00002 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["owner"]}}]'
-- model: admin.logentry
-  pk: 11
-  fields:
-    action_time: 2018-06-01 18:51:19+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '3'
-    object_repr: IOL-ACME-00003 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["owner"]}}]'
-- model: admin.logentry
-  pk: 12
-  fields:
-    action_time: 2018-06-01 18:51:27+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '4'
-    object_repr: IOL-ACME-00004 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["owner"]}}]'
-- model: admin.logentry
-  pk: 13
-  fields:
-    action_time: 2018-06-01 20:36:20+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '2'
-    object_repr: IOL-HEXTECH-00002 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["nic_model", "nic_pmd", "os_distro"]}}]'
-- model: admin.logentry
-  pk: 14
-  fields:
-    action_time: 2018-06-01 20:36:35+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '1'
-    object_repr: IOL-HEXTECH-00001 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["os_distro"]}}]'
-- model: admin.logentry
-  pk: 15
-  fields:
-    action_time: 2018-06-01 20:36:44+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '4'
-    object_repr: IOL-ACME-00004 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["os_distro"]}}]'
-- model: admin.logentry
-  pk: 16
-  fields:
-    action_time: 2018-06-01 20:36:54+00:00
-    user: [pmacarth]
-    content_type: [results, environment]
-    object_id: '3'
-    object_repr: IOL-ACME-00003 (v0)
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["os_distro"]}}]'
-- model: admin.logentry
-  pk: 17
-  fields:
-    action_time: 2018-06-05 20:04:18+00:00
-    user: [pmacarth]
-    content_type: [auth, user]
-    object_id: '5'
-    object_repr: acmevendor
-    action_flag: 2
-    change_message: '[{"changed": {"fields": ["password"]}}]'
+    name: nic_single_core_perf
+    description_url: "http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next"

@@ -26,7 +26,7 @@ def upload_model_path(field, instance, filename):
     This is utilized for private storage. urls.upload_model_path will also
     have to be updated if this gets changed.
     """
-    return f'{instance.__class__._meta.verbose_name_plural}/{instance.pk}/{field}/{filename}'
+    return f'{instance.__class__._meta.verbose_name_plural.replace(" ", "_")}/{instance.pk}/{field}/{filename}'
 
 
 class PatchSetQuerySet(models.QuerySet):
@@ -565,8 +565,11 @@ class TestRun(models.Model):
 
     timestamp = models.DateTimeField('time run',
         help_text='Date and time that test was run')
-    log_output_file = models.URLField(
+    log_output_file = models.URLField(blank=True, null=True,
         help_text='External URL of log output file')
+    log_upload_file = PrivateFileField(
+        upload_to=partial(upload_model_path, 'log_upload_file'),
+        blank=True, null=True, help_text='Log output file for this test run')
     tarball = models.ForeignKey(Tarball, on_delete=models.CASCADE,
         related_name='runs', help_text='Tarball used for test run')
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,

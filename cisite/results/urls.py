@@ -29,7 +29,9 @@ def upload_model_path(model, field):
     This is utilized for private storage. models.upload_model_path will also
     have to be updated if this gets changed.
     """
-    return f'{settings.PRIVATE_STORAGE_ROOT}{model._meta.verbose_name_plural}/<pk>/{field}/<filename>'
+    return f'{settings.PRIVATE_STORAGE_ROOT}' \
+           f'{model._meta.verbose_name_plural.replace(" ", "_")}/' \
+           f'<pk>/{field}/<filename>'
 
 
 urlpatterns = [
@@ -37,4 +39,7 @@ urlpatterns = [
     path(upload_model_path(models.Environment, 'hardware_description'),
          views.HardwareDescriptionDownloadView.as_view(),
          name='hardware_description'),
+    path(upload_model_path(models.TestRun, 'log_upload_file'),
+         views.TestRunLogDownloadView.as_view(),
+         name='log_upload_file'),
 ]
