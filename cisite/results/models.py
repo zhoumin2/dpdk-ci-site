@@ -413,7 +413,8 @@ class Environment(models.Model):
         help_text='Date since which results should be included in the '
                   'overall result on the dashboard')
     hardware_description = PrivateFileField(
-        null=True, upload_to=partial(upload_model_path, 'hardware_description'),
+        null=True, blank=True,
+        upload_to=partial(upload_model_path, 'hardware_description'),
         help_text='External hardware description provided by the member. '
                   'This can include setup configuration, topology, and '
                   'general hardware environment information.')
