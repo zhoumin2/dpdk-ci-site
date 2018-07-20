@@ -203,25 +203,39 @@ class Tarball(models.Model):
 
     @cached_property
     def status(self):
-        """Return a status string to be displayed on the dashboard."""
+        """Return a status string to be displayed on the dashboard.
+
+        For the Incomplete status, we consider only environments created since
+        the tarball was created (falling back to the patchset submission date
+        for old tarballs which didn't have a date tied to them). Environments
+        with a null creation date are considered to have always been active.
+
+        For the Possible Regression status, we consider only active
+        environments that were live at the time the test run was completed
+        (note that the reference time is *not* the same as for Incomplete).
+        If the live_since value is null, then we also ignore failures because
+        we presume that the environment is not yet live.
+        """
         if not self.runs.exists():
             return "Waiting"
 
-        date = self.patchset.patches.first().date
+        date = getattr(self, 'date', None)
+        if not date:
+            date = self.patchset.patches.first().date
         Environment = apps.get_model('results', 'Environment')
         active_envs = Environment.objects.filter(
-            Q(live_since__isnull=True) | Q(live_since__lte=date),
+            Q(date__isnull=True) | Q(date__lte=date),
             successor__isnull=True)
-        my_trs = {env.id: env.all_runs.filter(tarball__id=self.id).last()
-                  for env in active_envs.iterator()}
-        for x in my_trs.values():
-            if x is None:
+        for env in active_envs.iterator():
+            tr_qs = env.all_runs.filter(tarball__id=self.id)
+            if not tr_qs.exists():
                 return "Incomplete"
-        if True in [tr.results.filter(result="FAIL").exists()
-                    for tr in my_trs.values()]:
-            return "Possible Regression"
-        else:
-            return "Pass"
+            tr = tr_qs.last()
+            if getattr(env, 'live_since', None) and \
+                    env.live_since <= tr.timestamp and \
+                    tr.results.filter(result="FAIL").exists():
+                return "Possible Regression"
+        return "Pass"
 
 
 def validate_contact_list(value):
