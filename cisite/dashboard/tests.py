@@ -1,7 +1,6 @@
 """Define tests for dashboard app."""
 
 from datetime import datetime
-import pytz
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -11,6 +10,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.http import Http404
 from django import test
 from django.urls import reverse
+from django.utils.timezone import utc
 import requests_mock
 from results.tests import create_test_environment
 from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
@@ -205,7 +205,7 @@ class DetailViewTests(BaseTestCase):
             patchset=ps)
 
         run = TestRun.objects.create(
-            timestamp=datetime(2018, 6, 1, 20, 27, 42, tzinfo=pytz.utc),
+            timestamp=datetime(2018, 6, 1, 20, 27, 42, tzinfo=utc),
             log_output_file='https://dpdklab.iol.unh.edu/jenkins/job/'
                             'ACME1-Performance-Test/3/artifact/gamma.zip',
             tarball=tb, environment=self.env)

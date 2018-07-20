@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from datetime import datetime
-import pytz
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -11,6 +10,7 @@ from django.http.request import HttpRequest
 from django import test
 from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
+from django.utils.timezone import now, utc
 import rest_framework.exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -30,7 +30,7 @@ def create_test_run(environment, tarball=None):
         tb = Tarball.objects.create(
             branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
             commit_id="0" * 40)
-    return TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
+    return TestRun.objects.create(timestamp=now(),
                                   log_output_file='/foo/bar',
                                   tarball=tb, environment=environment)
 
@@ -48,7 +48,7 @@ def create_test_environment(**kwargs):
                     nic_pmd="i40e", nic_firmware_version="5.05",
                     kernel_version="4.14", compiler_name="gcc",
                     compiler_version="7.1", os_distro="Fedora26",
-                    bios_version="5.05", date=datetime.now(tz=pytz.utc))
+                    bios_version="5.05", date=now())
     env_args.update(kwargs)
     return Environment.objects.create(**env_args)
 
@@ -125,7 +125,7 @@ class PatchSerializerTestCase(test.TestCase):
               patchset_count=3,
               version='v2',
               patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=pytz.utc)))
+              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc)))
         serializer.is_valid(raise_exception=True)
         p = serializer.save()
         self.assertNotEqual(p.patchset, self.__class__.test_ps)
@@ -139,7 +139,7 @@ class PatchSerializerTestCase(test.TestCase):
               patchset_count=3,
               version='v2',
               patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=pytz.utc)))
+              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc)))
         serializer.is_valid(raise_exception=True)
         p = serializer.save()
         self.assertEqual(p.patchset, self.__class__.test_ps)
@@ -505,7 +505,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             tarball=cls.tarball_url,
             log_output_file='http://host.invalid/log_file.txt',
             log_upload_file=None,
-            timestamp=datetime.now(tz=pytz.utc),
+            timestamp=now(),
             environment=cls.env_url,
             report_timestamp=None,
             results=[dict(result='PASS',
@@ -688,7 +688,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
               patchset=self.test_ps,
               version='v2',
               patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=pytz.utc))
+              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc))
         Patch.objects.create(patchworks_id=30742,
               submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
               message_id='20171023231534.90996-2-ferruh.yigit@intel.com',
@@ -696,7 +696,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
               patchset=self.test_ps,
               version='v2',
               patch_number=2,
-              date=datetime(2017, 10, 23, 23, 15, 33, tzinfo=pytz.utc))
+              date=datetime(2017, 10, 23, 23, 15, 33, tzinfo=utc))
         self.env1 = create_test_environment(inventory_id='IOL-IOL-1')
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
@@ -721,7 +721,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
               patchset=self.test_ps,
               version='v2',
               patch_number=2,
-              date=datetime(2017, 10, 23, 23, 15, 34, tzinfo=pytz.utc))
+              date=datetime(2017, 10, 23, 23, 15, 34, tzinfo=utc))
 
     def test_incomplete_property(self):
         """Test that complete returns False for an incomplete patch set."""
@@ -971,7 +971,7 @@ class EnvironmentTestCase(test.TestCase):
         tb = Tarball.objects.create(
             tarball_url='http://example.com/dpdk.tar.gz', branch='master',
             commit_id='0000000000000000000000000000000000000000')
-        TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
+        TestRun.objects.create(timestamp=now(),
                                log_output_file='http://example.com/log.tar.gz',
                                tarball=tb, environment=env)
         self.assertTrue(
@@ -1059,7 +1059,7 @@ class TestResultTestCase(test.TestCase):
 
     def test_different_envs_fails(self):
         cls = self.__class__
-        run = TestRun.objects.create(timestamp=datetime.now(tz=pytz.utc),
+        run = TestRun.objects.create(timestamp=now(),
             log_output_file='/foo/bar', tarball=cls.test_tb,
             environment=cls.env1)
         TestResult.objects.create(result="PASS", difference=-1.0,
