@@ -9,6 +9,7 @@ from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q, F, Count
 from django.utils.functional import cached_property
+from django.utils.timezone import now
 from functools import partial
 from private_storage.fields import PrivateFileField
 
@@ -207,7 +208,7 @@ class Tarball(models.Model):
         related_name='tarballs', null=True, blank=True,
         help_text='Patchset this tarball was constructed from')
     date = models.DateTimeField(
-        null=True, auto_now_add=True,
+        null=True, default=now,
         help_text='When this tarball was generated')
 
     def __str__(self):
@@ -404,7 +405,7 @@ class Environment(models.Model):
         related_name='successor',
         help_text='Environment that this was cloned from')
     date = models.DateTimeField(
-        auto_now_add=True, null=True,
+        default=now, null=True,
         help_text='Date that this version of the environment was added to '
                   'the test lab')
     live_since = models.DateTimeField(
