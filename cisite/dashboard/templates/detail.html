@@ -94,8 +94,13 @@
         </thead>
         <tbody>
           {% for item in tc.results %}
+          {% if not r.environment.live_since or r.environment.live_since > r.timestamp %}
+          <tr class="table-secondary" title="This run does not affect the overall result above.">
+            <td class="text-{{ item.result_class }}">{{ item.result }}</td>
+          {% else %}
           <tr class="table-{{ item.result_class }}">
             <td>{{ item.result }}</td>
+          {% endif %}
             {% for p in item.measurement.parameters %}
               <td>{{ p.value }}</td>
             {% endfor %}
