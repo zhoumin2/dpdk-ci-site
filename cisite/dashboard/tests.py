@@ -168,7 +168,9 @@ class DetailViewTests(BaseTestCase):
                                    email='jvendor@example.com',
                                    password='P@$$w0rd')
         user.groups.add(grp)
-        self.env = create_test_environment(owner=grp)
+        mydate = datetime(2017, 1, 1, tzinfo=utc)
+        self.env = create_test_environment(owner=grp, date=mydate,
+                                           live_since=mydate)
         ContactPolicy.objects.create(environment=self.env)
         self.m1 = Measurement.objects.create(name='throughput', unit='Mpps',
                                              higher_is_better=True,

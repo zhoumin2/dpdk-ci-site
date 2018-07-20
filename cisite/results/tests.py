@@ -676,6 +676,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
     def setUp(self):
         """Reset model properties."""
         super().setUp()
+        env_date = datetime(2017, 1, 1, tzinfo=utc)
         TestCase.objects.create(
             name='nic_single_core_perf',
             description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
@@ -697,12 +698,14 @@ class PatchSetModelTestCase(test.TransactionTestCase):
               version='v2',
               patch_number=2,
               date=datetime(2017, 10, 23, 23, 15, 33, tzinfo=utc))
-        self.env1 = create_test_environment(inventory_id='IOL-IOL-1')
+        self.env1 = create_test_environment(
+            inventory_id='IOL-IOL-1', date=env_date, live_since=env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env1,
                                    testcase=TestCase.objects.first())
-        self.env2 = create_test_environment(inventory_id='IOL-IOL-2')
+        self.env2 = create_test_environment(
+            inventory_id='IOL-IOL-2', date=env_date, live_since=env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env2,
