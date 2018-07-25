@@ -98,6 +98,8 @@ class PatchSet(models.Model):
         help_text='Was the patch set posted to a public mailing list?')
     apply_error = models.BooleanField(default=False,
         help_text='Was an error encountered trying to apply the patch?')
+    series_id = models.PositiveIntegerField(unique=True, null=True,
+        blank=True, help_text='The patchworks series ID.')
 
     objects = PatchSetManager.from_queryset(PatchSetQuerySet)()
 
@@ -277,6 +279,8 @@ class Patch(models.Model):
         'containing list of dictionaries with fields: '
         'display_name (optional), email (required), '
         'how (required, "to" or "cc")')
+    series_id = models.PositiveIntegerField(null=True, blank=True,
+        help_text='The patchworks series ID.')
 
     class Meta:
         """Define metadata for patch model."""
