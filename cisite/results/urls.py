@@ -29,7 +29,7 @@ def upload_model_path(model, field):
     This is utilized for private storage. models.upload_model_path will also
     have to be updated if this gets changed.
     """
-    return f'{settings.PRIVATE_STORAGE_ROOT}' \
+    return f'{settings.PRIVATE_STORAGE_URL[1:]}' \
            f'{model._meta.verbose_name_plural.replace(" ", "_")}/' \
            f'<pk>/{field}/<filename>'
 

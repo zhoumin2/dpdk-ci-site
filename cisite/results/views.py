@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 from rest_framework import viewsets
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
@@ -39,10 +38,6 @@ class DownloadPermissionView(PrivateStorageDetailView):
         Since private storage gets the file based on the field and not the
         path, this will also verify that the path is correct.
         """
-        # remove the url prefix to get the relative path
-        path = self.request.path[len(settings.PRIVATE_STORAGE_URL):]
-        if path != private_file.relative_name:
-            raise Http404("File not found")
         return 'view_' + self.object._meta.model_name in \
             get_perms(self.request.user, self.object)
 
