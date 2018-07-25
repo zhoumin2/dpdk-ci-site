@@ -99,7 +99,7 @@ class PatchSerializer(serializers.HyperlinkedModelSerializer,
         patchset, created = PatchSet.objects.get_or_create(message_uid=message_uid,
             defaults=dict(patch_count=validated_data.pop('patchset_count'),
                           is_public=is_public,
-                          series_id=validated_data.pop('series_id', None)))
+                          series_id=validated_data.get('series_id', None)))
         patch = Patch.objects.create(patchset=patchset, **validated_data)
         return patch
 
