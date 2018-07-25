@@ -1,5 +1,7 @@
 """Render views for results database objects."""
 
+import uuid
+
 from collections import OrderedDict
 from rest_framework import viewsets
 from django.contrib.auth.models import Group, User
@@ -40,6 +42,15 @@ class DownloadPermissionView(PrivateStorageDetailView):
         """
         return 'view_' + self.object._meta.model_name in \
             get_perms(self.request.user, self.object)
+
+    def get(self, request, *args, **kwargs):
+        """Override `get` to pass extra args."""
+        self.object = self.get_object(**kwargs)
+        return super(PrivateStorageDetailView, self).get(request, *args, **kwargs)
+
+    def get_object(self, uuidhex, **kwargs):
+        """Override get_object to use the uuid."""
+        return self.model.objects.get(uuid=uuid.UUID(uuidhex))
 
 
 class HardwareDescriptionDownloadView(DownloadPermissionView):

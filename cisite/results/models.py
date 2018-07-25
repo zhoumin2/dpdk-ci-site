@@ -1,6 +1,8 @@
 """Model data for patchsets, environments, and test results."""
 
 import json
+import os
+import uuid
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -20,14 +22,37 @@ def get_admin_group():
 
 
 def upload_model_path(field, instance, filename):
-    """Upload files based on their model name, primary key, and field.
+    """Upload files based on their model name, uuid, and field.
 
-    NOTE: the `partial` method needs to be used to pass in the field.
+    NOTE: the `partial` method needs to be used to pass in the field. It is
+        also assumed that a "uuid" field exists in the table!
 
     This is utilized for private storage. urls.upload_model_path will also
     have to be updated if this gets changed.
     """
-    return f'{instance.__class__._meta.verbose_name_plural.replace(" ", "_")}/{instance.pk}/{field}/{filename}'
+    return f'{instance.__class__._meta.verbose_name_plural.replace(" ", "_")}/' \
+           f'{instance.uuid.hex}/{field}/{filename}'
+
+
+def upload_model_path_test_run(field, instance, filename):
+    """Upload files for a test run. Filename is only used for the extension.
+
+    See `upload_model_path` for more information.
+    """
+    time = instance.timestamp
+    # chop to 12 to keep aligned with linux kernel conventions
+    commit_hash = instance.tarball.commit_id[:12]
+    ps_id = instance.tarball.patchset.id
+    nic_name = instance.environment.nic_dtscodename
+    # since nic_dtscodename is optional, base the name off the last word in the
+    # nic_model (since the nic_model is a friendly name of the nic)
+    if not nic_name:
+        nic_name = instance.environment.nic_model.split(" ")[-1]
+    friendly_datetime = time.strftime('%Y-%m-%d_%H-%M-%S')
+    ext = os.path.splitext(filename)[1]
+    return f'{instance.__class__._meta.verbose_name_plural.replace(" ", "_")}/' \
+           f'{instance.uuid.hex}/{field}/{time.year}/{time.month}/' \
+           f'dpdk_{commit_hash}_{ps_id}_{friendly_datetime}_{nic_name}{ext}'
 
 
 class PatchSetQuerySet(models.QuerySet):
@@ -367,6 +392,7 @@ class Environment(models.Model):
     runs on the same environment are comparable and reproducible.
     """
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     inventory_id = models.CharField(max_length=64,
         help_text='Site equipment inventory label/identifier')
     owner = models.ForeignKey(Group, on_delete=models.SET_NULL,
@@ -435,7 +461,7 @@ class Environment(models.Model):
         help_text='Date since which results should be included in the '
                   'overall result on the dashboard')
     hardware_description = PrivateFileField(
-        null=True, blank=True,
+        null=True, blank=True, max_length=255,
         upload_to=partial(upload_model_path, 'hardware_description'),
         help_text='External hardware description provided by the member. '
                   'This can include setup configuration, topology, and '
@@ -461,6 +487,7 @@ class Environment(models.Model):
         new_obj = Environment.objects.get(pk=self.pk)
 
         new_obj.pk = None
+        new_obj.uuid = uuid.uuid4()
         new_obj.predecessor = self
         new_obj.contact_policy = None
         new_obj.save()
@@ -587,13 +614,15 @@ class Parameter(models.Model):
 class TestRun(models.Model):
     """Model a test run of a patch set."""
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     timestamp = models.DateTimeField('time run',
         help_text='Date and time that test was run')
     log_output_file = models.URLField(blank=True, null=True,
         help_text='External URL of log output file')
     log_upload_file = PrivateFileField(
-        upload_to=partial(upload_model_path, 'log_upload_file'),
-        blank=True, null=True, help_text='Log output file for this test run')
+        upload_to=partial(upload_model_path_test_run, 'log_upload_file'),
+        blank=True, null=True, max_length=255,
+        help_text='Log output file for this test run')
     tarball = models.ForeignKey(Tarball, on_delete=models.CASCADE,
         related_name='runs', help_text='Tarball used for test run')
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE,

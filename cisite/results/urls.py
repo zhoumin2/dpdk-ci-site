@@ -31,7 +31,17 @@ def upload_model_path(model, field):
     """
     return f'{settings.PRIVATE_STORAGE_URL[1:]}' \
            f'{model._meta.verbose_name_plural.replace(" ", "_")}/' \
-           f'<pk>/{field}/<filename>'
+           f'<uuidhex>/{field}/<filename>'
+
+
+def upload_model_path_test_run(model, field):
+    """Upload files for a test run.
+
+    See `upload_model_path` for more information.
+    """
+    return f'{settings.PRIVATE_STORAGE_URL[1:]}' \
+           f'{model._meta.verbose_name_plural.replace(" ", "_")}/' \
+           f'<uuidhex>/{field}/<year>/<month>/<filename>'
 
 
 urlpatterns = [
@@ -39,7 +49,7 @@ urlpatterns = [
     path(upload_model_path(models.Environment, 'hardware_description'),
          views.HardwareDescriptionDownloadView.as_view(),
          name='hardware_description'),
-    path(upload_model_path(models.TestRun, 'log_upload_file'),
+    path(upload_model_path_test_run(models.TestRun, 'log_upload_file'),
          views.TestRunLogDownloadView.as_view(),
          name='log_upload_file'),
 ]
