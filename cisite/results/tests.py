@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.http.request import HttpRequest
 from django import test
 from django.test.client import RequestFactory
@@ -15,21 +16,25 @@ import rest_framework.exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
+from tempfile import NamedTemporaryFile
 from .models import Patch, PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
-    Subscription, UserProfile, upload_model_path
+    Subscription, UserProfile, upload_model_path, upload_model_path_test_run
 from .serializers import PatchSerializer, EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
-from .urls import upload_model_path as upload_model_path_url
+from .urls import upload_model_path as upload_model_path_url, \
+    upload_model_path_test_run as upload_model_path_test_run_url
+from .views import HardwareDescriptionDownloadView, TestRunLogDownloadView
 
 
 def create_test_run(environment, **kwargs):
     """Create a dummy test run object for use by tests."""
     tb = kwargs.pop('tarball', None)
     if not tb:
+        ps = PatchSet.objects.create(patch_count=0)
         tb = Tarball.objects.create(
             branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
-            commit_id="0" * 40)
+            commit_id="0" * 40, patchset=ps)
     tr_kwargs = {
         'timestamp': now(),
         'log_output_file': 'http://foo.invalid/bar'
@@ -1349,16 +1354,87 @@ class TestDownloadURL(test.TestCase):
     def setUp(self):
         """Set up dummy test data."""
         super().setUp()
-        create_test_environment()
+        self.env = create_test_environment()
+        self.run = create_test_run(self.env)
 
-    def test_verify_sameness(self):
+    def test_verify_sameness_environment(self):
         """Verify that the methods in models and urls match."""
         path = upload_model_path_url(Environment, 'hardware_description')
         self.assertEqual(path, settings.PRIVATE_STORAGE_URL[1:] +
-                         'environments/<pk>/hardware_description/<filename>')
-        path = upload_model_path('hardware_description',
-                                 Environment.objects.first(), 'test.pdf')
-        self.assertEqual(path, 'environments/1/hardware_description/test.pdf')
+                         'environments/<uuidhex>/hardware_description/<filename>')
+        path = upload_model_path(
+            'hardware_description', Environment.objects.first(), 'test.pdf')
+        self.assertEqual(path, f'environments/{self.env.uuid.hex}/'
+                               'hardware_description/test.pdf')
         # now the actual sameness verification
-        url = reverse('hardware_description', args=('1', 'test.pdf'))
+        url = reverse('hardware_description', args=(self.env.uuid.hex, 'test.pdf'))
         self.assertEqual(settings.PRIVATE_STORAGE_URL + path, url)
+
+    def test_verify_sameness_test_run(self):
+        """Verify that the methods in models and urls match."""
+        path = upload_model_path_test_run_url(TestRun, 'log_upload_file')
+        self.assertEqual(
+            path, settings.PRIVATE_STORAGE_URL[1:] +
+            'test_runs/<uuidhex>/log_upload_file/<year>/<month>/<filename>')
+        path = upload_model_path_test_run(
+            'log_upload_file', TestRun.objects.first(), 'test.pdf')
+        year = self.run.timestamp.year
+        month = self.run.timestamp.month
+        friendly_datetime = self.run.timestamp.strftime('%Y-%m-%d_%H-%M-%S')
+        filename = f'dpdk_000000000000_1_{friendly_datetime}_fortville.pdf'
+        self.assertEqual(path, f'test_runs/{self.run.uuid.hex}/log_upload_file/'
+                               f'{year}/{month}/{filename}')
+        # now the actual sameness verification
+        url = reverse('log_upload_file', args=(self.run.uuid.hex, year, month,
+                                               filename))
+        self.assertEqual(settings.PRIVATE_STORAGE_URL + path, url)
+
+
+class TestDownloadViewPermission(test.TestCase):
+    """Test the download view permissions."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.user.groups.add(self.group)
+        self.tmp_file = NamedTemporaryFile()
+        self.django_file = File(self.tmp_file, name='test')
+        self.env = create_test_environment(
+            owner=self.group, hardware_description=self.django_file)
+        self.run = create_test_run(
+            self.env, log_upload_file=self.django_file)
+
+    def test_hardware_description_download_view(self):
+        """Make sure a 404 does not get raised."""
+        view = HardwareDescriptionDownloadView()
+        view.get_object(self.env.uuid.hex)
+
+    def test_test_run_download_view(self):
+        """Make sure a 404 does not get raised."""
+        view = TestRunLogDownloadView()
+        view.get_object(self.run.uuid.hex)
+
+    def test_hardware_description_download_view_get_anonymous(self):
+        """Check anonymous access."""
+        resp = self.client.get(self.env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_hardware_description_download_view_get_user(self):
+        """Check user access."""
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.get(self.env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_test_run_download_view_get_anonymous(self):
+        """Check anonymous access."""
+        resp = self.client.get(self.run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_test_run_download_view_get_user(self):
+        """Check user access."""
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.get(self.run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
