@@ -21,6 +21,7 @@ from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter
 from .models import Branch, Environment, Measurement, PatchSet, Patch, \
     Subscription, Tarball, TestCase, TestRun
 from . import permissions
+from .parsers import JSONMultiPartParser
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, PatchSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
@@ -167,6 +168,7 @@ class TestRunViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.OwnerReadCreateOnly,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
     serializer_class = TestRunSerializer
+    parser_classes = (JSONMultiPartParser,)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):

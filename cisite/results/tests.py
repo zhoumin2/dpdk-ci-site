@@ -520,7 +520,12 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             results=[dict(result='PASS',
                           difference=-0.85,
                           expected_value=None,
-                          measurement=cls.m_url)])
+                          measurement=cls.m_url),
+                     dict(result='PASS',
+                          difference=-0.71,
+                          expected_value=None,
+                          measurement=cls.m_url),
+                     ])
         request = HttpRequest()
         request.user = user
         cls.context = dict(request=request)
