@@ -79,6 +79,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cisite.wsgi.application'
 
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
