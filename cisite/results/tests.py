@@ -1367,8 +1367,7 @@ class TestDownloadURL(test.TestCase):
         path = upload_model_path_url(Environment, 'hardware_description')
         self.assertEqual(path, settings.PRIVATE_STORAGE_URL[1:] +
                          'environments/<uuidhex>/hardware_description/<filename>')
-        path = upload_model_path(
-            'hardware_description', Environment.objects.first(), 'test.pdf')
+        path = upload_model_path('hardware_description', self.env, 'test.pdf')
         self.assertEqual(path, f'environments/{self.env.uuid.hex}/'
                                'hardware_description/test.pdf')
         # now the actual sameness verification
@@ -1382,7 +1381,7 @@ class TestDownloadURL(test.TestCase):
             path, settings.PRIVATE_STORAGE_URL[1:] +
             'test_runs/<uuidhex>/log_upload_file/<year>/<month>/<filename>')
         path = upload_model_path_test_run(
-            'log_upload_file', TestRun.objects.first(), 'test.pdf')
+            'log_upload_file', self.run, 'test.pdf')
         year = self.run.timestamp.year
         month = self.run.timestamp.month
         friendly_datetime = self.run.timestamp.strftime('%Y-%m-%d_%H-%M-%S')
@@ -1393,6 +1392,25 @@ class TestDownloadURL(test.TestCase):
         url = reverse('log_upload_file', args=(self.run.uuid.hex, year, month,
                                                filename))
         self.assertEqual(settings.PRIVATE_STORAGE_URL + path, url)
+
+    def test_upload_model_path_test_run_no_ps(self):
+        """Verify no patchset on tarball is valid."""
+        tb = Tarball.objects.create(
+            branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
+            commit_id="0" * 40)
+        tr_kwargs = {
+            'timestamp': now(),
+            'log_output_file': 'http://foo.invalid/bar',
+            'tarball': tb
+        }
+        tr = TestRun.objects.create(environment=self.env, **tr_kwargs)
+        path = upload_model_path_test_run('log_upload_file', tr, 'test.pdf')
+        year = tr.timestamp.year
+        month = tr.timestamp.month
+        friendly_datetime = tr.timestamp.strftime('%Y-%m-%d_%H-%M-%S')
+        filename = f'dpdk_000000000000_{friendly_datetime}_fortville.pdf'
+        self.assertEqual(path, f'test_runs/{tr.uuid.hex}/log_upload_file/'
+                               f'{year}/{month}/{filename}')
 
 
 class TestDownloadViewPermission(test.TestCase):

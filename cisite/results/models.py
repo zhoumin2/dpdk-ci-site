@@ -42,7 +42,11 @@ def upload_model_path_test_run(field, instance, filename):
     time = instance.timestamp
     # chop to 12 to keep aligned with linux kernel conventions
     commit_hash = instance.tarball.commit_id[:12]
-    ps_id = instance.tarball.patchset.id
+    # in case a base test run is made (like from master) which does not
+    # contain a patchset
+    ps_id = ''
+    if instance.tarball.patchset:
+        ps_id = f'{instance.tarball.patchset.id}_'
     nic_name = instance.environment.nic_dtscodename
     # since nic_dtscodename is optional, base the name off the last word in the
     # nic_model (since the nic_model is a friendly name of the nic)
@@ -52,7 +56,7 @@ def upload_model_path_test_run(field, instance, filename):
     ext = os.path.splitext(filename)[1]
     return f'{instance.__class__._meta.verbose_name_plural.replace(" ", "_")}/' \
            f'{instance.uuid.hex}/{field}/{time.year}/{time.month}/' \
-           f'dpdk_{commit_hash}_{ps_id}_{friendly_datetime}_{nic_name}{ext}'
+           f'dpdk_{commit_hash}_{ps_id}{friendly_datetime}_{nic_name}{ext}'
 
 
 class PatchSetQuerySet(models.QuerySet):
