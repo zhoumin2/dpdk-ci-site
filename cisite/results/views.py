@@ -51,7 +51,10 @@ class DownloadPermissionView(PrivateStorageDetailView):
 
     def get_object(self, uuidhex, **kwargs):
         """Override get_object to use the uuid."""
-        return self.model.objects.get(uuid=uuid.UUID(uuidhex))
+        try:
+            return self.model.objects.get(uuid=uuid.UUID(uuidhex))
+        except ValueError:
+            raise Http404
 
 
 class HardwareDescriptionDownloadView(DownloadPermissionView):
