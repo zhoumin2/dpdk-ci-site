@@ -85,9 +85,10 @@
         <thead>
           <tr>
             <th>Result</th>
-            {% for p in tc.results.0.measurement.parameters %}
-              <th>{{ p.name }} ({{ p.unit }})</th>
-            {% endfor %}
+            <th>{{ tc.results.0.measurement.parameters.frame_size.name }}
+            ({{ tc.results.0.measurement.parameters.frame_size.unit }})</th>
+            <th>{{ tc.results.0.measurement.parameters.txd_rxd.name }}
+            ({{ tc.results.0.measurement.parameters.txd_rxd.unit }})</th>
             <th>{{ tc.results.0.measurement.name }} Difference
             ({{ tc.results.0.measurement.unit }})</th>
           </tr>
@@ -101,9 +102,8 @@
           <tr class="table-{{ item.result_class }}">
             <td>{{ item.result }}</td>
           {% endif %}
-            {% for p in item.measurement.parameters %}
-              <td>{{ p.value }}</td>
-            {% endfor %}
+            <td>{{ item.measurement.parameters.frame_size.value }}</td>
+            <td>{{ item.measurement.parameters.txd_rxd.value }}</td>
             <td>{{ item.difference|floatformat:"-5" }}</td>
           </tr>
           {% endfor %}

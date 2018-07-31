@@ -300,7 +300,9 @@ class DashboardDetail(BaseDashboardView):
                     run['failure_count'] = 0
                     run['testcases'] = {}
                     for result in run['results']:
-                        result['measurement'] = s.get(result['measurement']).json()
+                        measurement = s.get(result['measurement']).json()
+                        self.set_parameter_keys(measurement)
+                        result['measurement'] = measurement
                         if result['result'].upper() == 'FAIL':
                             run['failure_count'] += 1
                         tc = result['measurement']['testcase']
@@ -336,6 +338,19 @@ class DashboardDetail(BaseDashboardView):
                     }
             context['status_classes'] = text_color_classes(context['patchset']['status_class'])
             return context
+
+    def set_parameter_keys(self, measurement):
+        """Update the parameter list to be an object with name as the key.
+
+        This is to force proper "ordering" of the parameters. One day,
+        the measurements page or serializer should be updated to do this
+        instead of the dashboard. However, that is difficult. See DPDKLAB-386.
+        """
+        new_parameters = {}
+        for parameter in measurement['parameters']:
+            # can't use special characters in django templates...
+            new_parameters[parameter['name'].replace('/', '_')] = parameter
+        measurement['parameters'] = new_parameters
 
 
 class Preferences(LoginRequiredMixin, View):
