@@ -7,6 +7,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.http import Http404
 from django.http.request import HttpRequest
 from django import test
 from django.test.client import RequestFactory
@@ -1461,3 +1462,9 @@ class TestDownloadViewPermission(test.TestCase):
         self.client.login(username=self.user.username, password='AbCdEfGh')
         resp = self.client.get(self.run.log_upload_file.url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_for_404(self):
+        """Test that a 404 gets raised instead of 500."""
+        dpv = HardwareDescriptionDownloadView()
+        with self.assertRaises(Http404):
+            dpv.get_object('abcdefg')
