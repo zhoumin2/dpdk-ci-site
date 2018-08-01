@@ -109,6 +109,9 @@
           {% endfor %}
         </tbody>
       </table>
+      {% if r.log_upload_file %}
+      <p><a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a></p>
+      {% endif %}
     </div>
     {% endfor %}
     {% endif %}

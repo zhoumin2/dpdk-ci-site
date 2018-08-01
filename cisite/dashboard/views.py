@@ -294,6 +294,9 @@ class DashboardDetail(BaseDashboardView):
                     if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     run = resp.json()
+                    if run['log_upload_file']:
+                        run['log_upload_file'] = build_upload_url(
+                            self.request, run['log_upload_file'])
                     run['timestamp'] = parse_datetime(run['timestamp'])
                     delta = run['timestamp'] - context['patchset']['date']
                     run['timedelta'] = format_timedelta(delta)
