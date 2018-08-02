@@ -1,12 +1,21 @@
 """Define extra utility methods for the dashboard."""
 
+import json
+
 from contextlib import contextmanager
 from django.conf import settings
+from django.core.cache import cache
 from django.urls import reverse
 from html.parser import HTMLParser
+from logging import getLogger
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib.parse import urljoin, urlparse
+
+# default logger
+logger = getLogger('dashboard')
+# used for development url mapping
+request_mapping = None
 
 
 @contextmanager
@@ -97,3 +106,42 @@ def build_upload_url(request, real_url):
     """Returns a url based on the app and to-proxy url."""
     return request.build_absolute_uri(
         reverse('dashboard') + urlparse(real_url).path[1:])
+
+
+def pw_get(url, session=None):
+    """Calls a GET request to the patchworks API.
+
+    This also caches the response for future usage for an arbitrary amount.
+
+    `url` is a url to the patchworks API.
+    `session` is a requests Session. If passed, it is expected that it is
+        closed by the callee.
+
+    Returns: JSON response or throws an exception if the connection failed.
+    """
+    if settings.ENVIRONMENT == 'development':
+        try:
+            return _pw_get_devel(url)
+        except KeyError:
+            logger.warn(f'THIS SHOULD BE CACHED FOR DEVELOPMENT: {url}')
+
+    def call_pw_json():
+        logger.info(f'Requesting patchworks url: {url}')
+        if not session:
+            with Session() as s:
+                resp = s.get(url)
+        else:
+            resp = session.get(url)
+        resp.raise_for_status()
+        return resp.json()
+    # cache for 6 hours
+    return cache.get_or_set(url, call_pw_json, 60 * 60 * 6)
+
+
+def _pw_get_devel(url):
+    """If running in devel, use a mapping instead of calling patchworks."""
+    global request_mapping
+    if not request_mapping:
+        with open('cisite/request_mapping.json', 'r') as f:
+            request_mapping = json.load(f)
+    return request_mapping[url]

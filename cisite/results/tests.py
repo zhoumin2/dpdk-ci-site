@@ -18,10 +18,10 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 from tempfile import NamedTemporaryFile
-from .models import Patch, PatchSet, ContactPolicy, Environment, \
+from .models import PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
     Subscription, UserProfile, upload_model_path, upload_model_path_test_run
-from .serializers import PatchSerializer, EnvironmentSerializer, \
+from .serializers import EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
 from .urls import upload_model_path as upload_model_path_url, \
     upload_model_path_test_run as upload_model_path_test_run_url
@@ -32,7 +32,7 @@ def create_test_run(environment, **kwargs):
     """Create a dummy test run object for use by tests."""
     tb = kwargs.pop('tarball', None)
     if not tb:
-        ps = PatchSet.objects.create(patch_count=0)
+        ps = PatchSet.objects.create()
         tb = Tarball.objects.create(
             branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
             commit_id="0" * 40, patchset=ps)
@@ -117,42 +117,6 @@ class SerializerAssertionMixin(object):
         """
         self._assertSerializedNestedEqual(deepcopy(x_data), deepcopy(y_data),
                                           **kwargs)
-
-
-class PatchSerializerTestCase(test.TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        """Set up dummy test data."""
-        cls.test_ps = PatchSet.objects.create(patch_count=3,
-            message_uid='20171023231534.90996')
-
-    def test_create_patchset_does_not_exist(self):
-        serializer = PatchSerializer(data=dict(patchworks_id=30744,
-              pw_is_active=True,
-              submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
-              message_id='20171024231534.90997-1-ferruh.yigit@intel.com',
-              subject='ethdev: extract xstat basic stat count calculation',
-              patchset_count=3,
-              version='v2',
-              patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc)))
-        serializer.is_valid(raise_exception=True)
-        p = serializer.save()
-        self.assertNotEqual(p.patchset, self.__class__.test_ps)
-
-    def test_create_patchset_exists(self):
-        serializer = PatchSerializer(data=dict(patchworks_id=30741,
-              pw_is_active=True,
-              submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
-              message_id='20171023231534.90996-1-ferruh.yigit@intel.com',
-              subject='ethdev: extract xstat basic stat count calculation',
-              patchset_count=3,
-              version='v2',
-              patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc)))
-        serializer.is_valid(raise_exception=True)
-        p = serializer.save()
-        self.assertEqual(p.patchset, self.__class__.test_ps)
 
 
 class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
@@ -695,24 +659,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         TestCase.objects.create(
             name='nic_single_core_perf',
             description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
-        self.test_ps = PatchSet.objects.create(patch_count=3,
-            message_uid='20171023231534.90996')
-        Patch.objects.create(patchworks_id=30741,
-              submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
-              message_id='20171023231534.90996-1-ferruh.yigit@intel.com',
-              subject='ethdev: extract xstat basic stat count calculation',
-              patchset=self.test_ps,
-              version='v2',
-              patch_number=1,
-              date=datetime(2017, 10, 23, 23, 15, 32, tzinfo=utc))
-        Patch.objects.create(patchworks_id=30742,
-              submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
-              message_id='20171023231534.90996-2-ferruh.yigit@intel.com',
-              subject='ethdev: fix xstats get by id APIS',
-              patchset=self.test_ps,
-              version='v2',
-              patch_number=2,
-              date=datetime(2017, 10, 23, 23, 15, 33, tzinfo=utc))
+        self.test_ps = PatchSet.objects.create()
         self.env1 = create_test_environment(
             inventory_id='IOL-IOL-1', date=env_date, live_since=env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
@@ -731,62 +678,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         ContentType.objects.clear_cache()
         super().tearDown()
 
-    def add_last_patch(self):
-        Patch.objects.create(patchworks_id=30743,
-              message_id='20171023231534.90996-3-ferruh.yigit@intel.com',
-              submitter='Ferruh Yigit <ferruh.yigit@intel.com>',
-              subject='ethdev: fix xstats get by id APIS',
-              patchset=self.test_ps,
-              version='v2',
-              patch_number=2,
-              date=datetime(2017, 10, 23, 23, 15, 34, tzinfo=utc))
-
-    def test_incomplete_property(self):
-        """Test that complete returns False for an incomplete patch set."""
-        self.assertFalse(self.test_ps.complete)
-
-    def test_incomplete_query_works(self):
-        """Test that the PatchSetQuerySet incomplete query works."""
-        self.assertTrue(PatchSet.objects.incomplete().exists())
-
-    def test_incomplete_complete_query(self):
-        """Test that complete query does not return incomplete patch set."""
-        self.assertFalse(PatchSet.objects.complete().exists())
-
-    def test_incomplete_str(self):
-        """Test string representation of incomplete patch set."""
-        self.assertEqual(str(self.test_ps),
-                         '20171023231534.90996 2/3')
-
-    def test_complete_property(self):
-        """Test string representation of incomplete patch set."""
-        self.add_last_patch()
-        self.assertTrue(self.test_ps.complete)
-
-    def test_complete_query_works(self):
-        """Test that the PatchSetQuerySet complete query works."""
-        self.add_last_patch()
-        self.assertTrue(PatchSet.objects.complete().exists())
-
-    def test_complete_incomplete_query(self):
-        """Test that incomplete query does not return complete patch set."""
-        self.add_last_patch()
-        self.assertFalse(PatchSet.objects.incomplete().exists())
-
-    def test_complete_str(self):
-        """Test string representation of complete patch set."""
-        self.add_last_patch()
-        self.assertEqual(str(self.test_ps),
-                         '20171023231534.90996 3/3')
-
     def test_status_pending(self):
         """Verify that status with no tarball is Pending."""
         self.assertEqual(self.test_ps.status, 'Pending')
 
     def test_status_apply_error(self):
         """Verify that status shows Apply Error if that is the case."""
-        ps = PatchSet.objects.create(patch_count=1, apply_error=True,
-                                     message_uid='20180712203921.12742')
+        ps = PatchSet.objects.create(apply_error=True)
         self.assertEqual(ps.status, 'Apply Error')
 
     def test_status_waiting(self):

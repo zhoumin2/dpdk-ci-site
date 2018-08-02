@@ -1,0 +1,979 @@
+{
+  "https://patches.dpdk.org/api/1.0/series/23": {
+    "id": 23,
+    "url": "https://patches.dpdk.org/api/1.0/series/23/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] net/bnxt: add missing ids in xstats",
+    "date": "2018-06-07T05:36:05",
+    "submitter": {
+      "id": 3,
+      "url": "https://patches.dpdk.org/api/1.0/people/3/",
+      "name": "David Marchand",
+      "email": "david.marchand@6wind.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/23/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40705,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40705/",
+        "msgid": "<1528349765-31471-1-git-send-email-david.marchand@6wind.com>",
+        "date": "2018-06-07T05:36:05",
+        "name": "[dpdk-dev] net/bnxt: add missing ids in xstats",
+        "mbox": "https://patches.dpdk.org/patch/40705/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/22": {
+    "id": 22,
+    "url": "https://patches.dpdk.org/api/1.0/series/22/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "net/i40e: print real global changes",
+    "date": "2018-06-07T02:40:06",
+    "submitter": {
+      "id": 410,
+      "url": "https://patches.dpdk.org/api/1.0/people/410/",
+      "name": "Beilei Xing",
+      "email": "beilei.xing@intel.com"
+    },
+    "version": 1,
+    "total": 2,
+    "received_total": 2,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/22/mbox/",
+    "cover_letter": {
+      "id": 40702,
+      "url": "https://patches.dpdk.org/api/1.0/covers/40702/",
+      "msgid": "<1528339208-89160-1-git-send-email-beilei.xing@intel.com>",
+      "date": "2018-06-07T02:40:06",
+      "name": "[dpdk-dev,0/2] net/i40e: print real global changes"
+    },
+    "patches": [
+      {
+        "id": 40703,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40703/",
+        "msgid": "<1528339208-89160-2-git-send-email-beilei.xing@intel.com>",
+        "date": "2018-06-07T02:40:07",
+        "name": "[dpdk-dev,1/2] net/i40e: print real global changes",
+        "mbox": "https://patches.dpdk.org/patch/40703/mbox/"
+      },
+      {
+        "id": 40704,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40704/",
+        "msgid": "<1528339208-89160-3-git-send-email-beilei.xing@intel.com>",
+        "date": "2018-06-07T02:40:08",
+        "name": "[dpdk-dev,2/2] net/i40e: remove summarized global register change info",
+        "mbox": "https://patches.dpdk.org/patch/40704/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/21": {
+    "id": 21,
+    "url": "https://patches.dpdk.org/api/1.0/series/21/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] net/i40e: remove VF interrupt handler",
+    "date": "2018-06-07T01:31:56",
+    "submitter": {
+      "id": 504,
+      "url": "https://patches.dpdk.org/api/1.0/people/504/",
+      "name": "Zhang, Qi Z",
+      "email": "qi.z.zhang@intel.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/21/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40701,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40701/",
+        "msgid": "<20180607013156.28763-1-qi.z.zhang@intel.com>",
+        "date": "2018-06-07T01:31:56",
+        "name": "[dpdk-dev] net/i40e: remove VF interrupt handler",
+        "mbox": "https://patches.dpdk.org/patch/40701/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/20": {
+    "id": 20,
+    "url": "https://patches.dpdk.org/api/1.0/series/20/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "net/virtio: Tx path selection and offload improvements",
+    "date": "2018-06-06T12:31:23",
+    "submitter": {
+      "id": 512,
+      "url": "https://patches.dpdk.org/api/1.0/people/512/",
+      "name": "Maxime Coquelin",
+      "email": "maxime.coquelin@redhat.com"
+    },
+    "version": 2,
+    "total": 5,
+    "received_total": 5,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/20/mbox/",
+    "cover_letter": {
+      "id": 40691,
+      "url": "https://patches.dpdk.org/api/1.0/covers/40691/",
+      "msgid": "<20180606123128.7868-1-maxime.coquelin@redhat.com>",
+      "date": "2018-06-06T12:31:23",
+      "name": "[dpdk-dev,v2,0/5] net/virtio: Tx path selection and offload improvements"
+    },
+    "patches": [
+      {
+        "id": 40692,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40692/",
+        "msgid": "<20180606123128.7868-2-maxime.coquelin@redhat.com>",
+        "date": "2018-06-06T12:31:24",
+        "name": "[dpdk-dev,v2,1/5] net/virtio: prevent simple Tx path selection by default",
+        "mbox": "https://patches.dpdk.org/patch/40692/mbox/"
+      },
+      {
+        "id": 40693,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40693/",
+        "msgid": "<20180606123128.7868-3-maxime.coquelin@redhat.com>",
+        "date": "2018-06-06T12:31:25",
+        "name": "[dpdk-dev,v2,2/5] net/virtio: use simple path for Tx even if Rx mergeable",
+        "mbox": "https://patches.dpdk.org/patch/40693/mbox/"
+      },
+      {
+        "id": 40694,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40694/",
+        "msgid": "<20180606123128.7868-4-maxime.coquelin@redhat.com>",
+        "date": "2018-06-06T12:31:26",
+        "name": "[dpdk-dev,v2,3/5] net/vhost: improve Tx path selection",
+        "mbox": "https://patches.dpdk.org/patch/40694/mbox/"
+      },
+      {
+        "id": 40695,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40695/",
+        "msgid": "<20180606123128.7868-5-maxime.coquelin@redhat.com>",
+        "date": "2018-06-06T12:31:27",
+        "name": "[dpdk-dev,v2,4/5] net/virtio: don't use simple Rx if TCP LRO or VLAN strip requested",
+        "mbox": "https://patches.dpdk.org/patch/40695/mbox/"
+      },
+      {
+        "id": 40696,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40696/",
+        "msgid": "<20180606123128.7868-6-maxime.coquelin@redhat.com>",
+        "date": "2018-06-06T12:31:28",
+        "name": "[dpdk-dev,v2,5/5] net/virtio: improve offload check performance",
+        "mbox": "https://patches.dpdk.org/patch/40696/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/19": {
+    "id": 19,
+    "url": "https://patches.dpdk.org/api/1.0/series/19/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] net/bonding: don't clear active slave count",
+    "date": "2018-06-06T12:26:27",
+    "submitter": {
+      "id": 341,
+      "url": "https://patches.dpdk.org/api/1.0/people/341/",
+      "name": "Chas Williams",
+      "email": "3chas3@gmail.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/19/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40690,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40690/",
+        "msgid": "<20180606122627.18418-1-3chas3@gmail.com>",
+        "date": "2018-06-06T12:26:27",
+        "name": "[dpdk-dev] net/bonding: don't clear active slave count",
+        "mbox": "https://patches.dpdk.org/patch/40690/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/18": {
+    "id": 18,
+    "url": "https://patches.dpdk.org/api/1.0/series/18/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] examples/ipsec-secgw: fix incorrect IPv4 checksum at TX",
+    "date": "2018-06-06T12:04:01",
+    "submitter": {
+      "id": 33,
+      "url": "https://patches.dpdk.org/api/1.0/people/33/",
+      "name": "Ananyev, Konstantin",
+      "email": "konstantin.ananyev@intel.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/18/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40689,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40689/",
+        "msgid": "<1528286641-27668-1-git-send-email-konstantin.ananyev@intel.com>",
+        "date": "2018-06-06T12:04:01",
+        "name": "[dpdk-dev] examples/ipsec-secgw: fix incorrect IPv4 checksum at TX",
+        "mbox": "https://patches.dpdk.org/patch/40689/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/17": {
+    "id": 17,
+    "url": "https://patches.dpdk.org/api/1.0/series/17/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev,1/2] power: add get capabilities API",
+    "date": "2018-06-06T10:47:20",
+    "submitter": {
+      "id": 743,
+      "url": "https://patches.dpdk.org/api/1.0/people/743/",
+      "name": "Radu Nicolau",
+      "email": "radu.nicolau@intel.com"
+    },
+    "version": 1,
+    "total": 2,
+    "received_total": 2,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/17/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40687,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40687/",
+        "msgid": "<1528282041-20380-1-git-send-email-radu.nicolau@intel.com>",
+        "date": "2018-06-06T10:47:20",
+        "name": "[dpdk-dev,1/2] power: add get capabilities API",
+        "mbox": "https://patches.dpdk.org/patch/40687/mbox/"
+      },
+      {
+        "id": 40688,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40688/",
+        "msgid": "<1528282041-20380-2-git-send-email-radu.nicolau@intel.com>",
+        "date": "2018-06-06T10:47:21",
+        "name": "[dpdk-dev,2/2] examples/l3fw-power: add high/regular performance cores option",
+        "mbox": "https://patches.dpdk.org/patch/40688/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/16": {
+    "id": 16,
+    "url": "https://patches.dpdk.org/api/1.0/series/16/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev,v2] net/pcap: rx_iface_in stream type support",
+    "date": "2018-06-05T09:39:44",
+    "submitter": {
+      "id": 1047,
+      "url": "https://patches.dpdk.org/api/1.0/people/1047/",
+      "name": "ido goshen",
+      "email": "ido@cgstowernetworks.com"
+    },
+    "version": 2,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/16/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40683,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40683/",
+        "msgid": "<1528191584-46149-1-git-send-email-ido@cgstowernetworks.com>",
+        "date": "2018-06-05T09:39:44",
+        "name": "[dpdk-dev,v2] net/pcap: rx_iface_in stream type support",
+        "mbox": "https://patches.dpdk.org/patch/40683/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/15": {
+    "id": 15,
+    "url": "https://patches.dpdk.org/api/1.0/series/15/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] i40evf: don't reset device_info data",
+    "date": "2018-06-06T20:31:25",
+    "submitter": {
+      "id": 68,
+      "url": "https://patches.dpdk.org/api/1.0/people/68/",
+      "name": "Damjan Marion",
+      "email": "damarion@cisco.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/15/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40682,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40682/",
+        "msgid": "<20180606203125.90711-1-damarion@cisco.com>",
+        "date": "2018-06-06T20:31:25",
+        "name": "[dpdk-dev] i40evf: don't reset device_info data",
+        "mbox": "https://patches.dpdk.org/patch/40682/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/14": {
+    "id": 14,
+    "url": "https://patches.dpdk.org/api/1.0/series/14/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev,v3] doc/event: improve eventdev library documentation",
+    "date": "2018-06-06T20:30:01",
+    "submitter": {
+      "id": 1045,
+      "url": "https://patches.dpdk.org/api/1.0/people/1045/",
+      "name": "Honnappa Nagarahalli",
+      "email": "honnappa.nagarahalli@arm.com"
+    },
+    "version": 3,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/14/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40681,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40681/",
+        "msgid": "<1528317001-22990-1-git-send-email-honnappa.nagarahalli@arm.com>",
+        "date": "2018-06-06T20:30:01",
+        "name": "[dpdk-dev,v3] doc/event: improve eventdev library documentation",
+        "mbox": "https://patches.dpdk.org/patch/40681/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/13": {
+    "id": 13,
+    "url": "https://patches.dpdk.org/api/1.0/series/13/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "[dpdk-dev] examples: make Linux environment check consistent",
+    "date": "2018-06-06T13:50:27",
+    "submitter": {
+      "id": 685,
+      "url": "https://patches.dpdk.org/api/1.0/people/685/",
+      "name": "Thomas Monjalon",
+      "email": "thomas@monjalon.net"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/13/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40680,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40680/",
+        "msgid": "<20180606135027.13780-1-thomas@monjalon.net>",
+        "date": "2018-06-06T13:50:27",
+        "name": "[dpdk-dev] examples: make Linux environment check consistent",
+        "mbox": "https://patches.dpdk.org/patch/40680/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/12": {
+    "id": 12,
+    "url": "https://patches.dpdk.org/api/1.0/series/12/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/12/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40679,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40679/",
+        "msgid": "qsfsqdfs34dfsd@sdfa23456789",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40679/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/11": {
+    "id": 11,
+    "url": "https://patches.dpdk.org/api/1.0/series/11/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/11/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40678,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40678/",
+        "msgid": "qsfsqdfs34dfsd@sdfa234567",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40678/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/10": {
+    "id": 10,
+    "url": "https://patches.dpdk.org/api/1.0/series/10/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/10/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40677,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40677/",
+        "msgid": "qsfsqdfs34dfsd@sdfa23456",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix tries/9",
+        "mbox": "https://patches.dpdk.org/patch/40677/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/9": {
+    "id": 9,
+    "url": "https://patches.dpdk.org/api/1.0/series/9/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/9/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40676,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40676/",
+        "msgid": "qsfsqdfs34dfsd@sdfa2345",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40676/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/8": {
+    "id": 8,
+    "url": "https://patches.dpdk.org/api/1.0/series/8/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/8/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40675,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40675/",
+        "msgid": "qsfsqdfsdfsd@sdfa2345",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40675/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/7": {
+    "id": 7,
+    "url": "https://patches.dpdk.org/api/1.0/series/7/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/7/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40673,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40673/",
+        "msgid": "qsffsd@sdfa2345",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40673/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/6": {
+    "id": 6,
+    "url": "https://patches.dpdk.org/api/1.0/series/6/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "url": "https://patches.dpdk.org/api/1.0/series/4/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/4/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40669,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40669/",
+        "msgid": "qsflshdfsd@sdfsdfa23",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40669/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/5": {
+    "id": 5,
+    "url": "https://patches.dpdk.org/api/1.0/series/5/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/5/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40671,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40671/",
+        "msgid": "qsflshdfsd@sdfsdfa234",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40671/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/4": {
+    "id": 4,
+    "url": "https://patches.dpdk.org/api/1.0/series/4/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/4/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40669,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40669/",
+        "msgid": "qsflshdfsd@sdfsdfa23",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40669/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/3": {
+    "id": 3,
+    "url": "https://patches.dpdk.org/api/1.0/series/3/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/3/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40668,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40668/",
+        "msgid": "qsflshdfsd@sdfsdfa2",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40668/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/2": {
+    "id": 2,
+    "url": "https://patches.dpdk.org/api/1.0/series/2/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Ali Alnubani",
+      "email": "alialnu@mellanox.com"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/2/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40667,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40667/",
+        "msgid": "qsflshdfsd@sdfsdfa",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40667/mbox/"
+      }
+    ]
+  },
+  "https://patches.dpdk.org/api/1.0/series/1": {
+    "id": 1,
+    "url": "https://patches.dpdk.org/api/1.0/series/1/",
+    "project": {
+      "id": 1,
+      "url": "https://patches.dpdk.org/api/1.0/projects/1/",
+      "name": "DPDK",
+      "link_name": "dpdk",
+      "list_id": "dev.dpdk.org",
+      "list_email": "dev@dpdk.org",
+      "web_url": "http://core.dpdk.org",
+      "scm_url": "git://dpdk.org/dpdk",
+      "webscm_url": "http://git.dpdk.org/dpdk"
+    },
+    "name": "fix typo in mac_swap",
+    "date": "2018-05-26T22:23:58",
+    "submitter": {
+      "id": 969,
+      "url": "https://patches.dpdk.org/api/1.0/people/969/",
+      "name": "Thomas Monjalon",
+      "email": "thomas@monjalon.net"
+    },
+    "version": 1,
+    "total": 1,
+    "received_total": 1,
+    "received_all": true,
+    "mbox": "https://patches.dpdk.org/series/1/mbox/",
+    "cover_letter": null,
+    "patches": [
+      {
+        "id": 40574,
+        "url": "https://patches.dpdk.org/api/1.0/patches/40574/",
+        "msgid": "qsflshdfsd@sdfsdf",
+        "date": "2018-05-26T22:23:58",
+        "name": "fix typo in mac_swap",
+        "mbox": "https://patches.dpdk.org/patch/40574/mbox/"
+      }
+    ]
+  }
+}

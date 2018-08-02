@@ -23,7 +23,9 @@ import math
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
-    ipa_session, ParseIPAChangePassword
+    ipa_session, ParseIPAChangePassword, pw_get
+
+logger = getLogger('dashboard')
 
 
 def text_color_classes(bg_class):
@@ -80,7 +82,7 @@ def paginate_rest(page, context, count):
     """
     page += 1
 
-    pages = int(math.ceil(count / getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE']))
+    pages = int(math.ceil(count / settings.REST_FRAMEWORK['PAGE_SIZE']))
 
     # silently make page 0 equal to page 1
     if page == 0:
@@ -145,13 +147,13 @@ class LoginView(auth_views.LoginView):
                 r.raise_for_status()
                 self.request.session['api_sessionid'] = r.cookies['sessionid']
             except requests.exceptions.ConnectionError as e:
-                getLogger('dashboard').exception(
-                    'Connection closed into backend API: %s', login_url)
+                logger.exception(
+                    f'Connection closed into backend API: {login_url}')
                 auth_logout(self.request)
                 return HttpResponseRedirect(self.request.get_full_path())
             except requests.exceptions.HTTPError as e:
-                getLogger('dashboard').exception('Unable to log into backend API: %s',
-                                                 e.response.text)
+                logger.exception(
+                    f'Unable to log into backend API: {e.response.text}')
                 auth_logout(self.request)
                 return HttpResponseServerError(
                     content='<p>Unable to login to backend API</p>')
@@ -174,17 +176,18 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
-    def get_patchset_submitter(self, ps):
+    def get_patchset_submitter(self, series):
         """Returns the patchset submitter as it should be output.
 
         The output will be just the name for an anonymous user or the name
         plus e-mail for a logged in user. This should prevent spambots from
         harvesting e-mails off of our dashboard.
         """
-        ret = ps.get('submitter_name') or '(unknown)'
+        submitter = series['submitter']
+        ret = submitter.get('name') or '(unknown)'
         request = self.request
-        if request.user.is_authenticated and ps.get('submitter_email'):
-            ret += ' <' + ps['submitter_email'] + '>'
+        if request.user.is_authenticated and submitter.get('email'):
+            ret += ' <' + submitter['email'] + '>'
         return ret
 
     def add_static_context_data(self, context):
@@ -197,6 +200,13 @@ class BaseDashboardView(TemplateView):
         context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
         return context
 
+    def patchwork_range_str(self, series):
+        """Return the range of patchwork IDs as an HTML string."""
+        res = str(series['patches'][0]['id'])
+        if len(series['patches']) > 1:
+            res += f'&ndash;{series["patches"][-1]["id"]}'
+        return res
+
     def get_context_data(self, **kwargs):
         """Get the static context data for all dashboard views."""
         context = super().get_context_data(**kwargs)
@@ -208,15 +218,13 @@ class BaseDashboardView(TemplateView):
         try:
             return super().get(*args, **kwargs)
         except requests.exceptions.ConnectionError:
-            getLogger('dashboard').exception(
-                'Backend connection error')
+            logger.exception('Backend connection error')
             context = dict()
             try:
                 self.add_static_context_data(context)
             except Exception:
-                getLogger('dashboard').exception(
-                    'Unable to get static context data '
-                    'while rendering 503 view')
+                logger.exception('Unable to get static context data '
+                                 'while rendering 503 view')
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=HTTPStatus.SERVICE_UNAVAILABLE)
 
@@ -232,26 +240,31 @@ class PatchSetList(BaseDashboardView):
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
-            resp = s.get(urljoin(
-                settings.API_BASE_URL,
-                'patchsets?complete=true&ordering=-id&offset={}'
-                .format(page *
-                        getattr(settings, 'REST_FRAMEWORK')['PAGE_SIZE'])))
+            resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets/'), params={
+                'pw_is_active': True,
+                'without_series': False,
+                'ordering': '-id',
+                'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'],
+            })
             resp.raise_for_status()
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
             paginate_rest(page, context, resp_json['count'])
-            resp = s.get(urljoin(settings.API_BASE_URL,
-                                 'statuses'))
+            resp = s.get(urljoin(settings.API_BASE_URL, 'statuses/'))
             resp.raise_for_status()
             context['statuses'] = resp.json()['results']
 
-        for ps in context['patchsets']:
-            ps['id'] = int(ps['url'].split('/')[-2])
-            ps['submitter'] = self.get_patchset_submitter(ps)
-            if 'time_to_last_test' in ps:
-                ps['time_to_last_test'] = format_timedelta(
-                    timedelta(seconds=float(ps['time_to_last_test'])))
+        with requests.Session() as pw_session:
+            for patchset in context['patchsets']:
+                series = pw_get(patchset['pw_series_url'], pw_session)
+                patchset['series'] = series
+                patchset['patchwork_range_str'] = \
+                    self.patchwork_range_str(series)
+                patchset['submitter'] = self.get_patchset_submitter(series)
+                if 'time_to_last_test' in patchset:
+                    patchset['time_to_last_test'] = format_timedelta(
+                        timedelta(
+                            seconds=float(patchset['time_to_last_test'])))
         return context
 
 
@@ -265,16 +278,24 @@ class DashboardDetail(BaseDashboardView):
         context = super().get_context_data(**kwargs)
         with api_session(self.request) as s:
             api_resp = s.get(urljoin(settings.API_BASE_URL,
-                                     'patchsets/' + str(self.kwargs['id'])))
+                                     f'patchsets/{self.kwargs["id"]}/'))
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
                 raise Http404
             context['patchset'] = api_resp.json()
-            context['patchset']['date'] = parse_datetime(
-                context['patchset']['patches'][0]['date'])
-            context['patchset']['submitter'] = self.get_patchset_submitter(
-                context['patchset'])
-            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments'),
-                         params={'active': 'true'})
+            # since we now rely on series information, raise a 404 if there is
+            # no series attached
+            if not context['patchset']['series_id']:
+                raise Http404
+
+            series = pw_get(context['patchset']['pw_series_url'])
+            context['patchset']['patches'] = series['patches']
+            context['patchset']['patchwork_range_str'] =\
+                self.patchwork_range_str(series)
+            # assume UTC
+            context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
+            context['patchset']['submitter'] = self.get_patchset_submitter(series)
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                             params={'active': 'true'})
             if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
                                         HTTPStatus.FORBIDDEN]:
                 envs = dict()

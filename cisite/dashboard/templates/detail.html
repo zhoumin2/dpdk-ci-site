@@ -30,11 +30,7 @@
   </dl>
   <ul>
     {% for p in patchset.patches %}
-    <li>
-      <a href="https://dpdk.org/dev/patchwork/patch/{{ p.patchworks_id }}/">
-        [PATCH {{ p.patch_number }}/{{ patchset.patches|length }}] {{ p.subject }}
-      </a>
-    </li>
+    <li><a href="https://patches.dpdk.org/patch/{{ p.id }}">{{ p.name }}</a></li>
     {% endfor %}
   </ul>
   <h1>Test Results</h1>

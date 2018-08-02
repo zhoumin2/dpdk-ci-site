@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
 from django.db import models
-from django.db.models import Q, F, Count
+from django.db.models import Q
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from functools import partial
@@ -62,26 +62,11 @@ def upload_model_path_test_run(field, instance, filename):
 class PatchSetQuerySet(models.QuerySet):
     """Provide queries specific for patchsets."""
 
-    def incomplete(self):
-        return self.filter(patch_count__gt=F('cur_patch_count'))
-
-    def complete(self):
-        return self.filter(patch_count=F('cur_patch_count'))
-
     def without_tarball(self):
         return self.filter(tarballs=None)
 
     def with_tarball(self):
         return self.exclude(tarballs=None)
-
-
-class PatchSetManager(models.Manager):
-    """Provide custom annotation for patchset objects."""
-
-    def get_queryset(self):
-        return super().get_queryset().annotate(
-            cur_patch_count=Count('patches',
-                                  filter=Q(patches__pw_is_active=True)))
 
 
 class PatchSet(models.Model):
@@ -119,41 +104,31 @@ class PatchSet(models.Model):
         },
     }
 
-    message_uid = models.CharField(max_length=255, unique=True,
-        help_text="Subset of patch e-mail Message-Id to match on")
-    patch_count = models.PositiveIntegerField(
-        help_text='Number of patches in the patch set')
     is_public = models.BooleanField(default=True,
         help_text='Was the patch set posted to a public mailing list?')
     apply_error = models.BooleanField(default=False,
         help_text='Was an error encountered trying to apply the patch?')
     series_id = models.PositiveIntegerField(unique=True, null=True,
         blank=True, help_text='The patchworks series ID.')
+    completed_timestamp = models.DateTimeField(
+        null=True, blank=True,
+        help_text='When this patchset was completed')
+    # This can be removed once patchworks updates to 2.1 (DPDKLAB-393)
+    pw_is_active = models.BooleanField('Is active?', default=True,
+        help_text="True if still considered active in Patchwork")
 
-    objects = PatchSetManager.from_queryset(PatchSetQuerySet)()
-
-    @property
-    def complete(self):
-        return self.patches.count() == self.patch_count
+    objects = models.Manager.from_queryset(PatchSetQuerySet)()
 
     def __str__(self):
         """Return string representation of patchset record."""
-        return '{uid:s} {actual:d}/{expected:d}'.format(
-            uid=self.message_uid, actual=self.patches.count(),
-            expected=self.patch_count)
+        return f'{super().__str__()} (Series: {self.series_id}) ' \
+               f'(Completed: {self.completed_timestamp})'
 
     @property
     def time_to_last_test(self):
         """Return the time from submission to last test run."""
         tarball = self.tarballs.last()
-        return tarball.runs.last().timestamp - self.patches.first().date
-
-    def patchwork_range_str(self):
-        """Return the range of patchwork IDs as an HTML string."""
-        res = str(self.patches.first().patchworks_id)
-        if self.patches.count() > 1:
-            res += '&ndash;' + str(self.patches.last().patchworks_id)
-        return res
+        return tarball.runs.last().timestamp - self.completed_timestamp
 
     @cached_property
     def status(self):
@@ -252,7 +227,7 @@ class Tarball(models.Model):
 
         date = getattr(self, 'date', None)
         if not date:
-            date = self.patchset.patches.first().date
+            date = self.patchset.completed_timestamp
         Environment = apps.get_model('results', 'Environment')
         active_envs = Environment.objects.filter(
             Q(date__isnull=True) | Q(date__lte=date),
@@ -278,61 +253,6 @@ def validate_contact_list(value):
             raise ValidationError('Patch contact "how" not present or '
                                   'valid; must be "to", "cc", or "bcc"')
         validate_email(x['email'])
-
-
-class Patch(models.Model):
-    """Model a single patch in PatchWorks."""
-
-    patchworks_id = models.PositiveIntegerField("Patchwork ID", unique=True,
-        null=True, blank=True,
-        help_text="ID of patch in DPDK Patchworks instance")
-    pw_is_active = models.BooleanField('Is active?', default=True,
-        help_text="True if still considered active in Patchwork")
-    # Per RFC, maximum length of a Message-ID is 995 characters
-    message_id = models.CharField("Message-ID", max_length=1024,
-        help_text="Message-ID from patch submission e-mail")
-    submitter = models.CharField(max_length=128,
-        help_text="Patch submitter")
-    subject = models.CharField(max_length=128,
-        help_text="Subject line of commit message")
-    patchset = models.ForeignKey(PatchSet, on_delete=models.CASCADE,
-        related_name='patches', help_text="Patchset containing this patch")
-    version = models.CharField(max_length=16, help_text="Version of patchset")
-    is_rfc = models.BooleanField('RFC?', default=False,
-        help_text="Indicates that this patch is not to be merged")
-    patch_number = models.PositiveIntegerField(
-        help_text="Number of this patch within its patchset")
-    date = models.DateTimeField(help_text='Date this patch was submitted')
-    contacts = models.TextField(blank=True, validators=[validate_contact_list],
-        help_text='Recipients listed in To and Cc field, as JSON string '
-        'containing list of dictionaries with fields: '
-        'display_name (optional), email (required), '
-        'how (required, "to" or "cc")')
-    series_id = models.PositiveIntegerField(null=True, blank=True,
-        help_text='The patchworks series ID.')
-
-    class Meta:
-        """Define metadata for patch model."""
-
-        verbose_name_plural = "patches"
-        ordering = ['patchset', 'patch_number']
-
-    def __str__(self):
-        """Return string representation of patch record."""
-        rfc = ''
-        if self.is_rfc:
-            rfc = ',RFC'
-        ver = ',' + self.version
-        if ver == 'v0':
-            ver = ''
-        nc = ''
-        pc = self.patchset.patch_count
-        if pc > 1:
-            nc = ',{number:d}/{count:d}'.format(
-                number=self.patch_number, count=pc)
-        fs = '{pwid:d} [dpdk-dev{rfc:s}{version:s}{nc:s}] {subject:s}'
-        return fs.format(pwid=self.patchworks_id, rfc=rfc, version=ver,
-                         nc=nc, subject=self.subject)
 
 
 class ContactPolicy(models.Model):

@@ -9,7 +9,6 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'patchsets', views.PatchSetViewSet)
-router.register(r'patches', views.PatchViewSet)
 router.register(r'tarballs', views.TarballViewSet)
 router.register(r'branches', views.BranchViewSet)
 router.register(r'environments', views.EnvironmentViewSet)
