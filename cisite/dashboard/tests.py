@@ -1,6 +1,5 @@
 """Define tests for dashboard app."""
 
-from datetime import datetime
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -10,11 +9,9 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.http import Http404
 from django import test
 from django.urls import reverse
-from django.utils.timezone import utc
 import requests_mock
 from results.tests import create_test_environment
-from results.models import ContactPolicy, Patch, PatchSet, Measurement, \
-    Parameter, Subscription, Tarball, TestCase, TestResult, TestRun
+from results.models import Subscription, TestCase
 from .views import paginate_rest, parse_page
 from .util import ParseIPAChangePassword
 
@@ -27,23 +24,8 @@ class BaseTestCase(StaticLiveServerTestCase):
         ContentType.objects.clear_cache()
         super().tearDown()
 
-
-@requests_mock.Mocker()
-class PatchListViewTests(BaseTestCase):
-    """Test the patch list view."""
-
-    def setUp(self):
-        """Set up fake data into test database."""
-        super().setUp()
-        grp = Group.objects.create(name='acme')
-        user = User.objects.create_user(username='acmevendor', first_name='John',
-                                   last_name='Vendor',
-                                   email='jvendor@example.com',
-                                   password='P@$$w0rd')
-        user.groups.add(grp)
-
-    def setup_mock(self, m):
-        """Set up the mock appropriately."""
+    def setup_mock_common(self, m):
+        """Use for anonymous request mocking."""
         m.register_uri('GET', urljoin(settings.API_BASE_URL,
                                       'api-auth/login/'),
                        json='<html></html>',
@@ -53,7 +35,7 @@ class PatchListViewTests(BaseTestCase):
                        json='<html></html>',
                        cookies={'sessionid': '01234567'})
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'statuses?'),
+            'GET', urljoin(settings.API_BASE_URL, 'statuses'),
             json={
                 'count': 1,
                 'next': None,
@@ -65,6 +47,30 @@ class PatchListViewTests(BaseTestCase):
                         'tooltip': 'Pass'
                     }
                 ]
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'tarballs/1/'),
+            json={
+                'url': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
+                'patchset': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
+                'branch': 'dpdk',
+                'commit_id': 'ee73f98ef481f61eab2f7289f033c6f9113eee8a',
+                'job_name': 'Apply-One-Patch-Set',
+                'build_id': 936,
+                'tarball_url': 'https://dpdklab.iol.unh.edu/jenkins/job/Get-Latest-Git-Master/26/artifact/dpdk.tar.gz',
+                'runs': [
+                    urljoin(settings.API_BASE_URL, 'testruns/1/'),
+                ],
+                'date': '2018-07-25T17:29:27.556679Z',
+                'commit_url': 'https://git.dpdk.org/dpdk/commit/?id=ee73f98ef481f61eab2f7289f033c6f9113eee8a'
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'testcases/1/'),
+            json={
+                'url': urljoin(settings.API_BASE_URL, 'testcases/1/'),
+                'name': 'nic_single_core_perf',
+                'description_url':
+                    'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next'
             })
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'patchsets?complete=true'),
@@ -105,9 +111,315 @@ class PatchListViewTests(BaseTestCase):
                 ]
             })
 
+    def setup_mock_anonymous(self, m):
+        """Set up the mock for anonymous users."""
+        self.setup_mock_common(m)
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'environments?active=true'),
+            status_code=401)
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'testruns/1/'),
+            status_code=401)
+        ps_1 = {
+            'url': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
+            'id': 1,
+            'is_public': True,
+            'apply_error': False,
+            'tarballs': [
+                urljoin(settings.API_BASE_URL, 'tarballs/1/')
+            ],
+            'status': 'Pass',
+            'status_class': 'success',
+            'status_tooltip': 'Pass',
+            'series_id': 1,
+            'patchwork_range_str': '40574',
+            'patches': [
+                {
+                    'url': urljoin(settings.API_BASE_URL,
+                                   'patches/1/'),
+                    'patchworks_id': 40574,
+                    'message_id': '20180601110742.11927-1-thomas@monjalon.net',
+                    'subject': 'version: 18.08-rc0',
+                    'patchset': urljoin(settings.API_BASE_URL,
+                                        'patchsets/1/'),
+                    'version': 'v0',
+                    'patch_number': 1,
+                    'date': '2018-06-01 11:07:42+00:00',
+                    'contacts': '[{"display_name": "", '
+                                '"email": "dev@dpdk.org", '
+                                '"how": "to"}]'
+                }
+            ]
+        }
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1'),
+            json=ps_1)
+        return ps_1
+
+    def setup_mock_authenticated(self, m):
+        """Set up the mock for logged in users."""
+        self.setup_mock_common(m)
+        measurement = {
+            'url': urljoin(settings.API_BASE_URL, 'measurements/1/'),
+            'id': 1,
+            'name': 'throughput',
+            'unit': 'Mpps',
+            'higher_is_better': True,
+            'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
+            'parameters': [
+                {
+                    'name': 'frame_size',
+                    'id': 1,
+                    'value': 64,
+                    'unit': 'bytes'
+                },
+                {
+                    'name': 'txd/rxd',
+                    'id': 2,
+                    'value': 128,
+                    'unit': 'descriptors'
+                }
+            ],
+            'testcase': urljoin(settings.API_BASE_URL, 'testcases/1/')
+        }
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'measurements/1/'),
+            json=measurement)
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'measurements/2/'),
+            json=measurement)
+
+    def setup_mock_test_runs(self, m, fail=False):
+        """Call `setup_mock_authenticated` before this."""
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'testruns/1/'),
+            json={
+                'url': urljoin(settings.API_BASE_URL, 'testruns/1/'),
+                'timestamp': '2018-06-04T05:36:20Z',
+                'log_output_file': None,
+                'tarball': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
+                'results': [
+                    {
+                        'id': 1,
+                        'result': 'PASS',
+                        'difference': -0.185655863091204,
+                        'expected_value': None,
+                        'measurement': urljoin(settings.API_BASE_URL, 'measurements/1/'),
+                        'result_class': 'success'
+                    },
+                    {
+                        'id': 2,
+                        'result': 'FAIL' if fail else 'PASS',
+                        'difference': -0.664055231513893,
+                        'expected_value': None,
+                        'measurement': urljoin(settings.API_BASE_URL, 'measurements/2/'),
+                        'result_class': 'success'
+                    },
+                ],
+                'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
+                'report_timestamp': None,
+                'log_upload_file': None
+            })
+        ps_1 = {
+            'url': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
+            'id': 1,
+            'is_public': True,
+            'apply_error': False,
+            'tarballs': [
+                urljoin(settings.API_BASE_URL, 'tarballs/1/')
+            ],
+            'status': 'Possible Regression' if fail else 'Pass',
+            'status_class': 'danger' if fail else 'success',
+            'status_tooltip': 'Possible Regression' if fail else 'Pass',
+            'series_id': 1,
+            'patchwork_range_str': '40574',
+            'patches': [
+                {
+                    'url': urljoin(settings.API_BASE_URL,
+                                   'patches/1/'),
+                    'patchworks_id': 40574,
+                    'message_id': '20180601110742.11927-1-thomas@monjalon.net',
+                    'subject': 'version: 18.08-rc0',
+                    'patchset': urljoin(settings.API_BASE_URL,
+                                        'patchsets/1/'),
+                    'version': 'v0',
+                    'patch_number': 1,
+                    'date': '2018-06-01 11:07:42+00:00',
+                    'contacts': '[{"display_name": "", '
+                                '"email": "dev@dpdk.org", '
+                                '"how": "to"}]'
+                }
+            ]
+        }
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1'),
+            json=ps_1)
+        return ps_1
+
+    def setup_mock_environment(self, m, **kwargs):
+        """Create environment a mock environment
+
+        Make sure to update the id if making multiple environments.
+        Some environment URLs get autogenerated.
+        """
+        env = {
+            'url': None,
+            'id': 1,
+            'inventory_id': 'IOL-ACME-00002',
+            'owner': urljoin(settings.API_BASE_URL, 'group/3/'),
+            'motherboard_make': 'Foo',
+            'motherboard_model': 'Bar',
+            'motherboard_serial': 'A',
+            'cpu_socket_count': 1,
+            'cpu_cores_per_socket': 1,
+            'cpu_threads_per_core': 1,
+            'ram_type': 'DDR',
+            'ram_size': 1,
+            'ram_channel_count': 1,
+            'ram_frequency': 1,
+            'nic_make': 'ACME',
+            'nic_model': 'XL710',
+            'nic_speed': 10000,
+            'nic_dtscodename': 'Foo Bar 3',
+            'nic_device_id': '04:00.0',
+            'nic_device_bustype': 'pci',
+            'nic_pmd': 'acme',
+            'nic_firmware_source_id': '',
+            'nic_firmware_version': '6.22',
+            'kernel_cmdline': '',
+            'kernel_name': 'linux',
+            'kernel_version': 'A',
+            'compiler_name': 'gcc',
+            'compiler_version': 'A',
+            'bios_version': 'A',
+            'os_distro': 'Ubuntu 16.04',
+            'measurements': [
+                {
+                    'url': urljoin(settings.API_BASE_URL, 'measurements/7/'),
+                    'id': 7,
+                    'name': 'throughput',
+                    'unit': 'Mpps',
+                    'higher_is_better': True,
+                    'environment': None,
+                    'parameters': [
+                        {
+                            'name': 'frame_size',
+                            'id': 13,
+                            'value': 64,
+                            'unit': 'bytes'
+                        },
+                        {
+                            'name': 'txd/rxd',
+                            'id': 14,
+                            'value': 128,
+                            'unit': 'descriptors'
+                        }
+                    ],
+                    'testcase': urljoin(settings.API_BASE_URL, '/testcases/1/')
+                },
+                {
+                    'url': urljoin(settings.API_BASE_URL, '/measurements/8/'),
+                    'id': 8,
+                    'name': 'throughput',
+                    'unit': 'Mpps',
+                    'higher_is_better': True,
+                    'environment': None,
+                    'parameters': [
+                        {
+                            'name': 'frame_size',
+                            'id': 15,
+                            'value': 64,
+                            'unit': 'bytes'
+                        },
+                        {
+                            'name': 'txd/rxd',
+                            'id': 16,
+                            'value': 512,
+                            'unit': 'descriptors'
+                        }
+                    ],
+                    'testcase': urljoin(settings.API_BASE_URL, '/testcases/1/')
+                },
+                {
+                    'url': urljoin(settings.API_BASE_URL, '/measurements/9/'),
+                    'id': 9,
+                    'name': 'throughput',
+                    'unit': 'Mpps',
+                    'higher_is_better': True,
+                    'environment': None,
+                    'parameters': [
+                        {
+                            'name': 'frame_size',
+                            'id': 17,
+                            'value': 64,
+                            'unit': 'bytes'
+                        },
+                        {
+                            'name': 'txd/rxd',
+                            'id': 18,
+                            'value': 2048,
+                            'unit': 'descriptors'
+                        }
+                    ],
+                    'testcase': urljoin(settings.API_BASE_URL, '/testcases/1/')
+                }
+            ],
+            'contacts': [],
+            'contact_policy': {
+                'email_submitter': False,
+                'email_recipients': False,
+                'email_owner': False,
+                'email_success': False,
+                'email_list': 'pmacarth@iol.unh.edu'
+            },
+            'predecessor': None,
+            'successor': None,
+            'date': '2018-07-25T17:29:27Z',
+            'live_since': None,
+            'hardware_description': None
+        }
+        env.update(**kwargs)
+        env_url = urljoin(settings.API_BASE_URL, f'environments/{env["id"]}/')
+        env['url'] = env_url
+        env['measurements'][0]['environment'] = env_url
+        env['measurements'][1]['environment'] = env_url
+        env['measurements'][2]['environment'] = env_url
+        m.register_uri(
+            'GET',
+            urljoin(settings.API_BASE_URL, f'environments/{env["id"]}/'),
+            json=env)
+        return env
+
+    def setup_mock_active(self, m, environments):
+        """Set up which environments is considered active."""
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'environments?active=true'),
+            json={
+                'count': len(environments),
+                'next': None,
+                'previous': None,
+                'results': environments
+            })
+
+
+@requests_mock.Mocker()
+class PatchListViewTests(BaseTestCase):
+    """Test the patch list view."""
+
+    def setUp(self):
+        """Set up fake data into test database."""
+        super().setUp()
+        grp = Group.objects.create(name='acme')
+        user = User.objects.create_user(username='acmevendor', first_name='John',
+                                   last_name='Vendor',
+                                   email='jvendor@example.com',
+                                   password='P@$$w0rd')
+        user.groups.add(grp)
+
     def test_anon_active_legend(self, m):
         """Verify that the status legend is populated properly in context."""
-        self.setup_mock(m)
+        self.setup_mock_anonymous(m)
+
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         legend = response.context['statuses']
@@ -117,7 +429,8 @@ class PatchListViewTests(BaseTestCase):
 
     def test_anon_active_patchset(self, m):
         """Verify that an active patch is shown in the anonymous view."""
-        self.setup_mock(m)
+        self.setup_mock_anonymous(m)
+
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchsets'][0]
@@ -131,10 +444,12 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(ps['status_tooltip'], 'Pass')
 
     def test_auth_active_patchset(self, m):
-        """Verify that patchsets are shown properly in authenticated view.
+        """Verify that patchsets are shown properly in authenticated view."""
+        self.setup_mock_authenticated(m)
+        env = self.setup_mock_environment(m)
+        self.setup_mock_active(m, [env])
+        self.setup_mock_test_runs(m)
 
-        """
-        self.setup_mock(m)
         response = self.client.post(
             reverse('login'),
             dict(username='acmevendor', password='P@$$w0rd'), follow=True)
@@ -154,189 +469,122 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(ps['status_tooltip'], 'Pass')
 
 
+@requests_mock.Mocker()
 class DetailViewTests(BaseTestCase):
     """Test the detail view."""
 
-    def setUp(self):
-        super().setUp()
-        tc = TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
-        grp = Group.objects.create(name='acme')
-        user = User.objects.create_user(username='acmevendor', first_name='John',
-                                   last_name='Vendor',
-                                   email='jvendor@example.com',
-                                   password='P@$$w0rd')
-        user.groups.add(grp)
-        mydate = datetime(2017, 1, 1, tzinfo=utc)
-        self.env = create_test_environment(owner=grp, date=mydate,
-                                           live_since=mydate)
-        ContactPolicy.objects.create(environment=self.env)
-        self.m1 = Measurement.objects.create(name='throughput', unit='Mpps',
-                                             higher_is_better=True,
-                                             testcase=tc,
-                                             environment=self.env)
-        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
-                                 measurement=self.m1)
-        Parameter.objects.create(name='txd/rxd', unit='descriptors', value=64,
-                                 measurement=self.m1)
-        self.m2 = Measurement.objects.create(name='throughput', unit='Mpps',
-                                             higher_is_better=True,
-                                             testcase=tc,
-                                             environment=self.env)
-        Parameter.objects.create(name='frame_size', unit='bytes', value=64,
-                                 measurement=self.m2)
-        Parameter.objects.create(name='txd/rxd', unit='descriptors', value=512,
-                                 measurement=self.m2)
-
-    def make_test_patchset(self, result2='PASS'):
-        """Create a test patchset and test result."""
-        ps = PatchSet.objects.create(message_uid='20180601110742.11927',
-                                     patch_count=1)
-        Patch.objects.create(
-            patchworks_id=40574,
-            message_id='20180601110742.11927-1-thomas@monjalon.net',
-            submitter='Thomas Monjalon <thomas@monjalon.net>',
-            subject='version: 18.08-rc0', patchset=ps, version='v0',
-            patch_number=1, date='2018-06-01 11:07:42+00:00',
-            contacts='[{"display_name": "", "email": "dev@dpdk.org", '
-                     '"how": "to"}]')
-        tb = Tarball.objects.create(
-            branch='dpdk', build_id=914, job_name='Apply-One-Patch-Set',
-            commit_id='c6266cd55c3ab3bd13711ac0ae599fcf4a32ce84',
-            patchset=ps)
-
-        run = TestRun.objects.create(
-            timestamp=datetime(2018, 6, 1, 20, 27, 42, tzinfo=utc),
-            log_output_file='https://dpdklab.iol.unh.edu/jenkins/job/'
-                            'ACME1-Performance-Test/3/artifact/gamma.zip',
-            tarball=tb, environment=self.env)
-        TestResult.objects.create(result='PASS', difference=-0.185655863091204,
-                                  measurement=self.m1, run=run)
-        TestResult.objects.create(result=result2, difference=-0.664055231513893,
-                                  measurement=self.m2, run=run)
-
-        return ps
-
-    def test_anon_load(self):
+    def test_anon_load(self, m):
         """Test that the anonymous page loads."""
-        ps = self.make_test_patchset()
-        with self.settings(API_BASE_URL=self.live_server_url):
-            response = self.client.get(reverse('dashboard-detail',
-                                               args=[ps.id]))
-            self.assertEqual(response.status_code, 200)
-            ps = response.context['patchset']
-            self.assertEqual(ps['patchwork_range_str'], '40574')
-            self.assertEqual(len(ps['patches']), 1)
-            self.assertEqual(ps['patches'][0]['patch_number'], 1)
-            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
-            self.assertEqual(ps['status'], 'Pass')
-            self.assertEqual(len(response.context['runs'].items()), 0)
+        ps = self.setup_mock_anonymous(m)
 
-    def test_auth_fail(self):
+        ps = response = self.client.get(reverse('dashboard-detail',
+                                                args=(ps['id'],)))
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchset']
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(ps['patches'][0]['patch_number'], 1)
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['status'], 'Pass')
+        self.assertEqual(len(response.context['runs'].items()), 0)
+
+    def test_auth_fail(self, m):
         """Test a result with a failing result."""
-        ps = self.make_test_patchset(result2='FAIL')
-        with self.settings(API_BASE_URL=self.live_server_url):
-            # Log in
-            response = self.client.post(reverse('login'),
-                dict(username='acmevendor', password='P@$$w0rd'), follow=True)
-            self.assertTrue(response.context['user'].is_active)
+        self.setup_mock_authenticated(m)
+        env = self.setup_mock_environment(m)
+        self.setup_mock_active(m, [env])
+        ps = self.setup_mock_test_runs(m, fail=True)
 
-            response = self.client.get(reverse('dashboard-detail',
-                                               args=[ps.id]),
-                                       follow=True)
-            self.assertEqual(response.status_code, 200)
-            ps = response.context['patchset']
-            self.assertEqual(ps['patchwork_range_str'], '40574')
-            self.assertEqual(len(ps['patches']), 1)
-            self.assertEqual(ps['patches'][0]['patch_number'], 1)
-            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
-            self.assertEqual(ps['status'], 'Possible Regression')
-            run = response.context['runs'][
-                urljoin(self.live_server_url, reverse('environment-detail',
-                                                      args=[self.env.id]))]
-            self.assertEqual(len(run['results']), 2)
-            self.assertIsNot(run, None)
-            self.assertEqual(run['environment']['id'], self.env.id)
-            self.assertEqual(run['environment']['nic_model'], 'XL710')
-            self.assertEqual(run['failure_count'], 1)
-            self.assertEqual(run['results'][0]['result'], 'PASS')
-            self.assertEqual(run['results'][1]['result'], 'FAIL')
-            self.assertAlmostEqual(run['results'][0]['difference'],
-                                   -0.185655, places=5)
-            self.assertAlmostEqual(run['results'][1]['difference'],
-                                   -0.664055, places=5)
+        response = self.client.get(reverse('dashboard-detail',
+                                           args=(ps['id'],)),
+                                   follow=True)
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchset']
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(ps['patches'][0]['patch_number'], 1)
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['status'], 'Possible Regression')
+        run = response.context['runs'][
+            urljoin(settings.API_BASE_URL, reverse('environment-detail',
+                                                   args=(env['id'],)))]
+        self.assertEqual(len(run['results']), 2)
+        self.assertIsNotNone(run)
+        self.assertEqual(run['environment']['id'], env['id'])
+        self.assertEqual(run['environment']['nic_model'], 'XL710')
+        self.assertEqual(run['failure_count'], 1)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertEqual(run['results'][1]['result'], 'FAIL')
+        self.assertAlmostEqual(run['results'][0]['difference'],
+                               -0.185655, places=5)
+        self.assertAlmostEqual(run['results'][1]['difference'],
+                               -0.664055, places=5)
 
-    def test_auth_load(self):
+    def test_auth_load(self, m):
         """Test that the authenticated page loads."""
-        ps = self.make_test_patchset()
-        with self.settings(API_BASE_URL=self.live_server_url):
-            # Log in
-            response = self.client.post(reverse('login'),
-                dict(username='acmevendor', password='P@$$w0rd'), follow=True)
-            self.assertTrue(response.context['user'].is_active)
+        self.setup_mock_authenticated(m)
+        env = self.setup_mock_environment(m)
+        self.setup_mock_active(m, [env])
+        ps = self.setup_mock_test_runs(m)
 
-            response = self.client.get(reverse('dashboard-detail',
-                                               args=[ps.id]),
-                                       follow=True)
-            self.assertEqual(response.status_code, 200)
-            ps = response.context['patchset']
-            self.assertEqual(ps['patchwork_range_str'], '40574')
-            self.assertEqual(len(ps['patches']), 1)
-            self.assertEqual(ps['patches'][0]['patch_number'], 1)
-            self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
-            self.assertEqual(ps['status'], 'Pass')
-            run = response.context['runs'][
-                urljoin(self.live_server_url, reverse('environment-detail',
-                                                      args=[self.env.id]))]
-            self.assertEqual(len(run['results']), 2)
-            self.assertIsNot(run, None)
-            self.assertEqual(run['environment']['id'], self.env.id)
-            self.assertEqual(run['environment']['nic_model'], 'XL710')
-            self.assertEqual(run['failure_count'], 0)
-            self.assertEqual(run['results'][0]['result'], 'PASS')
-            self.assertAlmostEqual(run['results'][0]['difference'],
-                                   -0.185655, places=5)
-            self.assertAlmostEqual(run['results'][1]['difference'],
-                                   -0.664055, places=5)
+        response = self.client.get(reverse('dashboard-detail',
+                                           args=(ps['id'],)),
+                                   follow=True)
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchset']
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(ps['patches'][0]['patch_number'], 1)
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['status'], 'Pass')
+        run = response.context['runs'][
+            urljoin(settings.API_BASE_URL, reverse('environment-detail',
+                                                   args=(env['id'],)))]
+        self.assertEqual(len(run['results']), 2)
+        self.assertIsNotNone(run)
+        self.assertEqual(run['environment']['id'], env['id'])
+        self.assertEqual(run['environment']['nic_model'], 'XL710')
+        self.assertEqual(run['failure_count'], 0)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(run['results'][0]['difference'],
+                               -0.185655, places=5)
+        self.assertAlmostEqual(run['results'][1]['difference'],
+                               -0.664055, places=5)
 
-    def test_auth_successor(self):
+    def test_auth_successor(self, m):
         """Verify that runs dictionary uses successor environment."""
-        oldenv = self.env
-        self.env = self.env.clone()
-        try:
-            ps = self.make_test_patchset()
-            with self.settings(API_BASE_URL=self.live_server_url):
-                # Log in
-                response = self.client.post(reverse('login'),
-                    dict(username='acmevendor', password='P@$$w0rd'), follow=True)
-                self.assertTrue(response.context['user'].is_active)
+        self.setup_mock_authenticated(m)
+        self.setup_mock_environment(
+            m, successor=urljoin(settings.API_BASE_URL, 'environments/2/'))
+        cloned_env = self.setup_mock_environment(
+            m, id=2,
+            predecessor=urljoin(settings.API_BASE_URL, 'environments/1/'))
+        ps = self.setup_mock_test_runs(m)
+        self.setup_mock_active(m, [cloned_env])
 
-                response = self.client.get(reverse('dashboard-detail',
-                                                   args=[ps.id]),
-                                           follow=True)
-                self.assertEqual(response.status_code, 200)
-                ps = response.context['patchset']
-                self.assertEqual(ps['patchwork_range_str'], '40574')
-                self.assertEqual(len(ps['patches']), 1)
-                self.assertEqual(ps['patches'][0]['patch_number'], 1)
-                self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
-                self.assertEqual(ps['status'], 'Pass')
-                run = response.context['runs'][
-                    urljoin(self.live_server_url, reverse('environment-detail',
-                                                          args=[self.env.id]))]
-                self.assertEqual(len(run['results']), 2)
-                self.assertIsNot(run, None)
-                self.assertEqual(run['environment']['id'], self.env.id)
-                self.assertEqual(run['environment']['nic_model'], 'XL710')
-                self.assertEqual(run['failure_count'], 0)
-                self.assertEqual(run['results'][0]['result'], 'PASS')
-                self.assertAlmostEqual(run['results'][0]['difference'],
-                                       -0.185655, places=5)
-                self.assertAlmostEqual(run['results'][1]['difference'],
-                                       -0.664055, places=5)
-        finally:
-            self.env = oldenv
+        response = self.client.get(reverse('dashboard-detail',
+                                           args=(ps['id'],)),
+                                   follow=True)
+        self.assertEqual(response.status_code, 200)
+        ps = response.context['patchset']
+        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(ps['patches'][0]['patch_number'], 1)
+        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
+        self.assertEqual(ps['status'], 'Pass')
+        run = response.context['runs'][
+            urljoin(settings.API_BASE_URL, reverse('environment-detail',
+                                                   args=(cloned_env['id'],)))]
+        self.assertEqual(len(run['results']), 2)
+        self.assertIsNotNone(run)
+        self.assertEqual(run['environment']['id'], cloned_env['id'])
+        self.assertEqual(run['environment']['nic_model'], 'XL710')
+        self.assertEqual(run['failure_count'], 0)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(run['results'][0]['difference'],
+                               -0.185655, places=5)
+        self.assertAlmostEqual(run['results'][1]['difference'],
+                               -0.664055, places=5)
 
 
 class SubscriptionsViewTests(BaseTestCase):
