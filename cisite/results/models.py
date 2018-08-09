@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from functools import partial
+from guardian.shortcuts import assign_perm, remove_perm
+from guardian.utils import get_anonymous_user
 from private_storage.fields import PrivateFileField
 from urllib.parse import urljoin
 
@@ -440,7 +442,12 @@ class Environment(models.Model):
             while p is not None:
                 generation += 1
                 p = p.predecessor
-        return '{0:s} (v{1:d})'.format(self.inventory_id, generation)
+        if get_anonymous_user().has_perm('view_environment', self):
+            is_public = 'Public'
+        else:
+            is_public = 'Private'
+        return f'{self._meta.object_name} {self.id}: {self.inventory_id} ' \
+               f'(v{generation}) {is_public}'
 
     @property
     def all_ids(self):
@@ -464,6 +471,32 @@ class Environment(models.Model):
         if self.pipeline is None:
             return None
         return urljoin(settings.JENKINS_URL, f'job/{self.pipeline}')
+
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface."""
+        return reverse('environment-detail', args=(self.id,))
+
+    def get_related(self):
+        """Get all related objects and itself into a 2d list."""
+        return [[self], self.measurements.all(), self.runs.all()]
+
+    def set_public(self):
+        """Set AnonymousUser view permission to environment and related."""
+        anon = get_anonymous_user()
+        assign_perm('view_environment', anon, self)
+        for measurement in self.measurements.all():
+            assign_perm('view_measurement', anon, measurement)
+        for run in self.runs.all():
+            assign_perm('view_testrun', anon, run)
+
+    def set_private(self):
+        """Set AnonymousUser view permission to environment and related."""
+        anon = get_anonymous_user()
+        remove_perm('view_environment', anon, self)
+        for measurement in self.measurements.all():
+            remove_perm('view_measurement', anon, measurement)
+        for run in self.runs.all():
+            remove_perm('view_testrun', anon, run)
 
 
 class TestCase(models.Model):
@@ -509,7 +542,12 @@ class Measurement(models.Model):
 
     def __str__(self):
         """Return a string describing the measurement."""
-        return '{name:s} ({unit:s})'.format(name=self.name, unit=self.unit)
+        if get_anonymous_user().has_perm('view_measurement', self):
+            is_public = 'Public'
+        else:
+            is_public = 'Private'
+        return f'{self._meta.object_name} {self.id}: {self.name} ' \
+               f'({self.unit}) {is_public}'
 
     def clone(self, environment):
         """Return a clone of this measurement for a new environment."""
@@ -524,6 +562,10 @@ class Measurement(models.Model):
             new_p.measurement = new_obj
             new_p.save()
         return new_obj
+
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface."""
+        return reverse('measurement-detail', args=(self.id,))
 
 
 class Parameter(models.Model):
@@ -597,14 +639,21 @@ class TestRun(models.Model):
 
     def __str__(self):
         """Return the patchset and timestamp as a string."""
-        return '{url:s} {timestamp:s}'.format(
-            url=self.tarball.tarball_url,
-            timestamp=self.timestamp.isoformat(sep=' '))
+        if get_anonymous_user().has_perm('view_testrun', self):
+            is_public = 'Public'
+        else:
+            is_public = 'Private'
+        return f'{self._meta.object_name} {self.id}: ' \
+               f'{self.tarball.tarball_url} {self.timestamp} {is_public}'
 
     @property
     def failures(self):
         """Return a queryset containing only failing test results."""
         return self.results.filter(result="FAIL")
+
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface."""
+        return reverse('testrun-detail', args=(self.id,))
 
 
 class TestResult(models.Model):

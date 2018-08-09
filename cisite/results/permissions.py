@@ -1,5 +1,6 @@
 """Define custom permissions for results app."""
 
+from guardian.utils import get_anonymous_user
 from rest_framework.permissions import BasePermission, \
     DjangoObjectPermissions, SAFE_METHODS
 
@@ -19,42 +20,39 @@ class IsAdminUserOrReadOnly(BasePermission):
         return request.user.is_staff
 
 
-class OwnerReadCreateOnly(DjangoObjectPermissions):
-    """Add owner read access to objects.
+class DjangoObjectPermissionsOrAnonReadOnly(DjangoObjectPermissions):
+    """Base access of object from the object permissions.
 
-    Also all full access to staff users.
-    DjangoObjectPermissions already has not SAFE_METHODS permissions set,
-    just not SAFE_METHODS. This class adds SAFE_METHODS permssions.
+    Also allow anonymous users read only access to page listing.
+    (AnonymousUser still needs a separate permissions added for
+    viewing objects.)
+    This is similar to `DjangoModelPermissionsOrAnonReadOnly`, but
+    an equivalent did not exist.
+
+    This also makes it so that if anonymous users can view the object,
+    then any logged in user chan view the object.
     """
 
-    perms_map = {
-        'GET': ['%(app_label)s.view_%(model_name)s'],
-        'OPTIONS': ['%(app_label)s.view_%(model_name)s'],
-        'HEAD': ['%(app_label)s.view_%(model_name)s'],
-        'POST': ['%(app_label)s.add_%(model_name)s'],
-        'PUT': ['%(app_label)s.change_%(model_name)s'],
-        'PATCH': ['%(app_label)s.change_%(model_name)s'],
-        'DELETE': ['%(app_label)s.delete_%(model_name)s'],
-    }
+    authenticated_users_only = False
 
     def has_permission(self, request, view):
-        """Permission to view list in api view.
-
-        Also only checks has_object_permission if this returns true.
-        """
-        return request.user.is_staff or super().has_permission(request, view)
+        """Return if permission is granted if AnonymousUser has access."""
+        if super().has_permission(request, view):
+            return True
+        queryset = self._queryset(view)
+        perms = self.get_required_permissions(request.method, queryset.model)
+        return get_anonymous_user().has_perms(perms)
 
     def has_object_permission(self, request, view, obj):
-        """Return true if permission should be granted."""
-        user = request.user
-
-        if user.is_staff or obj.owner is None:
+        """Return if permission is granted if AnonymousUser has access."""
+        if super().has_object_permission(request, view, obj):
             return True
+        model_cls = self._queryset(view).model
+        perms = self.get_required_object_permissions(request.method, model_cls)
+        return get_anonymous_user().has_perms(perms, obj)
 
-        return super().has_object_permission(request, view, obj)
 
-
-class TestRunPermission(OwnerReadCreateOnly):
+class TestRunPermission(DjangoObjectPermissionsOrAnonReadOnly):
     """Allows specific actions to be run outside of the object permissions."""
 
     def has_object_permission(self, request, view, obj):

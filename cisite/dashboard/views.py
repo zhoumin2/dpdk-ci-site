@@ -326,7 +326,11 @@ class DashboardDetail(BaseDashboardView):
                     run['failure_count'] = 0
                     run['testcases'] = {}
                     for result in run['results']:
-                        measurement = s.get(result['measurement']).json()
+                        resp = s.get(result['measurement'])
+                        # in case the user does not have permission
+                        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                            continue
+                        measurement = resp.json()
                         self.set_parameter_keys(measurement)
                         result['measurement'] = measurement
                         if result['result'].upper() == 'FAIL':
@@ -341,7 +345,11 @@ class DashboardDetail(BaseDashboardView):
                     # versions won't show up in the list of active environments
                     # that we obtained above
                     env_url = run['environment']
-                    env = s.get(env_url).json()
+                    resp = s.get(env_url)
+                    # in case the user does not have permission
+                    if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                        continue
+                    env = resp.json()
                     while (env_url not in context['runs'].keys() and
                            env.get('successor')):
                         env_url = env['successor']

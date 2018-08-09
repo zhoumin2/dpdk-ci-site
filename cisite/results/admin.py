@@ -1,13 +1,17 @@
 """Register admin interface for DPDK CI site results models."""
 from django.contrib import admin
 from django.forms.models import ModelForm
-from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
+from django.urls import reverse, path
 from django.utils.html import format_html
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Tarball, TestResult, TestRun, \
     Subscription, UserProfile
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
+
+from .forms import SetPublicForm, SetPrivateForm
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -122,8 +126,8 @@ class EnvironmentAdmin(GuardedModelAdmin):
     """Define environment module in admin interface."""
 
     inlines = [ContactPolicyInline, MeasurementInline]
-    list_display = ('__str__', 'contact_policy_link')
-    readonly_fields = ('predecessor',)
+    list_display = ('__str__', 'contact_policy_link', 'environment_actions')
+    readonly_fields = ('predecessor', 'environment_actions')
 
     def contact_policy_link(self, obj):
         """Return a link to edit the contact policy for this environment."""
@@ -131,6 +135,71 @@ class EnvironmentAdmin(GuardedModelAdmin):
                            reverse('admin:results_contactpolicy_change',
                                    args=(obj.contact_policy.id,)),
                            obj.contact_policy)
+
+    def get_urls(self):
+        """Add custom urls to the admin page."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<environment_id>/set_public/',
+                self.admin_site.admin_view(self.process_set_public),
+                name='environment-public',
+            ),
+            path(
+                '<environment_id>/set_private/',
+                self.admin_site.admin_view(self.process_set_private),
+                name='environment-private',
+            ),
+        ]
+        return custom_urls + urls
+
+    def environment_actions(self, obj):
+        """Create custom environment actions."""
+        return format_html(
+            '<a class="button" href="{}">Set Public</a>&nbsp;'
+            '<a class="button" href="{}">Set Private</a>',
+            reverse('admin:environment-public', args=(obj.pk,)),
+            reverse('admin:environment-private', args=(obj.pk,)),
+        )
+
+    def process_set_public(self, request, environment_id, *args, **kwargs):
+        """Set environment public action call."""
+        return self.process_action(request, environment_id, SetPublicForm,
+                                   'Set Public')
+
+    def process_set_private(self, request, environment_id, *args, **kwargs):
+        """Set environment private action call."""
+        return self.process_action(request, environment_id, SetPrivateForm,
+                                   'Set Private')
+
+    def process_action(self, request, environment_id, action_form, action_title):
+        """Mostly generic method for custom actions."""
+        environment = self.get_object(request, environment_id)
+
+        if request.method != 'POST':
+            form = action_form()
+        else:
+            form = action_form(request.POST)
+            if form.is_valid():
+                form.save(environment, request.user)
+                self.message_user(request, 'Success')
+                url = reverse(
+                    'admin:results_environment_change',
+                    args=(environment.pk,),
+                )
+                return HttpResponseRedirect(url)
+
+        context = self.admin_site.each_context(request)
+        context['opts'] = self.model._meta
+        context['form'] = form
+        context['title'] = action_title
+        context['modified'] = environment.get_related()
+
+        return TemplateResponse(
+            request,
+            'admin/environment/environment_action.html',
+            context,
+        )
 
 
 admin.site.register(Branch)

@@ -13,15 +13,17 @@ from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import get_perms
+from guardian.utils import get_anonymous_user
 from private_storage.views import PrivateStorageDetailView
-from rest_framework.filters import OrderingFilter, DjangoObjectPermissionsFilter
+from rest_framework.filters import OrderingFilter
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter
+from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter, \
+    DjangoObjectPermissionsFilterWithAnonPerms
 from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
 from . import permissions
@@ -44,11 +46,12 @@ class DownloadPermissionView(PrivateStorageDetailView):
     def can_access_file(self, private_file):
         """Check if the user can view the model.
 
-        Since private storage gets the file based on the field and not the
-        path, this will also verify that the path is correct.
+        Also allows logged in users to access the file if AnonymousUser can
+        access the file.
         """
-        return 'view_' + self.object._meta.model_name in \
-            get_perms(self.request.user, self.object)
+        perm = 'view_' + self.object._meta.model_name
+        return perm in get_perms(self.request.user, self.object) or \
+            perm in get_perms(get_anonymous_user(), self.object)
 
     def get(self, request, *args, **kwargs):
         """Override `get` to pass extra args.
@@ -124,8 +127,9 @@ class TarballViewSet(viewsets.ModelViewSet):
 class EnvironmentViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of environments."""
 
-    filter_backends = (DjangoFilterBackend, OrderingFilter, DjangoObjectPermissionsFilter,)
-    permission_classes = (permissions.OwnerReadCreateOnly,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter,
+                       DjangoObjectPermissionsFilterWithAnonPerms,)
+    permission_classes = (permissions.DjangoObjectPermissionsOrAnonReadOnly,)
     queryset = EnvironmentSerializer.setup_eager_loading(
         Environment.objects.all())
     serializer_class = EnvironmentSerializer
@@ -157,8 +161,8 @@ class TestCaseViewSet(viewsets.ReadOnlyModelViewSet):
 class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
     """Provide a read-only view of measurements."""
 
-    filter_backends = (DjangoObjectPermissionsFilter,)
-    permission_classes = (permissions.OwnerReadCreateOnly,)
+    filter_backends = (DjangoObjectPermissionsFilterWithAnonPerms,)
+    permission_classes = (permissions.DjangoObjectPermissionsOrAnonReadOnly,)
     queryset = MeasurementSerializer.setup_eager_loading(
         Measurement.objects.all())
     serializer_class = MeasurementSerializer
@@ -167,7 +171,7 @@ class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
 class TestRunViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of test runs."""
 
-    filter_backends = (DjangoObjectPermissionsFilter,)
+    filter_backends = (DjangoObjectPermissionsFilterWithAnonPerms,)
     permission_classes = (permissions.TestRunPermission,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
     serializer_class = TestRunSerializer
