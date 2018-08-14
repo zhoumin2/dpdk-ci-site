@@ -45,6 +45,9 @@ INSTALLED_APPS = [
 
     # Provides permission checking during file access
     'private_storage',
+
+    # Sends js client errors to server log
+    'django_js_error_hook',
 ]
 
 MIDDLEWARE = [

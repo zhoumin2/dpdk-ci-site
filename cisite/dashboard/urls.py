@@ -2,7 +2,7 @@
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.vary import vary_on_cookie
 from . import views
@@ -26,6 +26,7 @@ urlpatterns = [
          name='dashboard-detail'),
     re_path(settings.PRIVATE_STORAGE_URL[1:] + '(?P<path>.*)',
             views.UploadView.as_view(), name='dashboard-uploads'),
+    path('js_error_hook/', include('django_js_error_hook.urls')),
 ]
 
 if getattr(settings, 'ENABLE_PREFERENCES', True):

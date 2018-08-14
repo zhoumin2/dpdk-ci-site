@@ -48,6 +48,7 @@
 
 {% block js %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="{% url 'js-error-handler-js' %}"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   <script src="{% static 'dashboard/subscriptions.js' %}"></script>
 {% endblock %}
