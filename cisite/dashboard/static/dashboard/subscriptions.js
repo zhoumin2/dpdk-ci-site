@@ -6,6 +6,7 @@ const errorPopup = e => {
   const message = "An error occurred. Please refresh the page and try again. If this persists, please email dpdklab@iol.unh.edu.";
   toastr.error(message);
   console.error(e);
+  logError(e);
 }
 
 /**

@@ -1,0 +1,3 @@
+"Forked" from https://github.com/jojax/django-js-error-hook/tree/cea4a9184a78f875fdfc6d7fe4f2f49d86bf5519
+
+- Modified the JS methods to be global to allow our JS that catch exceptions to also log the errors.
