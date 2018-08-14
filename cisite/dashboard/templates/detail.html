@@ -124,6 +124,40 @@
   permission to view detailed results for any test runs for this patch
   set.</p>
   {% endfor %}
+  {% if runs.items %}
+  <h3>Disclaimers</h3>
+  <p>The following disclaimer applies to Intel devices:</p>
+  <blockquote class="blockquote text-muted border-left ml-4">
+    <div class="ml-4">
+      <p>
+        <small>
+          Software and workloads used in performance tests may have been
+          optimized for performance only on Intel microprocessors.
+        </small>
+      </p>
+      <p>
+        <small>
+          Performance tests, such as SYSmark and MobileMark, are measured using
+          specific computer systems, components, software, operations and
+          functions. Any change to any of those factors may cause the results
+          to vary. You should consult other information and performance tests
+          to assist you in fully evaluating your contemplated purchases,
+          including the performance of that product when combined with other
+          products. For more complete information visit
+          <a href="https://www.intel.com/benchmarks/">www.intel.com/benchmarks</a>.
+        </small>
+      </p>
+      <p>
+        <small>
+          Performance results are based on testing as of {{ patchset.date|date }}
+          and may not reflect all publicly available security updates.
+          See configuration disclosure for details.
+          No product can be absolutely secure.
+        </small>
+      </p>
+    </div>
+  </blockquote>
+  {% endif %}
 {% endblock %}
 
 {% block js %}
