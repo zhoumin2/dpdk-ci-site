@@ -385,7 +385,21 @@ class Preferences(LoginRequiredMixin, View):
         return HttpResponseRedirect(reverse('subscriptions'))
 
 
-class Subscriptions(LoginRequiredMixin, BaseDashboardView):
+class NextToHomeMixin():
+    """Set the next context to the homepage.
+
+    This is used when, for example, logging out of a page that normally
+    requires a login, such as the prefrences page.
+    """
+
+    def get_context_data(self, **kwargs):
+        """Set the next context to the homepage."""
+        context = super().get_context_data(**kwargs)
+        context['next'] = reverse('dashboard')
+        return context
+
+
+class Subscriptions(LoginRequiredMixin, NextToHomeMixin, BaseDashboardView):
     """Show subscription preferences.
 
     DELETE, PATCH, and POST are proxy subscription calls to REST API.
@@ -472,7 +486,7 @@ class PasswordChangeForm(auth_forms.PasswordChangeForm):
             return super().clean_old_password()
 
 
-class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
+class PasswordChangeView(BaseDashboardView, NextToHomeMixin, auth_views.PasswordChangeView):
     """Change password view."""
 
     form_class = PasswordChangeForm
@@ -515,7 +529,7 @@ class PasswordChangeView(BaseDashboardView, auth_views.PasswordChangeView):
         return super(auth_views.PasswordChangeView, self).form_valid(form)
 
 
-class PasswordChangeDoneView(BaseDashboardView, auth_views.PasswordChangeDoneView):
+class PasswordChangeDoneView(BaseDashboardView, NextToHomeMixin, auth_views.PasswordChangeDoneView):
     """Inherit BaseDashboardView for context."""
 
 
