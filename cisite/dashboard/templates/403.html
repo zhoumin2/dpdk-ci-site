@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+{% endblock %}
+
+{% block content %}
+  <h1>Access forbidden</h1>
+  <p>
+    You have tried to navigate to a page or file that you do not have access to.
+  </p>
+  <p>
+    If you believe that this is an error, please send e-mail to
+    <a href="mailto:dpdklab@iol.unh.edu">dpdklab@iol.unh.edu</a>
+    and we will investigate.
+  </p>
+{% endblock %}
