@@ -1446,6 +1446,33 @@ class TestDownloadViewPermission(test.TestCase):
         resp = self.client.get(env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_log_upload_file_download_view_get_public(self):
+        """Check user access if download is supposed to be public.
+
+        Test runs are to remain private even if the environment is public to
+        avoid download of absolute values.
+        """
+        user = User.objects.create_user(
+            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+        # make environment with self group
+        env = create_test_environment(
+            owner=self.group, hardware_description=self.django_file)
+        run = create_test_run(
+            env, log_upload_file=self.django_file)
+
+        env.set_public()
+
+        # check anonymous cant access
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # check that a different group logged in user can't access
+        self.client.login(username=user.username, password='AbCdEfGh')
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_test_run_download_view_get_anonymous(self):
         """Check anonymous access."""
         resp = self.client.get(self.run.log_upload_file.url)

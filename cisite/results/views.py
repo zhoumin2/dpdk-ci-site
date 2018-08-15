@@ -87,6 +87,16 @@ class TestRunLogDownloadView(DownloadPermissionView):
     model = TestRun
     model_file_field = 'log_upload_file'
 
+    def can_access_file(self, private_file):
+        """Only the group is allowed to view the file.
+
+        This is to avoid download of absolute values. Since anonymous user has
+        permission for the object, make sure that the user is not anonymous.
+        """
+        perm = 'view_' + self.object._meta.model_name
+        return perm in get_perms(self.request.user, self.object) and \
+            not self.request.user.is_anonymous
+
 
 class PatchSetViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of incoming patchsets.
