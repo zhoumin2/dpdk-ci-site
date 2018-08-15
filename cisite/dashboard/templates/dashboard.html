@@ -24,8 +24,8 @@
         {% for ps in patchsets %}
         <tr class="table-{{ ps.status_class }}">
           <td><a href="{% url 'dashboard-detail' ps.id %}">{{ ps.patchwork_range_str|safe }}</a></td>
-          <td>{{ ps.patches.0.version }}</td>
-          <td>{{ ps.patches.0.subject }}</td>
+          <td>{{ ps.series.version }}</td>
+          <td>{{ ps.series.name }}</td>
           <td>{{ ps.submitter }}</td>
           <td title="{{ ps.status_tooltip }}">{{ ps.status }}</td>
           {% if request.user.is_superuser %}

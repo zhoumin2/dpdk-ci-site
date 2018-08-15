@@ -1,11 +1,12 @@
 """Define serializers for results models."""
 
-import re
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
+from urllib.parse import urljoin
 from .models import Branch, ContactPolicy, Environment, Measurement, \
-    Parameter, PatchSet, Patch, Tarball, TestCase, TestResult, TestRun, \
+    Parameter, PatchSet, Tarball, TestCase, TestResult, TestRun, \
     Subscription
 
 
@@ -64,88 +65,28 @@ class EnvironmentHyperlinkedField(serializers.HyperlinkedRelatedField):
             accept_global_perms=False)
 
 
-class PatchSerializer(serializers.HyperlinkedModelSerializer,
-                      EagerLoadingMixin):
-    """Serialize Patch objects."""
-
-    _SELECT_RELATED_FIELDS = ('patchset',)
-
-    patchset_count = serializers.IntegerField(default=1,
-        help_text='Number of patches in the patchset')
-
-    _messageIdPatterns = [
-        re.compile(r'(?P<uid>.*-.*)-\d+-git-send-email-(.*)'),
-        re.compile(r'.*\.(?P<uid>.*)\.git.(.*)'),
-        re.compile(r'(?P<uid>.*\..*)-\d+-(.*)'),
-    ]
-
-    class Meta:
-        """Specify fields to pull from Patch model."""
-
-        model = Patch
-        fields = ('url', 'patchworks_id', 'message_id', 'submitter', 'subject',
-                  'version', 'is_rfc', 'patch_number', 'date', 'patchset',
-                  'patchset_count', 'contacts', 'pw_is_active', 'series_id')
-        read_only_fields = ('patchset',)
-
-    def create(self, validated_data):
-        message_uid = ''
-        for pattern in self.__class__._messageIdPatterns:
-            m = pattern.match(validated_data['message_id'])
-            if m:
-                message_uid = m.group('uid')
-        is_public = ('patchworks_id' in validated_data and
-            validated_data['patchworks_id'] is not None)
-        patchset, created = PatchSet.objects.get_or_create(message_uid=message_uid,
-            defaults=dict(patch_count=validated_data.pop('patchset_count'),
-                          is_public=is_public,
-                          series_id=validated_data.get('series_id', None)))
-        patch = Patch.objects.create(patchset=patchset, **validated_data)
-        return patch
-
-
 class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                          EagerLoadingMixin):
     """Serialize PatchSet objects."""
 
-    _SUBMITTER_RE = re.compile("(?P<name>.+) *<(?P<email>.+@.+)>")
-    _PREFETCH_RELATED_FIELDS = ('patches', 'tarballs')
+    _PREFETCH_RELATED_FIELDS = ('tarballs',)
 
-    patches = PatchSerializer(many=True, read_only=True)
-    submitter_name = serializers.SerializerMethodField()
-    submitter_email = serializers.SerializerMethodField()
+    pw_series_url = serializers.SerializerMethodField()
 
     class Meta:
         """Specify fields to pull from PatchSet model."""
 
         model = PatchSet
-        fields = ('url', 'id', 'patch_count', 'patches', 'complete',
-                  'is_public', 'apply_error', 'tarballs',
-                  'patchwork_range_str', 'status', 'status_class',
-                  'status_tooltip', 'submitter_name', 'submitter_email',
-                  'time_to_last_test', 'series_id')
-        read_only_fields = ('complete', 'tarballs', 'patchwork_range_str',
+        fields = ('url', 'id', 'is_public', 'apply_error', 'tarballs',
+                  'status', 'status_class', 'status_tooltip',
+                  'time_to_last_test', 'series_id', 'pw_series_url',
+                  'completed_timestamp', 'pw_is_active')
+        read_only_fields = ('complete', 'tarballs',
                             'status', 'status_class', 'status_tooltip',
                             'time_to_last_test')
 
-    def get_submitter_name(self, obj):
-        """Return the name of the submitter without the e-mail address."""
-
-        m = self._SUBMITTER_RE.match(obj.patches.first().submitter)
-        if m:
-            return m.group('name')
-        else:
-            return None
-
-    def get_submitter_email(self, obj):
-        """Return the e-mail address of the submitter."""
-
-        submitter = obj.patches.first().submitter
-        m = self._SUBMITTER_RE.match(submitter)
-        if m:
-            return m.group('email')
-        else:
-            return submitter
+    def get_pw_series_url(self, obj):
+        return urljoin(settings.PATCHWORKS_URL, f'series/{obj.series_id}')
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):

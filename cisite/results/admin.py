@@ -4,7 +4,7 @@ from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.html import format_html
 from .models import Branch, ContactPolicy, Environment, Measurement, \
-    Parameter, Patch, PatchSet, Tarball, TestResult, TestRun, \
+    Parameter, PatchSet, Tarball, TestResult, TestRun, \
     Subscription, UserProfile
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
@@ -54,14 +54,6 @@ class MeasurementInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     model = Measurement
-
-
-class PatchInline(admin.StackedInline):
-    """Inline admin form for patches."""
-
-    extra = 0
-    show_change_link = True
-    model = Patch
 
 
 class TestResultInline(admin.TabularInline):
@@ -143,6 +135,6 @@ class EnvironmentAdmin(GuardedModelAdmin):
 
 admin.site.register(Branch)
 admin.site.register(Measurement, GuardedModelAdmin, inlines=[ParameterInline])
-admin.site.register(PatchSet, inlines=[PatchInline])
+admin.site.register(PatchSet)
 admin.site.register(Tarball)
 admin.site.register(TestRun, GuardedModelAdmin, inlines=[TestResultInline])

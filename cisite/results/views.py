@@ -18,12 +18,12 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter
-from .models import Branch, Environment, Measurement, PatchSet, Patch, \
+from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
 from . import permissions
 from .parsers import JSONMultiPartParser
 from .serializers import BranchSerializer, EnvironmentSerializer, \
-    GroupSerializer, MeasurementSerializer, PatchSerializer, \
+    GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer
 
@@ -84,8 +84,8 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PatchSetFilter
-    ordering_fields = ('apply_error', 'cur_patch_count', 'id', 'is_public',
-                       'message_uid', 'patch_count', 'patches', 'tarballs')
+    ordering_fields = ('apply_error', 'id', 'is_public', 'tarballs',
+                       'completed_timestamp', 'series_id')
 
 
 class BranchViewSet(viewsets.ModelViewSet):
@@ -105,20 +105,6 @@ class TarballViewSet(viewsets.ModelViewSet):
     queryset = TarballSerializer.setup_eager_loading(Tarball.objects.all())
     serializer_class = TarballSerializer
     filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
-
-
-class PatchViewSet(viewsets.ModelViewSet):
-    """Provide a read-write view of patches."""
-
-    permission_classes = (permissions.IsAdminUserOrReadOnly,)
-    queryset = PatchSerializer.setup_eager_loading(Patch.objects.all())
-    serializer_class = PatchSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filter_fields = ('patchworks_id', 'is_rfc', 'submitter', 'pw_is_active')
-    ordering_fields = ('contacts', 'date', 'id', 'is_rfc', 'message_id',
-                       'patch_number', 'patchset', 'patchset_id',
-                       'patchworks_id', 'pw_is_active', 'subject', 'submitter',
-                       'version')
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):

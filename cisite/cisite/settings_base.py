@@ -144,6 +144,8 @@ AUTH_LDAP_FIND_GROUP_PERMS = True
 AUTH_LDAP_CACHE_GROUPS = True
 AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 
+ENVIRONMENT = 'production'
+
 # Patchworks
 PATCHWORKS_URL = 'https://patches.dpdk.org/api/1.0/'
 

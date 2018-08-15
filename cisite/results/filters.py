@@ -38,26 +38,25 @@ class PatchSetFilter(FilterSet):
     filtering via our custom query.
     """
 
-    complete = BooleanFilter(
-        name='complete', label='complete', method='complete_filter',
-        help_text='If present, limits to complete (if True) or incomplete (if False) patchsets.')
     has_tarball = BooleanFilter(
         name='has_tarball', label='has tarball', method='has_tarball_filter',
         help_text='If present, limits to patchsets with or without a corresponding tarball built.')
+
+    # Django-filters does not allow isnull checks on integer filters.
+    # This is a double negative since Django does not a have a isnotnull, and
+    # I'd rather not add extra code to remove the double negative.
+    # This also exists since we did not use the patchworks series when the original
+    # database was created (since their REST API did not exist at the time), thus
+    # older patchset don't have a series_id.
+    without_series = BooleanFilter(
+        field_name='series_id', lookup_expr='isnull',
+        help_text='Patchsets without series attached to them.')
 
     class Meta:
         """Set up class fields automatically."""
 
         model = PatchSet
-        fields = ['apply_error']
-
-    def complete_filter(self, queryset, name, value):
-        """Filter based on the value of the complete query field."""
-        assert name == 'complete', 'Unexpected query field name'
-        if value:
-            return queryset.complete()
-        else:
-            return queryset.incomplete()
+        fields = ('apply_error', 'pw_is_active')
 
     def has_tarball_filter(self, queryset, name, value):
         """Filter based on the value of the complete query field."""

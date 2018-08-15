@@ -1,5 +1,7 @@
 """Define tests for dashboard app."""
 
+import json
+
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -35,7 +37,7 @@ class BaseTestCase(StaticLiveServerTestCase):
                        json='<html></html>',
                        cookies={'sessionid': '01234567'})
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'statuses'),
+            'GET', urljoin(settings.API_BASE_URL, 'statuses/'),
             json={
                 'count': 1,
                 'next': None,
@@ -72,50 +74,16 @@ class BaseTestCase(StaticLiveServerTestCase):
                 'description_url':
                     'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next'
             })
-        m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'patchsets?complete=true'),
-            json={
-                'count': 1,
-                'next': None,
-                'previous': None,
-                'results': [
-                    {
-                        'url': urljoin(settings.API_BASE_URL,
-                                       'patchsets/1/'),
-                        'message_uid': '20180601110742.11927',
-                        'patch_count': 1,
-                        'patchwork_range_str': '40574',
-                        'submitter_name': 'Thomas Monjalon',
-                        'submitter_email': 'thomas@monjalon.net',
-                        'status': 'Pass',
-                        'status_class': 'success',
-                        'status_tooltip': 'Pass',
-                        'patches': [
-                            {
-                                'url': urljoin(settings.API_BASE_URL,
-                                               'patches/1/'),
-                                'patchworks_id': 40574,
-                                'message_id': '20180601110742.11927-1-thomas@monjalon.net',
-                                'subject': 'version: 18.08-rc0',
-                                'patchset': urljoin(settings.API_BASE_URL,
-                                                    'patchsets/1/'),
-                                'version': 'v0',
-                                'patch_number': 1,
-                                'date': '2018-06-01 11:07:42+00:00',
-                                'contacts': '[{"display_name": "", '
-                                            '"email": "dev@dpdk.org", '
-                                            '"how": "to"}]'
-                            }
-                        ]
-                    }
-                ]
-            })
+        with open('cisite/request_mapping.json') as f:
+            mapping = json.load(f)
+            url = urljoin(settings.PATCHWORKS_URL, 'series/1')
+            m.register_uri('GET', url, json=mapping[url])
 
     def setup_mock_anonymous(self, m):
         """Set up the mock for anonymous users."""
         self.setup_mock_common(m)
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'environments?active=true'),
+            'GET', urljoin(settings.API_BASE_URL, 'environments/?active=true'),
             status_code=401)
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'testruns/1/'),
@@ -132,27 +100,20 @@ class BaseTestCase(StaticLiveServerTestCase):
             'status_class': 'success',
             'status_tooltip': 'Pass',
             'series_id': 1,
-            'patchwork_range_str': '40574',
-            'patches': [
-                {
-                    'url': urljoin(settings.API_BASE_URL,
-                                   'patches/1/'),
-                    'patchworks_id': 40574,
-                    'message_id': '20180601110742.11927-1-thomas@monjalon.net',
-                    'subject': 'version: 18.08-rc0',
-                    'patchset': urljoin(settings.API_BASE_URL,
-                                        'patchsets/1/'),
-                    'version': 'v0',
-                    'patch_number': 1,
-                    'date': '2018-06-01 11:07:42+00:00',
-                    'contacts': '[{"display_name": "", '
-                                '"email": "dev@dpdk.org", '
-                                '"how": "to"}]'
-                }
-            ]
+            'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
+            'completed_timestamp': '2018-07-20T00:00:00Z'
         }
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1'),
+            'GET', urljoin(settings.API_BASE_URL,
+                           'patchsets/?pw_is_active=true&without_series=false&ordering=-id&offset=0'),
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [ps_1]
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1/'),
             json=ps_1)
         return ps_1
 
@@ -232,27 +193,20 @@ class BaseTestCase(StaticLiveServerTestCase):
             'status_class': 'danger' if fail else 'success',
             'status_tooltip': 'Possible Regression' if fail else 'Pass',
             'series_id': 1,
-            'patchwork_range_str': '40574',
-            'patches': [
-                {
-                    'url': urljoin(settings.API_BASE_URL,
-                                   'patches/1/'),
-                    'patchworks_id': 40574,
-                    'message_id': '20180601110742.11927-1-thomas@monjalon.net',
-                    'subject': 'version: 18.08-rc0',
-                    'patchset': urljoin(settings.API_BASE_URL,
-                                        'patchsets/1/'),
-                    'version': 'v0',
-                    'patch_number': 1,
-                    'date': '2018-06-01 11:07:42+00:00',
-                    'contacts': '[{"display_name": "", '
-                                '"email": "dev@dpdk.org", '
-                                '"how": "to"}]'
-                }
-            ]
+            'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
+            'completed_timestamp': '2018-07-20T00:00:00Z'
         }
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1'),
+            'GET', urljoin(settings.API_BASE_URL,
+                           'patchsets/?pw_is_active=true&without_series=false&ordering=-id&offset=0'),
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [ps_1]
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1/'),
             json=ps_1)
         return ps_1
 
@@ -393,7 +347,7 @@ class BaseTestCase(StaticLiveServerTestCase):
     def setup_mock_active(self, m, environments):
         """Set up which environments is considered active."""
         m.register_uri(
-            'GET', urljoin(settings.API_BASE_URL, 'environments?active=true'),
+            'GET', urljoin(settings.API_BASE_URL, 'environments/?active=true'),
             json={
                 'count': len(environments),
                 'next': None,
@@ -436,8 +390,6 @@ class PatchListViewTests(BaseTestCase):
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(ps['patches'][0]['version'], 'v0')
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['submitter'], 'Thomas Monjalon')
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(ps['status_class'], 'success')
@@ -460,8 +412,6 @@ class PatchListViewTests(BaseTestCase):
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(ps['patches'][0]['version'], 'v0')
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['submitter'],
                          'Thomas Monjalon <thomas@monjalon.net>')
         self.assertEqual(ps['status'], 'Pass')
@@ -477,14 +427,13 @@ class DetailViewTests(BaseTestCase):
         """Test that the anonymous page loads."""
         ps = self.setup_mock_anonymous(m)
 
-        ps = response = self.client.get(reverse('dashboard-detail',
-                                                args=(ps['id'],)))
+        response = self.client.get(reverse('dashboard-detail',
+                                           args=(ps['id'],)))
+
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
-        self.assertEqual(ps['patches'][0]['patch_number'], 1)
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(len(response.context['runs'].items()), 0)
 
@@ -502,8 +451,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
-        self.assertEqual(ps['patches'][0]['patch_number'], 1)
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['status'], 'Possible Regression')
         run = response.context['runs'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
@@ -534,8 +481,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
-        self.assertEqual(ps['patches'][0]['patch_number'], 1)
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['status'], 'Pass')
         run = response.context['runs'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
@@ -569,8 +514,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
-        self.assertEqual(ps['patches'][0]['patch_number'], 1)
-        self.assertEqual(ps['patches'][0]['subject'], 'version: 18.08-rc0')
         self.assertEqual(ps['status'], 'Pass')
         run = response.context['runs'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
