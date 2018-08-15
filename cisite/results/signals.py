@@ -26,6 +26,10 @@ def save_group(sender, instance, created, **kwargs):
                        for x in ['add', 'view', 'change', 'delete']
                        for y in ['environment', 'measurement', 'testresult',
                                  'testrun']]
+        # some permissions don't have a 'view' permission
+        permissions += ['_'.join([x, y])
+                        for x in ['add', 'change', 'delete']
+                        for y in ['subscription']]
         instance.permissions.set(
             [Permission.objects.get(codename=x) for x in permissions])
 
