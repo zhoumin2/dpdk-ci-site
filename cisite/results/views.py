@@ -4,6 +4,7 @@ import uuid
 
 from collections import OrderedDict
 from rest_framework import viewsets
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
@@ -45,8 +46,16 @@ class DownloadPermissionView(PrivateStorageDetailView):
             get_perms(self.request.user, self.object)
 
     def get(self, request, *args, **kwargs):
-        """Override `get` to pass extra args."""
+        """Override `get` to pass extra args.
+
+        Also raise PermissionDenied to show our custom template instead of
+        returning a plain 403.
+        """
         self.object = self.get_object(**kwargs)
+
+        if not self.can_access_file(self.get_private_file()):
+            raise PermissionDenied
+
         return super(PrivateStorageDetailView, self).get(request, *args, **kwargs)
 
     def get_object(self, uuidhex, **kwargs):
