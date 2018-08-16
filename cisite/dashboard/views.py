@@ -75,10 +75,11 @@ def paginate_rest(page, context, count):
 
     The `context` dictionary will get modified with the following:
     {
-        next: url|None
-        previous: url|None
+        next_url: url|None
+        previous_url: url|None
         page_links: [{is_break, is_active, url, page}]
     }
+    (This is similar to DRF pagination.py)
     """
     page += 1
 
@@ -106,13 +107,13 @@ def paginate_rest(page, context, count):
     context['page_links'] = _get_page_links(
         page_numbers, page, lambda num: f'?page={num}')
 
-    context['next'] = None
+    context['next_url'] = None
     if page != pages:
-        context['next'] = f'?page={page + 1}'
+        context['next_url'] = f'?page={page + 1}'
 
-    context['previous'] = None
+    context['previous_url'] = None
     if page > 1:
-        context['previous'] = f'?page={page - 1}'
+        context['previous_url'] = f'?page={page - 1}'
 
 
 class AuthenticationForm(auth_forms.AuthenticationForm):
