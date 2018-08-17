@@ -86,6 +86,8 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                             'time_to_last_test')
 
     def get_pw_series_url(self, obj):
+        if obj.series_id is None:
+            return None
         return urljoin(settings.PATCHWORKS_URL, f'series/{obj.series_id}')
 
 
