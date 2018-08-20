@@ -199,6 +199,8 @@ class BaseDashboardView(TemplateView):
         """
         context['banner'] = getattr(settings, 'DASHBOARD_BANNER', None)
         context['enable_preferences'] = getattr(settings, 'ENABLE_PREFERENCES', True)
+        context['enable_admin'] = settings.ENABLE_ADMIN
+        context['enable_rest_api'] = settings.ENABLE_REST_API
         return context
 
     def patchwork_range_str(self, series):
