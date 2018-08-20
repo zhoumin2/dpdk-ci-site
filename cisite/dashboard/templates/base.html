@@ -60,11 +60,29 @@
     <p>Content goes here.</p>
     {% endblock %}
 
-    <p class="border-top text-muted">Copyright &copy; 2018
-    <a class="text-dark" href="https://dpdk.org" target="_blank">DPDK Project</a>.
-    Hosted by the
-    <a class="text-dark" href="https://www.iol.unh.edu" target="_blank">
-    University of New Hampshire InterOperability Laboratory</a>.</p>
+    <div class="row border-top">
+      <div class="col-sm">
+        <p class="text-muted">Copyright &copy; 2018
+        <a class="text-dark" href="https://dpdk.org">DPDK Project</a>.
+        Hosted by the
+        <a class="text-dark" href="https://www.iol.unh.edu">
+        University of New Hampshire InterOperability Laboratory</a>.</p>
+      </div>
+      <div class="col-sm-3 col-md-2">
+        <ul class="list-inline text-right">
+          {% if enable_rest_api %}
+          <li class="list-inline-item">
+            <a href="{% url 'api-root' %}">API</a>
+          </li>
+          {% endif %}
+          {% if request.user.is_staff and enable_admin %}
+          <li class="list-inline-item">
+            <a href="{% url 'admin:index' %}">Admin</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
   </div>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
