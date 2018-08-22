@@ -26,9 +26,7 @@
           <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ request.user }}</a>
           <div class="dropdown-menu dropdown-menu-right">
-            {% if enable_preferences %}
             <a class="dropdown-item" href="{% url 'preferences' %}">Preferences</a>
-            {% endif %}
             <a class="dropdown-item" href="{% url 'logout' %}?next={{ next|default:request.path }}">Logout</a>
           </div>
           </li>
