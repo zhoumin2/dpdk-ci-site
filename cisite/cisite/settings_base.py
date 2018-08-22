@@ -152,7 +152,6 @@ PATCHWORKS_URL = 'https://patches.dpdk.org/api/1.0/'
 # Defaults
 ENABLE_REST_API = True
 ENABLE_ADMIN = True
-ENABLE_PREFERENCES = True
 LOGIN_URL = '/dashboard/accounts/login/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'dashboard'
