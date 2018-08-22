@@ -27,21 +27,19 @@ urlpatterns = [
     re_path(settings.PRIVATE_STORAGE_URL[1:] + '(?P<path>.*)',
             views.UploadView.as_view(), name='dashboard-uploads'),
     path('js_error_hook/', include('django_js_error_hook.urls')),
+    path('preferences/',
+         views.Preferences.as_view(),
+         name='preferences'),
+    path('preferences/subscriptions/',
+         views.Subscriptions.as_view(),
+         name='subscriptions'),
+    path('preferences/subscriptions/<int:subscription>/',
+         views.Subscriptions.as_view(),
+         name='subscriptions-detail'),
+    path('preferences/password_change/',
+         views.PasswordChangeView.as_view(),
+         name='password_change'),
+    path('preferences/password_change_done/',
+         views.PasswordChangeDoneView.as_view(),
+         name='password_change_done'),
 ]
-
-if getattr(settings, 'ENABLE_PREFERENCES', True):
-    urlpatterns.append(path('preferences/',
-                            views.Preferences.as_view(),
-                            name='preferences'))
-    urlpatterns.append(path('preferences/subscriptions/',
-                            views.Subscriptions.as_view(),
-                            name='subscriptions'))
-    urlpatterns.append(path('preferences/subscriptions/<int:subscription>/',
-                            views.Subscriptions.as_view(),
-                            name='subscriptions-detail'))
-    urlpatterns.append(path('preferences/password_change/',
-                            views.PasswordChangeView.as_view(),
-                            name='password_change'))
-    urlpatterns.append(path('preferences/password_change_done/',
-                            views.PasswordChangeDoneView.as_view(),
-                            name='password_change_done'))
