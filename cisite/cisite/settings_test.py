@@ -38,3 +38,7 @@ CACHES = {
 }
 
 API_BASE_URL = 'http://example.com/'
+CA_CERT_BUNDLE = None
+JENKINS_URL = 'http://example.com/'
+JENKINS_USER = 'none'
+JENKINS_API_TOKEN = 'none'

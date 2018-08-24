@@ -53,6 +53,15 @@ without activating the virtual environment first, since it looks for
   password, it will use this url to change the password via IPA's REST API.
   `CA_CERT_BUNDLE` also needs to be set.
 
+* `JENKINS_URL`: The Jenkins URL to allow for rerunning tests from the
+  dashboard.
+
+* `JENKINS_USER`: The Jenkins API user for rerunning tests from the
+  dashboard.
+
+* `JENKINS_API_TOKEN`: The Jenkins API token of the JENKINS_USER for rerunning
+   tests from the dashboard.
+
 ## Running the server
 
 ```

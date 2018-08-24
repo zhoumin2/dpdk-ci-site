@@ -1,10 +1,13 @@
 """Render views for results database objects."""
 
+import requests
 import uuid
 
 from collections import OrderedDict
+from logging import getLogger
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
@@ -27,6 +30,8 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer
+
+logger = getLogger('results')
 
 
 class DownloadPermissionView(PrivateStorageDetailView):
@@ -163,10 +168,27 @@ class TestRunViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of test runs."""
 
     filter_backends = (DjangoObjectPermissionsFilter,)
-    permission_classes = (permissions.OwnerReadCreateOnly,)
+    permission_classes = (permissions.TestRunPermission,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
     serializer_class = TestRunSerializer
     parser_classes = (JSONMultiPartParser,)
+
+    @detail_route(methods=['post'])
+    def rerun(self, request, pk):
+        """Rerun a test run."""
+        tr = self.get_object()
+        pipeline_url = f'{tr.environment.pipeline_url}/buildWithParameters/'
+        logger.info(f'{request.user} reran {pipeline_url} for '
+                    f'test run {pk}')
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        params = {'TARBALL_META_URL': tr.tarball.tarball_url}
+        resp = requests.post(pipeline_url,
+                             verify=settings.CA_CERT_BUNDLE,
+                             auth=auth,
+                             params=params)
+        resp.raise_for_status()
+        return Response({'status': 'pending'})
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
