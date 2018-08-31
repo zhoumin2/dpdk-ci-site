@@ -182,7 +182,8 @@ class TestRunViewSet(viewsets.ModelViewSet):
                     f'test run {pk}')
         auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
                                            settings.JENKINS_API_TOKEN)
-        params = {'TARBALL_META_URL': tr.tarball.tarball_url}
+        tb_url = request.build_absolute_uri(tr.tarball.get_absolute_url())
+        params = {'TARBALL_META_URL': tb_url}
         resp = requests.post(pipeline_url,
                              verify=settings.CA_CERT_BUNDLE,
                              auth=auth,

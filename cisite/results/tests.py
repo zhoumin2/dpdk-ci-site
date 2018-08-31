@@ -1385,9 +1385,10 @@ class TestRerun(test.TestCase):
         self.env = create_test_environment(
             owner=self.group, pipeline=self.pipeline)
         self.tr = create_test_run(self.env)
+        tr_url = 'http://testserver' + self.tr.tarball.get_absolute_url()
         self.pipeline_url = f'{settings.JENKINS_URL}job/{self.pipeline}/' \
                             'buildWithParameters/?' \
-                            f'TARBALL_META_URL={self.tr.tarball.tarball_url}'
+                            f'TARBALL_META_URL={tr_url}'
 
     def test_valid_user(self, m):
         m.register_uri('POST', self.pipeline_url)
