@@ -11,6 +11,7 @@ from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from functools import partial
@@ -244,6 +245,10 @@ class Tarball(models.Model):
                     tr.results.filter(result="FAIL").exists():
                 return "Possible Regression"
         return "Pass"
+
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface and reruns."""
+        return reverse('tarball-detail', args=(self.id,))
 
 
 def validate_contact_list(value):
