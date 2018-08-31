@@ -5,6 +5,7 @@ import os
 import uuid
 
 from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
@@ -14,6 +15,7 @@ from django.utils.functional import cached_property
 from django.utils.timezone import now
 from functools import partial
 from private_storage.fields import PrivateFileField
+from urllib.parse import urljoin
 
 
 def get_admin_group():
@@ -390,6 +392,9 @@ class Environment(models.Model):
         help_text='External hardware description provided by the member. '
                   'This can include setup configuration, topology, and '
                   'general hardware environment information.')
+    pipeline = models.CharField(
+        max_length=255, null=True, blank=True,
+        help_text='The pipeline used for running tests')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -448,6 +453,12 @@ class Environment(models.Model):
         TestRun = apps.get_model('results', 'TestRun')
         qs = TestRun.objects.filter(environment__id__in=self.all_ids)
         return qs
+
+    @property
+    def pipeline_url(self):
+        if self.pipeline is None:
+            return None
+        return urljoin(settings.JENKINS_URL, f'job/{self.pipeline}')
 
 
 class TestCase(models.Model):

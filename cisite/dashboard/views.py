@@ -550,3 +550,21 @@ class UploadView(View):
                           settings.PRIVATE_STORAGE_URL[1:] + path)
             r = s.get(url)
             return HttpResponse(r, content_type=r.headers['content-type'])
+
+
+class Rerun(LoginRequiredMixin, View):
+    """Proxy a rerun to the results view."""
+
+    def post(self, request, tr_id, *args, **kwargs):
+        with api_session(self.request) as s:
+            api_resp = s.post(urljoin(settings.API_BASE_URL,
+                                      f'testruns/{tr_id}/rerun/'))
+            api_resp.raise_for_status()
+            messages.success(request,
+                             'The test is now reruning. Please check back '
+                             'in at least 10 minutes for an updated result.')
+        next_url = request.GET.get('next')
+        if next_url:
+            return HttpResponseRedirect(next_url)
+        else:
+            return HttpResponseRedirect(reverse('dashboard'))

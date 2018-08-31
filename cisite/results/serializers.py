@@ -199,7 +199,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
                   'predecessor', 'successor', 'date', 'live_since',
-                  'hardware_description')
+                  'hardware_description', 'pipeline_url')
         read_only_fields = ('contacts', 'predecessor', 'successor',
                             'date')
 
@@ -346,7 +346,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         """Specify how to serialize test runs."""
 
         model = TestRun
-        fields = ('url', 'timestamp', 'log_output_file',
+        fields = ('id', 'url', 'timestamp', 'log_output_file',
                   'tarball', 'results', 'environment',
                   'report_timestamp', 'log_upload_file')
 

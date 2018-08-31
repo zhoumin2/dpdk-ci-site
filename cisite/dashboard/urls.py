@@ -24,6 +24,9 @@ urlpatterns = [
                  cache_page(60 * 10)(
                      views.DashboardDetail.as_view()))),
          name='dashboard-detail'),
+    path('testruns/<int:tr_id>/rerun/',
+         views.Rerun.as_view(),
+         name='dashboard_rerun'),
     re_path(settings.PRIVATE_STORAGE_URL[1:] + '(?P<path>.*)',
             views.UploadView.as_view(), name='dashboard-uploads'),
     path('js_error_hook/', include('django_js_error_hook.urls')),

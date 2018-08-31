@@ -14,6 +14,7 @@ from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now, utc
 import rest_framework.exceptions
+import requests_mock
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
@@ -164,6 +165,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             bios_version="4.2",
             live_since=None,
             hardware_description=None,
+            pipeline_url=None,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
@@ -1366,3 +1368,46 @@ class TestDownloadViewPermission(test.TestCase):
         dpv = HardwareDescriptionDownloadView()
         with self.assertRaises(Http404):
             dpv.get_object('abcdefg')
+
+
+@requests_mock.Mocker(real_http=True)
+class TestRerun(test.TestCase):
+    """Test the rerun permissions."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.user.groups.add(self.group)
+        self.pipeline = 'test'
+        self.env = create_test_environment(
+            owner=self.group, pipeline=self.pipeline)
+        self.tr = create_test_run(self.env)
+        self.pipeline_url = f'{settings.JENKINS_URL}job/{self.pipeline}/' \
+                            'buildWithParameters/?' \
+                            f'TARBALL_META_URL={self.tr.tarball.tarball_url}'
+
+    def test_valid_user(self, m):
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('testrun-rerun', args=(self.tr.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_other_user(self, m):
+        """Make sure a user of a different group can't rerun the test."""
+        user = User.objects.create_user(
+            'joevendor2', 'joe@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+
+        self.client.login(username=user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('testrun-rerun', args=(self.tr.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_anonymous(self, m):
+        """Make sure a user of a different group can't rerun the test."""
+        resp = self.client.post(reverse('testrun-rerun', args=(self.tr.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -20,9 +20,11 @@ class IsAdminUserOrReadOnly(BasePermission):
 
 
 class OwnerReadCreateOnly(DjangoObjectPermissions):
-    """Allow owner read and create access to objects.
+    """Add owner read access to objects.
 
-    Allow access only to the owner of the object, or staff.
+    Also all full access to staff users.
+    DjangoObjectPermissions already has not SAFE_METHODS permissions set,
+    just not SAFE_METHODS. This class adds SAFE_METHODS permssions.
     """
 
     perms_map = {
@@ -48,6 +50,21 @@ class OwnerReadCreateOnly(DjangoObjectPermissions):
 
         if user.is_staff or obj.owner is None:
             return True
+
+        return super().has_object_permission(request, view, obj)
+
+
+class TestRunPermission(OwnerReadCreateOnly):
+    """Allows specific actions to be run outside of the object permissions."""
+
+    def has_object_permission(self, request, view, obj):
+        """Return true if permission should be granted."""
+        if view.action == 'rerun':
+            user = request.user
+            env = obj.environment
+            if user.groups.all().filter(name=env.owner).exists() or \
+                    user.is_staff:
+                return True
 
         return super().has_object_permission(request, view, obj)
 
