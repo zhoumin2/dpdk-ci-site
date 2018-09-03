@@ -561,7 +561,7 @@ class Rerun(LoginRequiredMixin, View):
                                       f'testruns/{tr_id}/rerun/'))
             api_resp.raise_for_status()
             messages.success(request,
-                             'The test is now reruning. Please check back '
+                             'The test is now rerunning. Please check back '
                              'in at least 10 minutes for an updated result.')
         next_url = request.GET.get('next')
         if next_url:
