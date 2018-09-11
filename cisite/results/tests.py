@@ -637,7 +637,7 @@ class EnvironmentHyperlinkedFieldTestCase(test.TestCase):
         field = EnvironmentHyperlinkedField()
         field._context = dict(request=request)
         self.assertQuerysetEqual(field.get_queryset(),
-            ['<Environment: IOL-IOL-1 (v0)>'])
+            ['<Environment: Environment 1: IOL-IOL-1 (v0) Private>'])
 
     def test_get_environment_admin(self):
         """Test that both environments show up as an admin."""
@@ -647,7 +647,8 @@ class EnvironmentHyperlinkedFieldTestCase(test.TestCase):
         field = EnvironmentHyperlinkedField()
         field._context = dict(request=request)
         self.assertQuerysetEqual(field.get_queryset(),
-            ['<Environment: IOL-IOL-1 (v0)>', '<Environment: IOL-IOL-1 (v0)>'],
+            ['<Environment: Environment 1: IOL-IOL-1 (v0) Private>',
+             '<Environment: Environment 2: IOL-IOL-1 (v0) Private>'],
             ordered=False)
 
 
@@ -1159,6 +1160,57 @@ class SubscriptionTestCase(test.TestCase):
         self.assertFalse(profile.subscriptions.exists())
 
 
+class EnvironmentViewSetTestCase(APITestCase):
+    """Test the environment view set."""
+
+    def test_public_permissions(self):
+        """Test view permissions on public environment."""
+        user = User.objects.create_user('joevendor2', 'joe2@example.com',
+                                        'AbCdEfGh')
+        grp = Group.objects.create(name='Group2')
+        user.groups.add(grp)
+
+        env = create_test_environment()
+
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(0, response['count'])
+
+        env.set_public()
+
+        # check anonymous
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(1, response['count'])
+
+        # check other logged in user of different group
+        self.client.login(username=user.username, password='AbCdEfGh')
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(1, response['count'])
+
+    def test_private_permissions(self):
+        """Test view permissions on private environment AFTER set public."""
+        user = User.objects.create_user('joevendor2', 'joe2@example.com',
+                                        'AbCdEfGh')
+        grp = Group.objects.create(name='Group2')
+        user.groups.add(grp)
+
+        env = create_test_environment()
+
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(0, response['count'])
+
+        env.set_public()
+        env.set_private()
+
+        # check anonymous
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(0, response['count'])
+
+        # check other logged in user of different group
+        self.client.login(username=user.username, password='AbCdEfGh')
+        response = self.client.get(reverse('environment-list')).json()
+        self.assertEqual(0, response['count'])
+
+
 class SubscriptionViewSet(APITestCase):
     """Test the subscription view set."""
 
@@ -1351,6 +1403,75 @@ class TestDownloadViewPermission(test.TestCase):
         self.client.login(username=self.user.username, password='AbCdEfGh')
         resp = self.client.get(self.env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_hardware_description_download_view_get_public(self):
+        """Check user access if download is supposed to be public."""
+        user = User.objects.create_user(
+            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+        # make environment with self group
+        env = create_test_environment(
+            owner=self.group, hardware_description=self.django_file)
+        env.set_public()
+
+        # check anonymous is ok
+        resp = self.client.get(env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        # check that a different group logged in user is ok
+        self.client.login(username=user.username, password='AbCdEfGh')
+        resp = self.client.get(env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_hardware_description_download_view_get_private(self):
+        """Check user access if download is private AFTER set public."""
+        user = User.objects.create_user(
+            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+        # make environment with self group
+        env = create_test_environment(
+            owner=self.group, hardware_description=self.django_file)
+
+        env.set_public()
+        env.set_private()
+
+        # check anonymous
+        resp = self.client.get(env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # check other logged in user of different group
+        self.client.login(username=user.username, password='AbCdEfGh')
+        resp = self.client.get(env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_log_upload_file_download_view_get_public(self):
+        """Check user access if download is supposed to be public.
+
+        Test runs are to remain private even if the environment is public to
+        avoid download of absolute values.
+        """
+        user = User.objects.create_user(
+            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+        # make environment with self group
+        env = create_test_environment(
+            owner=self.group, hardware_description=self.django_file)
+        run = create_test_run(
+            env, log_upload_file=self.django_file)
+
+        env.set_public()
+
+        # check anonymous cant access
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # check that a different group logged in user can't access
+        self.client.login(username=user.username, password='AbCdEfGh')
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_test_run_download_view_get_anonymous(self):
         """Check anonymous access."""

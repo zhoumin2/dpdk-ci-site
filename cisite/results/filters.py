@@ -4,6 +4,10 @@ This file contains custom filter sets for the results application.
 """
 
 from django_filters.rest_framework import BooleanFilter, FilterSet
+from guardian.shortcuts import get_objects_for_user
+from guardian.utils import get_anonymous_user
+from rest_framework.filters import DjangoObjectPermissionsFilter
+
 from .models import Environment, PatchSet, Subscription
 
 
@@ -93,3 +97,20 @@ class SubscriptionFilter(FilterSet):
         else:
             return queryset.exclude(
                 user_profile__exact=self.request.user.results_profile)
+
+
+class DjangoObjectPermissionsFilterWithAnonPerms(DjangoObjectPermissionsFilter):
+    """Allow access to any logged in user if AnonymousUser has permission."""
+
+    def filter_queryset(self, request, queryset, view):
+        """Combine filter of super() and AnonymousUser."""
+        model_cls = queryset.model
+        kwargs = {
+            'app_label': model_cls._meta.app_label,
+            'model_name': model_cls._meta.model_name
+        }
+        permission = self.perm_format % kwargs
+        extra = {'accept_global_perms': False}
+        return super().filter_queryset(request, queryset, view) | \
+            get_objects_for_user(get_anonymous_user(), permission, queryset,
+                                 **extra)
