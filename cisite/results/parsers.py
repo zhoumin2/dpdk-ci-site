@@ -17,6 +17,10 @@ class JSONMultiPartParser(MultiPartParser):
 
         result = super().parse(stream, media_type, parser_context)
 
+        # in case of uploads from DRF form
+        if 'json' not in result.data:
+            return result
+
         try:
             result.data = result.data.copy()
             jsonlist = result.data.pop('json')

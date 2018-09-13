@@ -109,6 +109,7 @@ class PatchSet(models.Model):
         },
     }
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     is_public = models.BooleanField(default=True,
         help_text='Was the patch set posted to a public mailing list?')
     apply_error = models.BooleanField(default=False,
@@ -121,6 +122,10 @@ class PatchSet(models.Model):
     # This can be removed once patchworks updates to 2.1 (DPDKLAB-393)
     pw_is_active = models.BooleanField('Is active?', default=True,
         help_text="True if still considered active in Patchwork")
+    build_log = models.FileField(
+        null=True, blank=True, max_length=255,
+        upload_to=partial(upload_model_path, 'build_log'),
+        help_text='Build log of applying and building the patch.')
 
     objects = models.Manager.from_queryset(PatchSetQuerySet)()
 
