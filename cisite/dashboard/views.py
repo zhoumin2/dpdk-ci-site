@@ -362,6 +362,10 @@ class DashboardDetail(BaseDashboardView):
                             self.request, env['hardware_description'])
                     run['environment'] = env
                     context['runs'][env_url] = run
+            elif context['patchset']['build_log']:
+                api_resp = s.get(context['patchset']['build_log'])
+                api_resp.raise_for_status()
+                context['patchset']['build_log'] = api_resp.text
 
             # Fill in details of missing environments so they can be displayed
             # in the template
