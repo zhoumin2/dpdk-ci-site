@@ -24,6 +24,8 @@ TIME_ZONE = 'UTC'
 STATIC_URL = '/static/'
 PRIVATE_STORAGE_ROOT = 'uploads/'
 PRIVATE_STORAGE_URL = '/uploads/'
+MEDIA_ROOT = 'uploads/public/'
+MEDIA_URL = '/uploads-public/'
 
 REST_FRAMEWORK['PAGE_SIZE'] = 100
 

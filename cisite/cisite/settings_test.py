@@ -23,6 +23,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = 'static/'
 PRIVATE_STORAGE_URL = '/uploads/'
 PRIVATE_STORAGE_ROOT = 'uploads/'
+MEDIA_ROOT = 'uploads/public/'
+MEDIA_URL = '/uploads-public/'
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
