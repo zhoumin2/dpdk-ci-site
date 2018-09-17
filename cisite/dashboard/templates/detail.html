@@ -43,6 +43,9 @@
   </ul>
   <h1>Test Results</h1>
   <p>Overall result: <span class="{{ status_classes }}">{{ patchset.status }}</span></p>
+  {% if patchset.apply_error and patchset.build_log %}
+  <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
+  {% else %}
   {% for env_url, r in runs.items %}
     <div class="card mb-4">
       <h2 class="card-header" id="env-{{ r.environment.id }}">
@@ -134,6 +137,7 @@
   permission to view detailed results for any test runs for this patch
   set.</p>
   {% endfor %}
+  {% endif %}
   {% if runs.items %}
   <h3>Disclaimers</h3>
   <p>Intel:</p>
