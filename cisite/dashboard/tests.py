@@ -74,6 +74,12 @@ class BaseTestCase(StaticLiveServerTestCase):
                 'description_url':
                     'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next'
             })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'group/3/'),
+            json={
+                'url': urljoin(settings.API_BASE_URL, 'group/3/'),
+                'name': 'acme',
+            })
         with open('cisite/request_mapping.json') as f:
             mapping = json.load(f)
             url = urljoin(settings.PATCHWORKS_URL, 'series/1')

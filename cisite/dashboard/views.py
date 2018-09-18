@@ -362,6 +362,15 @@ class DashboardDetail(BaseDashboardView):
                             self.request, env['hardware_description'])
                     run['environment'] = env
                     context['runs'][env_url] = run
+
+                    # if the user is not in the owning group, then don't show
+                    # the buttons (since they won't have access anyways)
+                    group = s.get(env['owner']).json()
+                    user = self.request.user
+                    if not user.groups.filter(name=group['name']).exists() and \
+                            not user.is_staff:
+                        run['environment']['pipeline_url'] = None
+                        run['log_upload_file'] = None
             elif context['patchset']['build_log']:
                 api_resp = s.get(context['patchset']['build_log'])
                 api_resp.raise_for_status()
