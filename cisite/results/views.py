@@ -19,7 +19,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
@@ -112,7 +112,11 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filter_class = PatchSetFilter
-    parser_classes = (JSONMultiPartParser, JSONParser)
+    # All parsers are used in the dpdk ci scripts.
+    # JSONMultiPartParser is used in apply_patchset.py
+    # JSONParser is used in download_patchset.py
+    # FormParser is used in update_all_patches_patchwork_status.py
+    parser_classes = (JSONMultiPartParser, JSONParser, FormParser)
     ordering_fields = ('apply_error', 'id', 'is_public', 'tarballs',
                        'completed_timestamp', 'series_id')
 
