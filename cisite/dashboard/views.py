@@ -305,13 +305,14 @@ class DashboardDetail(BaseDashboardView):
                 api_resp.raise_for_status()
                 envs = api_resp.json()['results']
                 envs = {x['url']: x for x in envs}
-            context['runs'] = dict()
+
+            context['environments'] = dict()
             if context['patchset'].get('tarballs', []):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
                 if tarball.get('date'):
                     tarball['date'] = parse_datetime(tarball['date'])
                 context['tarball'] = tarball
-                context['runs'] = {x: None for x in envs}
+                context['environments'] = {x: None for x in envs}
                 for url in tarball['runs']:
                     resp = s.get(url)
                     if resp.status_code >= HTTPStatus.BAD_REQUEST:
@@ -350,39 +351,59 @@ class DashboardDetail(BaseDashboardView):
                     if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     env = resp.json()
-                    while (env_url not in context['runs'].keys() and
-                           env.get('successor')):
+
+                    while (env_url not in context['environments'].keys() and
+                            env.get('successor')):
                         env_url = env['successor']
                         env = s.get(env_url).json()
+
                     if env.get('live_since'):
                         env['live_since'] = parse_datetime(env['live_since'])
+
                     # parse the absolute url to our proxied url
                     if env.get('hardware_description'):
                         env['hardware_description'] = build_upload_url(
                             self.request, env['hardware_description'])
-                    run['environment'] = env
-                    context['runs'][env_url] = run
 
                     # if the user is not in the owning group, then don't show
-                    # the buttons (since they won't have access anyways)
+                    # certain elements, such as links (since they won't have access
+                    # anyways)
                     group = s.get(env['owner']).json()
                     user = self.request.user
-                    if not user.groups.filter(name=group['name']).exists() and \
-                            not user.is_staff:
-                        run['environment']['pipeline_url'] = None
+                    show_elements = user.groups.filter(name=group['name']).exists() or \
+                        user.is_staff
+
+                    # avoid duplicate replacements since we try to get the
+                    # latest environment multiple times inside the test run
+                    # loop
+                    if not context['environments'][env_url]:
+                        env['runs'] = []
+                        # hide rerun button to invalid users
+                        if not show_elements:
+                            env['pipeline_url'] = None
+                        context['environments'][env_url] = env
+
+                    # hide download artifact button to invalid users
+                    if not show_elements:
                         run['log_upload_file'] = None
+
+                    context['environments'][env_url]['runs'].append(run)
+
             elif context['patchset']['build_log']:
                 api_resp = s.get(context['patchset']['build_log'])
                 api_resp.raise_for_status()
                 context['patchset']['build_log'] = api_resp.text
 
-            # Fill in details of missing environments so they can be displayed
-            # in the template
-            for env_url, run in context['runs'].items():
-                if run is None:
-                    context['runs'][env_url] = {
-                        'environment': envs[env_url]
-                    }
+            for env_url, env in context['environments'].items():
+                # Fill in details of missing environments so they can be
+                # displayed in the template
+                if env is None:
+                    context['environments'][env_url] = envs[env_url]
+                elif 'runs' in context['environments'][env_url]:
+                    # also reverse the runs so that the latest run is first
+                    context['environments'][env_url]['runs'] = \
+                        list(reversed(context['environments'][env_url]['runs']))
+
             context['status_classes'] = text_color_classes(context['patchset']['status_class'])
             return context
 

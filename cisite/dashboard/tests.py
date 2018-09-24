@@ -441,7 +441,7 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
-        self.assertEqual(len(response.context['runs'].items()), 0)
+        self.assertEqual(len(response.context['environments'].items()), 0)
 
     def test_auth_fail(self, m):
         """Test a result with a failing result."""
@@ -458,19 +458,18 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
         self.assertEqual(ps['status'], 'Possible Regression')
-        run = response.context['runs'][
+        env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
-        self.assertEqual(len(run['results']), 2)
-        self.assertIsNotNone(run)
-        self.assertEqual(run['environment']['id'], env['id'])
-        self.assertEqual(run['environment']['nic_model'], 'XL710')
-        self.assertEqual(run['failure_count'], 1)
-        self.assertEqual(run['results'][0]['result'], 'PASS')
-        self.assertEqual(run['results'][1]['result'], 'FAIL')
-        self.assertAlmostEqual(run['results'][0]['difference'],
+        self.assertEqual(len(env['runs'][0]['results']), 2)
+        self.assertEqual(env['id'], env['id'])
+        self.assertEqual(env['nic_model'], 'XL710')
+        self.assertEqual(env['runs'][0]['failure_count'], 1)
+        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
+        self.assertEqual(env['runs'][0]['results'][1]['result'], 'FAIL')
+        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(run['results'][1]['difference'],
+        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
                                -0.664055, places=5)
 
     def test_auth_load(self, m):
@@ -488,18 +487,17 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
-        run = response.context['runs'][
+        env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
-        self.assertEqual(len(run['results']), 2)
-        self.assertIsNotNone(run)
-        self.assertEqual(run['environment']['id'], env['id'])
-        self.assertEqual(run['environment']['nic_model'], 'XL710')
-        self.assertEqual(run['failure_count'], 0)
-        self.assertEqual(run['results'][0]['result'], 'PASS')
-        self.assertAlmostEqual(run['results'][0]['difference'],
+        self.assertEqual(len(env['runs'][0]['results']), 2)
+        self.assertEqual(env['id'], env['id'])
+        self.assertEqual(env['nic_model'], 'XL710')
+        self.assertEqual(env['runs'][0]['failure_count'], 0)
+        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(run['results'][1]['difference'],
+        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
                                -0.664055, places=5)
 
     def test_auth_successor(self, m):
@@ -521,18 +519,17 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
-        run = response.context['runs'][
+        env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(cloned_env['id'],)))]
-        self.assertEqual(len(run['results']), 2)
-        self.assertIsNotNone(run)
-        self.assertEqual(run['environment']['id'], cloned_env['id'])
-        self.assertEqual(run['environment']['nic_model'], 'XL710')
-        self.assertEqual(run['failure_count'], 0)
-        self.assertEqual(run['results'][0]['result'], 'PASS')
-        self.assertAlmostEqual(run['results'][0]['difference'],
+        self.assertEqual(len(env['runs'][0]['results']), 2)
+        self.assertEqual(env['id'], cloned_env['id'])
+        self.assertEqual(env['nic_model'], 'XL710')
+        self.assertEqual(env['runs'][0]['failure_count'], 0)
+        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(run['results'][1]['difference'],
+        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
                                -0.664055, places=5)
 
 
