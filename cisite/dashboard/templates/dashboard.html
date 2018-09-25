@@ -24,7 +24,6 @@
         <tr>
           <th>Status [<a href="#" data-toggle="popover" title="Status Legend" data-content="<dl>{% for s in statuses %}<dt><span class=&quot;bg-{{ s.class }}&quot;>&nbsp;&nbsp;&nbsp;</span>&nbsp;{{ s.name }}</dt><dd>{{ s.tooltip }}</dd>{% endfor %}</dl>" data-html="true">?</a>]</th>
           <th title="Patch information">Patch</th>
-          <th title="Summary of tests on all active environments">Summary</th>
           {% if request.user.is_superuser %}
           <th title="The time it took from when the patchset was submitted to when the last test run completed.">Time</th>
           {% endif %}
@@ -33,7 +32,21 @@
       <tbody>
         {% for ps in patchsets %}
         <tr>
-          <td title="{{ ps.status_tooltip }}"><span class="badge badge-{{ ps.status_class }}">{{ ps.status }}</span></td>
+          <td>
+            <span class="badge badge-{{ ps.status_class }}" title="{{ ps.status_tooltip }}">{{ ps.status }}</span>
+            {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
+            <div class="text-nowrap" title="Summary of tests on all active environments: {{ ps.incomplete }} incomplete, {{ ps.passed }} passed, and {{ ps.failed }} failed">
+              {% for i in ps.incomplete_range %}
+              <span class="bg-secondary px-2 mr-1"></span>
+              {% endfor %}
+              {% for i in ps.passed_range %}
+              <span class="bg-success px-2 mr-1"></span>
+              {% endfor %}
+              {% for i in ps.failed_range %}
+              <span class="bg-danger px-2 mr-1"></span>
+              {% endfor %}
+            </div>
+          </td>
           <td>
             <div class="d-flex justify-content-between flex-column flex-md-row">
               <div>
@@ -48,20 +61,6 @@
             </div>
             <div>
               {{ ps.series.name }}
-            </div>
-          </td>
-          <td title="Summary of tests: {{ ps.incomplete }} incomplete, {{ ps.passed }} passed, and {{ ps.failed }} failed.">
-            {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
-            <div class="text-nowrap">
-              {% for i in ps.incomplete_range %}
-              <span class="bg-secondary px-2 mr-1"></span>
-              {% endfor %}
-              {% for i in ps.passed_range %}
-              <span class="bg-success px-2 mr-1"></span>
-              {% endfor %}
-              {% for i in ps.failed_range %}
-              <span class="bg-danger px-2 mr-1"></span>
-              {% endfor %}
             </div>
           </td>
           {% if request.user.is_superuser %}
