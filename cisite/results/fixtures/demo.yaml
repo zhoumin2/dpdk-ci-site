@@ -937,6 +937,10 @@
   pk: 89
   fields: {timestamp: !!timestamp '2018-06-04 20:06:31+00:00', log_output_file: null,
     tarball: 35, environment: 4}
+- model: results.testrun
+  pk: 90
+  fields: {timestamp: !!timestamp '2018-06-04 20:06:32+00:00', log_output_file: null,
+    tarball: 35, environment: 4}
 - model: results.testresult
   pk: 1
   fields: {result: PASS, difference: 0.1, expected_value: null, measurement: 1, run: 1}
@@ -1798,6 +1802,18 @@
   pk: 221
   fields: {result: PASS, difference: 0.720722747440271, expected_value: null, measurement: 12,
     run: 89}
+- model: results.testresult
+  pk: 222
+  fields: {result: PASS, difference: -2.28692504288938, expected_value: null, measurement: 10,
+    run: 90}
+- model: results.testresult
+  pk: 223
+  fields: {result: PASS, difference: 0.438921076238154, expected_value: null, measurement: 11,
+    run: 90}
+- model: results.testresult
+  pk: 224
+  fields: {result: PASS, difference: 0.820722747440271, expected_value: null, measurement: 12,
+    run: 90}
 - model: auth.user
   pk: 1
   fields:

@@ -46,89 +46,64 @@
   {% if patchset.apply_error and patchset.build_log %}
   <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
   {% else %}
-  {% for env_url, r in runs.items %}
+  {% for env_url, environment in environments.items %}
     <div class="card mb-4">
-      <h2 class="card-header" id="env-{{ r.environment.id }}">
-        {{ r.environment.nic_make }} {{ r.environment.nic_model }} {{ r.environment.nic_speed }} Mbps
+      <h2 class="card-header" id="env-{{ environment.id }}">
+        {{ environment.nic_make }} {{ environment.nic_model }} {{ environment.nic_speed }} Mbps
       </h2>
       <div class="card-body">
         {% if 'url' not in r %}
         <p>The tests were not run for this environment.</p>
         {% else %}
-          {% if not r.environment.live_since or r.environment.live_since > r.timestamp %}
+          {% if not environment.live_since or environment.live_since > r.timestamp %}
           <p>Note: This run does not affect the overall result above.</p>
           {% endif %}
-          {% if r.environment.hardware_description %}
-          <h3><a href="{{ r.environment.hardware_description }}">Configuration Information</a></h3>
+          {% if environment.hardware_description %}
+          <h3><a href="{{ environment.hardware_description }}">Configuration Information</a></h3>
           {% else %}
           <h3>Configuration Information</h3>
           {% endif %}
           <dl>
             <div class="row">
             <dt class="col">Kernel</dt>
-            <dd class="col-10">{{ r.environment.kernel_name }} {{ r.environment.kernel_version }}</dd>
+            <dd class="col-10">{{ environment.kernel_name }} {{ environment.kernel_version }}</dd>
             </div>
             <div class="row">
             <dt class="col">Compiler</dt>
-            <dd class="col-10">{{ r.environment.compiler_name }} {{ r.environment.compiler_version }}</dd>
+            <dd class="col-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
             </div>
             <div class="row">
             <dt class="col">Target</dt>
             <dd class="col-10">x86_64-native-linuxapp-gcc</dd>
             </div>
-            <div class="row">
-            <dt class="col">Fail/Total</dt>
-            <dd class="col-10">{{ r.failure_count }}/{{ r.results|length }}</dd>
-            </div>
           </dl>
+          {% if environment.runs|length > 0 %}
           <h3>Detailed performance results</h3>
-          <p>Test run at: {{ r.timestamp|date:"DATETIME_FORMAT" }}
-            {% if request.user.is_superuser %}
-            ({{ r.timedelta }} since patchset posted)
-            {% endif %}
-          </p>
-          {% for tc in r.testcases.values %}
-          <h4>Test Case: <a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
-          <div class="table-responsive-sm">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Result</th>
-                  <th>{{ tc.results.0.measurement.parameters.frame_size.name }}
-                  ({{ tc.results.0.measurement.parameters.frame_size.unit }})</th>
-                  <th>{{ tc.results.0.measurement.parameters.txd_rxd.name }}
-                  ({{ tc.results.0.measurement.parameters.txd_rxd.unit }})</th>
-                  <th>{{ tc.results.0.measurement.name }} Difference
-                  ({{ tc.results.0.measurement.unit }})</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in tc.results %}
-                {% if not r.environment.live_since or r.environment.live_since > r.timestamp %}
-                <tr class="table-secondary" title="This run does not affect the overall result above.">
-                  <td class="text-{{ item.result_class }}">{{ item.result }}</td>
-                {% else %}
-                <tr class="table-{{ item.result_class }}">
-                  <td>{{ item.result }}</td>
-                {% endif %}
-                  <td>{{ item.measurement.parameters.frame_size.value }}</td>
-                  <td>{{ item.measurement.parameters.txd_rxd.value }}</td>
-                  <td>{{ item.difference|floatformat:"-5" }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+          {% endif %}
+          {% if environment.runs|length > 1 %}
+          <ul class="nav nav-tabs">
+            {% for r in environment.runs %}
+            <li class="nav-item">
+              <a class="nav-link{{ forloop.first|yesno:' active,' }}" data-toggle="tab" href="#run-{{ r.id }}" role="tab" aria-controls="run-{{ r.id }}" aria-selected="{{ forloop.first|lower }}">
+                Run {{ forloop.revcounter }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="tab-content">
+            {% for r in environment.runs %}
+            <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
+              {% include "test_run.html" %}
+            </div>
+            {% endfor %}
           </div>
-          {% if r.log_upload_file %}
-          <a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a>
+          {% elif environment.runs|length == 1 %}
+            {% with environment.runs|first as r %}
+              {% include "test_run.html" %}
+            {% endwith %}
+          {% else %}
+          <p>There are not yet any runs for this patch set.</p>
           {% endif %}
-          {% if r.environment.pipeline_url %}
-          <form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={% url 'dashboard-detail' patchset.id %}" method="POST">
-            {% csrf_token %}
-            <input type="submit" class="btn btn-warning" value="Rerun">
-          </form>
-          {% endif %}
-          {% endfor %}
         {% endif %}
       </div>
     </div>
