@@ -230,6 +230,12 @@ class BaseDashboardView(TemplateView):
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=HTTPStatus.SERVICE_UNAVAILABLE)
 
+    def add_patchset_ranges(self, patchset):
+        """Pass in the patchset to apply a range."""
+        patchset['incomplete_range'] = range(patchset['incomplete'])
+        patchset['passed_range'] = range(patchset['passed'])
+        patchset['failed_range'] = range(patchset['failed'])
+
 
 class PatchSetList(BaseDashboardView):
     """Display the list of patches on the dashboard."""
@@ -267,6 +273,7 @@ class PatchSetList(BaseDashboardView):
                     patchset['time_to_last_test'] = format_timedelta(
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
+                self.add_patchset_ranges(patchset)
         return context
 
 
@@ -293,6 +300,7 @@ class DashboardDetail(BaseDashboardView):
             context['patchset']['patches'] = series['patches']
             context['patchset']['patchwork_range_str'] =\
                 self.patchwork_range_str(series)
+            self.add_patchset_ranges(context['patchset'])
             # assume UTC
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
             context['patchset']['submitter'] = self.get_patchset_submitter(series)

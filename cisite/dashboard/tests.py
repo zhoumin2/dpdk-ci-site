@@ -107,7 +107,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'status_tooltip': 'Pass',
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
-            'completed_timestamp': '2018-07-20T00:00:00Z'
+            'completed_timestamp': '2018-07-20T00:00:00Z',
+            'incomplete': 0,
+            'passed': 0,
+            'failed': 0,
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,
@@ -200,7 +203,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'status_tooltip': 'Possible Regression' if fail else 'Pass',
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
-            'completed_timestamp': '2018-07-20T00:00:00Z'
+            'completed_timestamp': '2018-07-20T00:00:00Z',
+            'incomplete': 0,
+            'passed': 0,
+            'failed': 0,
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,
