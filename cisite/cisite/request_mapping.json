@@ -502,7 +502,7 @@
       "scm_url": "git://dpdk.org/dpdk",
       "webscm_url": "http://git.dpdk.org/dpdk"
     },
-    "name": "fix typo in mac_swap",
+    "name": null,
     "date": "2018-05-26T22:23:58",
     "submitter": {
       "id": 969,
