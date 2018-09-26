@@ -259,6 +259,8 @@ class PatchSetList(BaseDashboardView):
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
                 series = pw_get(patchset['pw_series_url'], pw_session)
+                if not series['name']:
+                    series['name'] = f'Untitled series #{series["id"]}'
                 patchset['series'] = series
                 patchset['patchwork_range_str'] = \
                     self.patchwork_range_str(series)
