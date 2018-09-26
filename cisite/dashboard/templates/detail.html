@@ -45,6 +45,7 @@
     Test Results
     <small><span class="badge badge-{{ patchset.status_class }} align-middle">{{ patchset.status }}</span></small>
   </h1>
+  {% if patchset.incomplete > 0 or patchset.passed > 0 or patchset.failed > 0 %}
   <p title="Summary of tests: {{ patchset.incomplete }} incomplete, {{ patchset.passed }} passed, and {{ patchset.failed }} failed.">
     <span class="mr-2">Test summary:</span>
     {% for i in patchset.incomplete_range %}
@@ -57,6 +58,7 @@
     <span class="bg-danger px-2 mr-1"></span>
     {% endfor %}
   </p>
+  {% endif %}
   {% if patchset.apply_error and patchset.build_log %}
   <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
   {% else %}
