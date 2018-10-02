@@ -43,8 +43,24 @@
     <li><a href="https://patches.dpdk.org/patch/{{ p.id }}">{{ p.name }}</a></li>
     {% endfor %}
   </ul>
-  <h1>Test Results</h1>
-  <p>Overall result: <span class="{{ status_classes }}">{{ patchset.status }}</span></p>
+  <h1>
+    Test Results
+    <small><span class="badge badge-{{ patchset.status_class }} align-middle">{{ patchset.status }}</span></small>
+  </h1>
+  {% if patchset.incomplete > 0 or patchset.passed > 0 or patchset.failed > 0 %}
+  <p title="Summary of tests: {{ patchset.incomplete }} incomplete, {{ patchset.passed }} passed, and {{ patchset.failed }} failed.">
+    <span class="mr-2">Test summary:</span>
+    {% for i in patchset.incomplete_range %}
+    <span class="bg-secondary px-2 mr-1"></span>
+    {% endfor %}
+    {% for i in patchset.passed_range %}
+    <span class="bg-success px-2 mr-1"></span>
+    {% endfor %}
+    {% for i in patchset.failed_range %}
+    <span class="bg-danger px-2 mr-1"></span>
+    {% endfor %}
+  </p>
+  {% endif %}
   {% if patchset.apply_error and patchset.build_log %}
   <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
   {% else %}

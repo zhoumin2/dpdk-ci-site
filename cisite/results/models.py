@@ -159,6 +159,27 @@ class PatchSet(models.Model):
         return self.statuses.get(self.status, dict()).get('tooltip',
                                                           self.status)
 
+    @property
+    def passed(self):
+        """Return the number of passed environments."""
+        if self.apply_error or not self.tarballs.exists():
+            return 0
+        return self.tarballs.last().passed
+
+    @property
+    def failed(self):
+        """Return the number of failed environments."""
+        if self.apply_error or not self.tarballs.exists():
+            return 0
+        return self.tarballs.last().failed
+
+    @property
+    def incomplete(self):
+        """Return the number of incomplete environments."""
+        if self.apply_error or not self.tarballs.exists():
+            return 0
+        return self.tarballs.last().incomplete
+
 
 class Branch(models.Model):
     """Model a DPDK repository branch."""
@@ -219,7 +240,25 @@ class Tarball(models.Model):
 
     @cached_property
     def status(self):
-        """Return a status string to be displayed on the dashboard.
+        """Return a status string to be displayed on the dashboard."""
+        if not self.runs.exists():
+            return "Waiting"
+
+        if self.incomplete > 0:
+            return "Incomplete"
+
+        if self.failed > 0:
+            return "Possible Regression"
+
+        return "Pass"
+
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface and reruns."""
+        return reverse('tarball-detail', args=(self.id,))
+
+    @cached_property
+    def get_pass_fail_incomplete(self):
+        """Return a dict of passed, failed, and incomplete test runs.
 
         For the Incomplete status, we consider only environments created since
         the tarball was created (falling back to the patchset submission date
@@ -232,30 +271,49 @@ class Tarball(models.Model):
         If the live_since value is null, then we also ignore failures because
         we presume that the environment is not yet live.
         """
+        count = {'passed': 0, 'failed': 0, 'incomplete': 0}
+
         if not self.runs.exists():
-            return "Waiting"
+            return count
 
         date = getattr(self, 'date', None)
         if not date:
             date = self.patchset.completed_timestamp
+
         Environment = apps.get_model('results', 'Environment')
         active_envs = Environment.objects.filter(
             Q(date__isnull=True) | Q(date__lte=date),
             successor__isnull=True)
+
         for env in active_envs.iterator():
             tr_qs = env.all_runs.filter(tarball__id=self.id)
             if not tr_qs.exists():
-                return "Incomplete"
+                count['incomplete'] += 1
+                continue
             tr = tr_qs.last()
-            if getattr(env, 'live_since', None) and \
-                    env.live_since <= tr.timestamp and \
-                    tr.results.filter(result="FAIL").exists():
-                return "Possible Regression"
-        return "Pass"
 
-    def get_absolute_url(self):
-        """Return url to REST API for use with admin interface and reruns."""
-        return reverse('tarball-detail', args=(self.id,))
+            if getattr(env, 'live_since', None) and \
+                    env.live_since <= tr.timestamp:
+                if tr.results.filter(result="FAIL").exists():
+                    count['failed'] += 1
+                if tr.results.filter(result="PASS").exists():
+                    count['passed'] += 1
+        return count
+
+    @cached_property
+    def passed(self):
+        """Return the number of passed environments."""
+        return self.get_pass_fail_incomplete['passed']
+
+    @cached_property
+    def failed(self):
+        """Return the number of failed environments."""
+        return self.get_pass_fail_incomplete['failed']
+
+    @cached_property
+    def incomplete(self):
+        """Return the number of incomplete environments."""
+        return self.get_pass_fail_incomplete['incomplete']
 
 
 def validate_contact_list(value):

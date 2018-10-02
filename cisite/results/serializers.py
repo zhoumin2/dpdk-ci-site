@@ -80,7 +80,8 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
         fields = ('url', 'id', 'is_public', 'apply_error', 'tarballs',
                   'status', 'status_class', 'status_tooltip',
                   'time_to_last_test', 'series_id', 'pw_series_url',
-                  'completed_timestamp', 'pw_is_active', 'build_log')
+                  'completed_timestamp', 'pw_is_active', 'build_log',
+                  'passed', 'failed', 'incomplete')
         read_only_fields = ('complete', 'tarballs',
                             'status', 'status_class', 'status_tooltip',
                             'time_to_last_test')
