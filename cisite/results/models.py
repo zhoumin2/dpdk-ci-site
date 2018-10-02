@@ -296,6 +296,7 @@ class Tarball(models.Model):
                     env.live_since <= tr.timestamp:
                 if tr.results.filter(result="FAIL").exists():
                     count['failed'] += 1
+                    continue
                 if tr.results.filter(result="PASS").exists():
                     count['passed'] += 1
         return count
