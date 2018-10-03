@@ -7,8 +7,9 @@ from django.db import migrations, models
 
 def copy_patch_fields_to_patchset(apps, schema_editor):
     """Copy first patch fields to patchset."""
+    db_alias = schema_editor.connection.alias
     PatchSet = apps.get_model('results', 'PatchSet')
-    for patchset in PatchSet.objects.all():
+    for patchset in PatchSet.objects.using(db_alias).all():
         patch = patchset.patches.first()
         patchset.completed_timestamp = patch.date
         patchset.pw_is_active = patch.pw_is_active

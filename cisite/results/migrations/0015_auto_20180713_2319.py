@@ -4,8 +4,9 @@ from django.db import migrations
 
 
 def add_first_testcase(apps, schema_editor):
+    db_alias = schema_editor.connection.alias
     TestCase = apps.get_model('results', 'TestCase')
-    TestCase.objects.create(
+    TestCase.objects.using(db_alias).create(
         name='nic_single_core_perf',
         description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
 
