@@ -690,6 +690,11 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         ps = PatchSet.objects.create(apply_error=True)
         self.assertEqual(ps.status, 'Apply Error')
 
+    def test_status_build_error(self):
+        """Verify that status shows Build Error if that is the case."""
+        ps = PatchSet.objects.create(build_error=True)
+        self.assertEqual(ps.status, 'Build Error')
+
     def test_status_waiting(self):
         """Verify that status with tarball but no results is Waiting."""
         Tarball.objects.create(branch="master", commit_id="0" * 40,

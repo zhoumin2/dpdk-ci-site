@@ -61,7 +61,7 @@
     {% endfor %}
   </p>
   {% endif %}
-  {% if patchset.apply_error and patchset.build_log %}
+  {% if patchset.has_error and patchset.build_log %}
   <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
   {% else %}
   {% for env_url, environment in environments.items %}

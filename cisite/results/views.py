@@ -118,7 +118,7 @@ class PatchSetViewSet(viewsets.ModelViewSet):
     # FormParser is used in update_all_patches_patchwork_status.py
     parser_classes = (JSONMultiPartParser, JSONParser, FormParser)
     ordering_fields = ('apply_error', 'id', 'is_public', 'tarballs',
-                       'completed_timestamp', 'series_id')
+                       'completed_timestamp', 'series_id', 'build_error')
 
 
 class BranchViewSet(viewsets.ModelViewSet):
