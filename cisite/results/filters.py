@@ -3,6 +3,7 @@
 This file contains custom filter sets for the results application.
 """
 
+from django.db.models import Q
 from django_filters.rest_framework import BooleanFilter, FilterSet
 from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_anonymous_user
@@ -46,6 +47,10 @@ class PatchSetFilter(FilterSet):
         name='has_tarball', label='has tarball', method='has_tarball_filter',
         help_text='If present, limits to patchsets with or without a corresponding tarball built.')
 
+    has_error = BooleanFilter(
+        name='has_error', label='has error', method='has_error_filter',
+        help_text='If present, limits to patchsets with apply errors or build errors.')
+
     # Django-filters does not allow isnull checks on integer filters.
     # This is a double negative since Django does not a have a isnotnull, and
     # I'd rather not add extra code to remove the double negative.
@@ -60,7 +65,7 @@ class PatchSetFilter(FilterSet):
         """Set up class fields automatically."""
 
         model = PatchSet
-        fields = ('apply_error', 'pw_is_active')
+        fields = ('apply_error', 'build_error', 'pw_is_active')
 
     def has_tarball_filter(self, queryset, name, value):
         """Filter based on the value of the complete query field."""
@@ -69,6 +74,14 @@ class PatchSetFilter(FilterSet):
             return queryset.with_tarball()
         else:
             return queryset.without_tarball()
+
+    def has_error_filter(self, queryset, name, value):
+        """Filter based on the value of the complete query field."""
+        assert name == 'has_error', 'Unexpected query field name'
+        if value:
+            return queryset.filter(Q(apply_error=True) | Q(build_error=True))
+        else:
+            return queryset.filter(apply_error=False, build_error=False)
 
 
 class SubscriptionFilter(FilterSet):

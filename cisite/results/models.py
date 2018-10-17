@@ -90,7 +90,11 @@ class PatchSet(models.Model):
         },
         'Apply Error': {
             'class': 'warning',
-            'tooltip': 'The patch series could not be applied or built',
+            'tooltip': 'The patch series could not be applied',
+        },
+        'Build Error': {
+            'class': 'warning',
+            'tooltip': 'The patch series could not be built',
         },
         'Incomplete': {
             'class': 'warning',
@@ -114,6 +118,8 @@ class PatchSet(models.Model):
         help_text='Was the patch set posted to a public mailing list?')
     apply_error = models.BooleanField(default=False,
         help_text='Was an error encountered trying to apply the patch?')
+    build_error = models.BooleanField(default=False,
+        help_text='Was an error encountered trying to build the patch?')
     series_id = models.PositiveIntegerField(unique=True, null=True,
         blank=True, help_text='The patchworks series ID.')
     completed_timestamp = models.DateTimeField(
@@ -145,6 +151,8 @@ class PatchSet(models.Model):
         """Return the status string to be displayed on the dashboard."""
         if self.apply_error:
             return "Apply Error"
+        elif self.build_error:
+            return "Build Error"
         elif not self.tarballs.exists():
             return "Pending"
         else:
@@ -159,24 +167,29 @@ class PatchSet(models.Model):
         return self.statuses.get(self.status, dict()).get('tooltip',
                                                           self.status)
 
+    @cached_property
+    def has_error(self):
+        """"Returns whether the patchset had an apply error or build error."""
+        return self.apply_error or self.build_error
+
     @property
     def passed(self):
         """Return the number of passed environments."""
-        if self.apply_error or not self.tarballs.exists():
+        if self.has_error or not self.tarballs.exists():
             return 0
         return self.tarballs.last().passed
 
     @property
     def failed(self):
         """Return the number of failed environments."""
-        if self.apply_error or not self.tarballs.exists():
+        if self.has_error or not self.tarballs.exists():
             return 0
         return self.tarballs.last().failed
 
     @property
     def incomplete(self):
         """Return the number of incomplete environments."""
-        if self.apply_error or not self.tarballs.exists():
+        if self.has_error or not self.tarballs.exists():
             return 0
         return self.tarballs.last().incomplete
 
