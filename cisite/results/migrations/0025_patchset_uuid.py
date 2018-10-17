@@ -7,8 +7,9 @@ import uuid
 
 
 def gen_uuid(apps, schema_editor):
+    db_alias = schema_editor.connection.alias
     PatchSet = apps.get_model('results', 'PatchSet')
-    for row in PatchSet.objects.all():
+    for row in PatchSet.objects.using(db_alias).all():
         row.uuid = uuid.uuid4()
         row.save(update_fields=['uuid'])
 

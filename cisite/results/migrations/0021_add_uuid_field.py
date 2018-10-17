@@ -10,12 +10,13 @@ import uuid
 
 
 def gen_uuid(apps, schema_editor):
+    db_alias = schema_editor.connection.alias
     Environment = apps.get_model('results', 'Environment')
-    for row in Environment.objects.all():
+    for row in Environment.objects.using(db_alias).all():
         row.uuid = uuid.uuid4()
         row.save(update_fields=['uuid'])
     TestRun = apps.get_model('results', 'TestRun')
-    for row in TestRun.objects.all():
+    for row in TestRun.objects.using(db_alias).all():
         row.uuid = uuid.uuid4()
         row.save(update_fields=['uuid'])
 

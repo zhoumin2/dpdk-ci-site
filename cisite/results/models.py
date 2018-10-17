@@ -541,8 +541,27 @@ class Environment(models.Model):
         return reverse('environment-detail', args=(self.id,))
 
     def get_related(self):
-        """Get all related objects and itself into a 2d list."""
-        return [[self], self.measurements.all(), self.runs.all()]
+        """Get all related objects and itself into a 2d list.
+
+        This is used when previewing what will become public from the
+        admin interface.
+        """
+        measurements = self.measurements.all()
+        runs = self.runs.all()
+        results = []
+        for run in runs:
+            results += run.results.all()
+
+        ret = [[self]]
+        if measurements:
+            ret += [measurements]
+        if runs:
+            ret += [runs]
+        if results:
+            ret += [results]
+        if self.predecessor:
+            ret += self.predecessor.get_related()
+        return ret
 
     def set_public(self):
         """Set AnonymousUser view permission to environment and related."""
@@ -551,7 +570,15 @@ class Environment(models.Model):
         for measurement in self.measurements.all():
             assign_perm('view_measurement', anon, measurement)
         for run in self.runs.all():
+            # Although TestResult is serialized in the API, this is required
+            # for syncing the public database.
+            for result in run.results.all():
+                assign_perm('view_testresult', anon, result)
             assign_perm('view_testrun', anon, run)
+        # Required when syncing the public database, or else it will throw an
+        # error that it can't find the foreign keys.
+        if self.predecessor:
+            self.predecessor.set_public()
 
     def set_private(self):
         """Set AnonymousUser view permission to environment and related."""
@@ -560,7 +587,11 @@ class Environment(models.Model):
         for measurement in self.measurements.all():
             remove_perm('view_measurement', anon, measurement)
         for run in self.runs.all():
+            for result in run.results.all():
+                remove_perm('view_testresult', anon, result)
             remove_perm('view_testrun', anon, run)
+        if self.predecessor:
+            self.predecessor.set_private()
 
 
 class TestCase(models.Model):
@@ -771,9 +802,13 @@ class TestResult(models.Model):
         test throughput measuring 4.9 Gbps against an expected
         result of 5.0 Gbps +/- 100 Mbps.
         """
-        return '{name:s} {result:s} {difference:f} {unit:s}'.format(
-            name=self.measurement.name, result=self.result,
-            difference=self.difference, unit=self.measurement.unit)
+        if get_anonymous_user().has_perm('view_testresult', self):
+            is_public = 'Public'
+        else:
+            is_public = 'Private'
+        return f'{self._meta.object_name} {self.id}: ' \
+               f'{self.measurement.name} {self.result} {self.difference} ' \
+               f'{self.measurement.unit} {is_public}'
 
     @property
     def result_class(self):
