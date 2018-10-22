@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Patchset {{ patchset.id }}{% endblock %}
+
 {% block breadcrumb_items %}
   <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
   <li class="breadcrumb-item active" aria-current="page">Patchset Detail</li>
