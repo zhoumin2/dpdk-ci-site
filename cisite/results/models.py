@@ -132,6 +132,12 @@ class PatchSet(models.Model):
         null=True, blank=True, max_length=255,
         upload_to=partial(upload_model_path, 'build_log'),
         help_text='Build log of applying and building the patch.')
+    commit_id = models.CharField(
+        max_length=40, blank=True,
+        help_text='The most recent git commit id that the patch set was '
+                  'applied to. The commit id in the tarball should be used '
+                  'instead of this. This should be used when no tarball '
+                  'exists.')
 
     objects = models.Manager.from_queryset(PatchSetQuerySet)()
 
@@ -192,6 +198,12 @@ class PatchSet(models.Model):
         if self.has_error or not self.tarballs.exists():
             return 0
         return self.tarballs.last().incomplete
+
+    @property
+    def commit_url(self):
+        if self.commit_id is None:
+            return None
+        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
 
 class Branch(models.Model):

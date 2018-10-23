@@ -34,6 +34,13 @@
         (<a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a>)
       </dd>
     </div>
+    {% elif patchset.commit_id %}
+    <div class="row">
+      <dt class="col">Applied on</dt>
+      <dd class="col-10">
+        <a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a>
+      </dd>
+    </div>
     {% endif %}
     <div class="row">
       <dt class="col">Date Submitted</dt>
