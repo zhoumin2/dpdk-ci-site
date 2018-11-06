@@ -13,6 +13,7 @@ from django import test
 from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now, utc
+from guardian.utils import get_anonymous_user
 import rest_framework.exceptions
 import requests_mock
 from rest_framework import status
@@ -462,13 +463,13 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             tarball_url='http://host.invalid/dpdk.tar.gz')
         cls.tarball_url = reverse(
             'tarball-detail', args=[tarball.id], request=None)
-        env = create_test_environment(owner=group)
-        ContactPolicy.objects.create(environment=env)
+        cls.env = create_test_environment(owner=group)
+        ContactPolicy.objects.create(environment=cls.env)
         m = Measurement.objects.create(name='throughput_large_queue',
                                        unit='Mpps',
                                        higher_is_better=True,
                                        testcase=TestCase.objects.first(),
-                                       environment=env)
+                                       environment=cls.env)
         Parameter.objects.create(name='Frame size', unit='bytes',
                                  value=64, measurement=m)
         Parameter.objects.create(name='txd/rxd', unit='descriptors',
@@ -476,7 +477,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
         cls.m_url = reverse(
             'measurement-detail', args=[m.id], request=None)
         cls.env_url = reverse(
-            'environment-detail', args=[env.id], request=None)
+            'environment-detail', args=[cls.env.id], request=None)
         cls.initial_data = dict(
             tarball=cls.tarball_url,
             log_output_file='http://host.invalid/log_file.txt',
@@ -584,6 +585,28 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
         self.assertSerializedNestedEqual(
             self.__class__.initial_data, run_data, nested_lists=['results'],
             results_excludes=['result_class'])
+
+    def test_create_test_run_anon(self):
+        """Verify that anon user can view test run if env is anon."""
+        self.__class__.env.set_public()
+        anon = get_anonymous_user()
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+                                       context=self.__class__.context)
+        serializer.is_valid(raise_exception=True)
+        run = serializer.save()
+        self.assertTrue(anon.has_perm('view_testrun', run))
+        for result in run.results.all():
+            self.assertTrue(anon.has_perm('view_testresult', result))
+
+        # Sanity check by setting env back to private
+        self.__class__.env.set_private()
+        serializer = TestRunSerializer(data=self.__class__.initial_data,
+                                       context=self.__class__.context)
+        serializer.is_valid(raise_exception=True)
+        run = serializer.save()
+        self.assertFalse(anon.has_perm('view_testrun', run))
+        for result in run.results.all():
+            self.assertFalse(anon.has_perm('view_testresult', result))
 
 
 class SubscriptionSerializerTestCase(test.TestCase):
@@ -1055,6 +1078,35 @@ class TestResultTestCase(test.TestCase):
             res2 = TestResult.objects.create(result="PASS", difference=1.0,
                                              measurement=cls.m2, run=run)
             res2.full_clean()
+
+
+class MeasurementTestCase(test.TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        """Set up dummy test data."""
+        TestCase.objects.create(
+            name='nic_single_core_perf',
+            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        grp = Group.objects.create(name='group')
+        cls.env = create_test_environment(owner=grp)
+        ContactPolicy.objects.create(environment=cls.env)
+
+    def test_create_measurement_anon(self):
+        """Verify that anon user can view measurement if env is anon."""
+        self.__class__.env.set_public()
+        m = Measurement.objects.create(name="throughput",
+                                       unit="Gbps", higher_is_better=True,
+                                       environment=self.__class__.env, testcase=TestCase.objects.first())
+        anon = get_anonymous_user()
+        self.assertTrue(anon.has_perm('view_measurement', m))
+
+        # Sanity check by setting env back to private
+        self.__class__.env.set_private()
+        m = Measurement.objects.create(name="throughput",
+                                       unit="Gbps", higher_is_better=True,
+                                       environment=self.__class__.env, testcase=TestCase.objects.first())
+        anon = get_anonymous_user()
+        self.assertFalse(anon.has_perm('view_measurement', m))
 
 
 class SubscriptionTestCase(test.TestCase):
