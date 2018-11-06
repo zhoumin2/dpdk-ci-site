@@ -6,6 +6,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from guardian.shortcuts import assign_perm, remove_perm
+from guardian.utils import get_anonymous_user
 
 
 def clear_environment_perms(environment):
@@ -16,6 +17,13 @@ def clear_environment_perms(environment):
     for m in environment.measurements.all().iterator():
         remove_perm('change_measurement', environment.owner, m)
         remove_perm('delete_measurement', environment.owner, m)
+
+
+def set_anon_permissions(permission, environment, instance):
+    """Set anonymous permissions if environment can be viewed anonymously."""
+    anon = get_anonymous_user()
+    if anon.has_perm('view_environment', environment):
+        assign_perm(permission, anon, instance)
 
 
 @receiver(post_save, sender=Group)
@@ -104,6 +112,8 @@ def save_measurement(sender, instance, **kwargs):
     assign_perm('change_measurement', group, instance)
     assign_perm('delete_measurement', group, instance)
 
+    set_anon_permissions('view_measurement', instance.environment, instance)
+
 
 @receiver(post_save, sender=TestResult)
 def save_test_result(sender, instance, **kwargs):
@@ -115,6 +125,8 @@ def save_test_result(sender, instance, **kwargs):
     assign_perm('change_testresult', group, instance)
     assign_perm('delete_testresult', group, instance)
 
+    set_anon_permissions('view_testresult', instance.run.environment, instance)
+
 
 @receiver(post_save, sender=TestRun)
 def save_test_run(sender, instance, **kwargs):
@@ -125,4 +137,6 @@ def save_test_run(sender, instance, **kwargs):
     assign_perm('view_testrun', group, instance)
     assign_perm('change_testrun', group, instance)
     assign_perm('delete_testrun', group, instance)
+
+    set_anon_permissions('view_testrun', instance.environment, instance)
     clear_environment_perms(instance.environment)
