@@ -620,3 +620,16 @@ class Rerun(LoginRequiredMixin, View):
             return HttpResponseRedirect(next_url)
         else:
             return HttpResponseRedirect(reverse('dashboard'))
+
+
+class StatsView(BaseDashboardView):
+    """Display the graph page."""
+
+    template_name = 'stats.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the patchset for the test runs."""
+        context = super().get_context_data(**kwargs)
+        context['grafana_url'] = settings.GRAFANA_URL
+        context['grafana_graphs'] = settings.GRAFANA_GRAPHS
+        return context
