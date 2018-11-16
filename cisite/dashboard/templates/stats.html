@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stats{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active" aria-current="page">Stats</li>
+{% endblock %}
+
+{% block content %}
+{% if grafana_url %}
+<p><a href="{{ grafana_url }}">Grafana</a></p>
+{% endif %}
+<!-- Since we are using an iframe, just set the height to be slightly smaller
+than the screen height to make it mostly fullscreen with some padding due to scrolling behavior. -->
+{% for url in grafana_graphs %}
+<iframe class="w-100" style="height: calc(100vh - 100px)" src="{{ url }}?kiosk=tv&amp;from=now-90d&amp;to=now&amp;refresh=6h"></iframe>
+{% endfor %}
+{% endblock %}

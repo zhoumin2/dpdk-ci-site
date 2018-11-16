@@ -62,6 +62,12 @@ without activating the virtual environment first, since it looks for
 * `JENKINS_API_TOKEN`: The Jenkins API token of the JENKINS_USER for rerunning
    tests from the dashboard.
 
+* `GRAFANA_URL`: The Grafana URL. This is used in the stats page and can be
+  used for `GRAFANA_GRAPHS` below.
+
+* `GRAFANA_GRAPHS`: A list of urls from grafana to to display. For example:
+  `GRAFANA_GRAPHS = [GRAFANA_URL + 'd/qao3xzbmz/master-comparison']`
+
 ## Running the server
 
 ```

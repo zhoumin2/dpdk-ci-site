@@ -155,3 +155,5 @@ ENABLE_ADMIN = True
 LOGIN_URL = '/dashboard/accounts/login/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'dashboard'
+GRAFANA_URL = None
+GRAFANA_GRAPHS = []
