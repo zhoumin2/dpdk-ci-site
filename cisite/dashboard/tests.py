@@ -382,17 +382,6 @@ class PatchListViewTests(BaseTestCase):
                                    password='P@$$w0rd')
         user.groups.add(grp)
 
-    def test_anon_active_legend(self, m):
-        """Verify that the status legend is populated properly in context."""
-        self.setup_mock_anonymous(m)
-
-        response = self.client.get(reverse('dashboard'))
-        self.assertEqual(response.status_code, 200)
-        legend = response.context['statuses']
-        self.assertEqual(legend[0]['name'], 'Pass')
-        self.assertEqual(legend[0]['class'], 'success')
-        self.assertEqual(legend[0]['tooltip'], 'Pass')
-
     def test_anon_active_patchset(self, m):
         """Verify that an active patch is shown in the anonymous view."""
         self.setup_mock_anonymous(m)
@@ -537,6 +526,22 @@ class DetailViewTests(BaseTestCase):
                                -0.185655, places=5)
         self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
                                -0.664055, places=5)
+
+
+@requests_mock.Mocker()
+class AboutViewTests(BaseTestCase):
+    """Test the about view."""
+
+    def test_anon_active_legend(self, m):
+        """Verify that the status legend is populated properly in context."""
+        self.setup_mock_anonymous(m)
+
+        response = self.client.get(reverse('about'))
+        self.assertEqual(response.status_code, 200)
+        legend = response.context['statuses']
+        self.assertEqual(legend[0]['name'], 'Pass')
+        self.assertEqual(legend[0]['class'], 'success')
+        self.assertEqual(legend[0]['tooltip'], 'Pass')
 
 
 class SubscriptionsViewTests(BaseTestCase):

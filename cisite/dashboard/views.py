@@ -258,9 +258,6 @@ class PatchSetList(BaseDashboardView):
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
             paginate_rest(page, context, resp_json['count'])
-            resp = s.get(urljoin(settings.API_BASE_URL, 'statuses/'))
-            resp.raise_for_status()
-            context['statuses'] = resp.json()['results']
 
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
@@ -585,6 +582,23 @@ class PasswordChangeView(BaseDashboardView, NextToHomeMixin, auth_views.Password
 
 class PasswordChangeDoneView(BaseDashboardView, NextToHomeMixin, auth_views.PasswordChangeDoneView):
     """Inherit BaseDashboardView for context."""
+
+
+class AboutView(BaseDashboardView):
+    """Display the about page."""
+
+    template_name = 'about.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the patchset for the test runs."""
+        context = super().get_context_data(**kwargs)
+
+        with api_session(self.request) as s:
+            resp = s.get(urljoin(settings.API_BASE_URL, 'statuses/'))
+            resp.raise_for_status()
+            context['statuses'] = resp.json()['results']
+
+        return context
 
 
 class UploadView(View):

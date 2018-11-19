@@ -48,4 +48,7 @@ urlpatterns = [
     path('stats/',
          views.StatsView.as_view(),
          name='stats'),
+    path('about/',
+         views.AboutView.as_view(),
+         name='about'),
 ]

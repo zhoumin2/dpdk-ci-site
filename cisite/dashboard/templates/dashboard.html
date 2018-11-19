@@ -24,7 +24,7 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th>Status [<a href="#" data-toggle="popover" title="Status Legend" data-content="<dl>{% for s in statuses %}<dt><span class=&quot;bg-{{ s.class }}&quot;>&nbsp;&nbsp;&nbsp;</span>&nbsp;{{ s.name }}</dt><dd>{{ s.tooltip }}</dd>{% endfor %}</dl>" data-html="true">?</a>]</th>
+          <th title="Patch status. More information can be found by hovering over a status or by seeing the about page.">Status</th>
           <th title="Patch information">Patch</th>
           {% if request.user.is_superuser %}
           <th title="The time it took from when the patchset was submitted to when the last test run completed.">Time</th>
