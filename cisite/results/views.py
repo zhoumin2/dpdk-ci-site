@@ -175,7 +175,6 @@ class BranchViewSet(viewsets.ModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
     filter_fields = ('name', 'last_commit_id')
-    lookup_field = 'name'
 
 
 class TarballViewSet(viewsets.ModelViewSet):

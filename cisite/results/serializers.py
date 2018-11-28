@@ -397,9 +397,6 @@ class BranchSerializer(serializers.HyperlinkedModelSerializer):
 
         model = Branch
         fields = ('url', 'name', 'repository_url', 'regexp', 'last_commit_id')
-        extra_kwargs = {
-            'url': {'lookup_field': 'name'},
-        }
 
 
 class TarballSerializer(serializers.HyperlinkedModelSerializer,
