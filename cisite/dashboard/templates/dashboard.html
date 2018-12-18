@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -31,44 +32,19 @@
           {% endif %}
         </tr>
       </thead>
-      <tbody>
-        {% for ps in patchsets %}
-        <tr>
-          <td>
-            <span class="badge badge-{{ ps.status_class }}" title="{{ ps.status_tooltip }}">{{ ps.status }}</span>
-            {% if ps.incomplete > 0 or ps.passed > 0 or ps.failed > 0 %}
-            {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
-            <div class="text-nowrap" title="Summary of tests on all active environments: {{ ps.incomplete }} incomplete, {{ ps.passed }} passed, and {{ ps.failed }} failed">
-              {% for i in ps.incomplete_range %}
-              <span class="bg-secondary px-2 mr-1"></span>
-              {% endfor %}
-              {% for i in ps.passed_range %}
-              <span class="bg-success px-2 mr-1"></span>
-              {% endfor %}
-              {% for i in ps.failed_range %}
-              <span class="bg-danger px-2 mr-1"></span>
-              {% endfor %}
-            </div>
-            {% endif %}
+      <tbody id="dashboard-table" data-start="{{ start }}" data-end="{{ end }}">
+        {# Initially show placeholder rows until items are loaded #}
+        {% for i in range %}
+        <tr id="row-{{ i }}">
+          <td title="Fetching patch information...">
+            <i class="fas fa-sync-alt fa-spin"></i>
           </td>
           <td>
-            <div class="d-flex justify-content-between flex-column flex-md-row">
-              <div>
-                <a href="{% url 'dashboard-detail' ps.id %}">{{ ps.patchwork_range_str|safe }}</a>
-                {% if ps.series.version > 1 %}
-                <span class="badge badge-pill badge-secondary" title="Patch version">v{{ ps.series.version }}</span>
-                {% endif %}
-              </div>
-              <div class="text-muted">
-                <small>{{ ps.submitter }}</small>
-              </div>
-            </div>
-            <div>
-              {{ ps.series.name }}
-            </div>
+            <div>&nbsp;</div>
+            <div>&nbsp;</div>
           </td>
           {% if request.user.is_superuser %}
-          <td class="text-nowrap">{{ ps.time_to_last_test }}</td>
+          <td></td>
           {% endif %}
         </tr>
         {% endfor %}
@@ -79,6 +55,11 @@
 {% endblock %}
 
 {% block js %}
+  <script src="{% url 'js-error-handler-js' %}"></script>
+  {# Required polyfills to use the fetch (and promise) api #}
+  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4.2.5/dist/es6-promise.auto.min.js" integrity="sha256-8qFPvAMQLj9hOXkNoEO0iOXQx2tHyA8XWkym5O3dxqM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
+  <script src="{% static 'build/dashboard.js' %}"></script>
   <script>
     $(function () {
       $('[data-toggle="popover"]').popover()

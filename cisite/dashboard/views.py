@@ -248,17 +248,27 @@ class PatchSetList(BaseDashboardView):
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
+            offset = page * settings.REST_FRAMEWORK['PAGE_SIZE']
             resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets/'), params={
                 'pw_is_active': True,
                 'without_series': False,
                 'ordering': '-id',
-                'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'],
+                'offset': offset,
+                'limit': 1,
             })
             resp.raise_for_status()
             resp_json = resp.json()
+            end = min(offset + settings.REST_FRAMEWORK['PAGE_SIZE'], resp_json['count'])
             context['patchsets'] = resp_json['results']
+            context['start'] = offset
+            context['end'] = end
+            context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
+        self.update_patchsets(context)
+        return context
+
+    def update_patchsets(self, context):
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
                 series = pw_get(patchset['pw_series_url'], pw_session)
@@ -273,6 +283,31 @@ class PatchSetList(BaseDashboardView):
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
                 self.add_patchset_ranges(patchset)
+
+
+class PatchSetRow(PatchSetList):
+    """Display the list of patches on the dashboard."""
+
+    template_name = 'dashboard_row.html'
+
+    def get_context_data(self, **kwargs):
+        """Return extra data for the dashboard template."""
+        context = super().get_context_data(**kwargs)
+
+        with api_session(self.request) as s:
+            page = parse_page(self.request.GET.get('page'))
+            resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets/'), params={
+                'pw_is_active': True,
+                'without_series': False,
+                'ordering': '-id',
+                'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
+                'limit': 1,
+            })
+            resp.raise_for_status()
+            resp_json = resp.json()
+            context['patchsets'] = resp_json['results']
+
+        self.update_patchsets(context)
         return context
 
 

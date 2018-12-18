@@ -3,3 +3,4 @@ db.sqlite3
 secret_key.txt
 sqlite3.db
 uploads
+build

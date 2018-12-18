@@ -2,3 +2,4 @@ config.log
 static
 venv
 uploads
+node_modules

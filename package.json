@@ -1,0 +1,17 @@
+{
+  "name": "cisite",
+  "private": true,
+  "scripts": {
+    "build": "babel cisite/dashboard/js -d cisite/dashboard/static/build",
+    "dev": "babel --watch cisite/dashboard/js -d cisite/dashboard/static/build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@bitbucket.iol.unh.edu:7999/dpdklab/cisite.git"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.0",
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.2.0"
+  }
+}
