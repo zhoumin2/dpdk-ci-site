@@ -255,6 +255,7 @@ class PatchSetList(BaseDashboardView):
                 'ordering': '-id',
                 'offset': offset,
                 'limit': 1,
+                'cache': True,
             })
             resp.raise_for_status()
             resp_json = resp.json()
@@ -305,6 +306,7 @@ class PatchSetRow(PatchSetList):
                 'ordering': '-id',
                 'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
                 'limit': self.request.GET.get('limit') or 1,
+                'cache': True,
             })
             resp.raise_for_status()
             resp_json = resp.json()

@@ -4,7 +4,10 @@ import requests
 import uuid
 
 from collections import OrderedDict
+from functools import partial
 from logging import getLogger
+
+from django.core.cache import cache
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
@@ -99,7 +102,50 @@ class TestRunLogDownloadView(DownloadPermissionView):
             not self.request.user.is_anonymous
 
 
-class PatchSetViewSet(viewsets.ModelViewSet):
+class CacheListModelMixin:
+    """List a queryset and cache the serializer if the cache parameter is set.
+
+    Using a cached queryset is slower than just getting it from the database.
+    Thus we only cache the serialized data.
+
+    Based from:
+    https://github.com/encode/django-rest-framework/blob/963ce306f3226ec64eb8990c4fbc094a77fabcba/rest_framework/mixins.py#L35
+    """
+    def list(self, request, *args, **kwargs):
+        use_cache = request.query_params.get('cache', None)
+        # The key is based on ordering the queryset, so that requests with
+        # different ordering of the queryset hits the same cached page
+        key = request.META['PATH_INFO'] +\
+            ''.join([i[0] + i[1] for i in sorted(request.GET.items())])
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            return self.get_paginated_response(self._get_or_set(
+                use_cache, key, partial(self._get_page_serializer_data, page)))
+
+        return Response(self._get_or_set(
+            use_cache, key, partial(self._get_serializer_data, queryset)))
+
+    def _get_page_serializer_data(self, page):
+        return self.get_serializer(page, many=True).data
+
+    def _get_serializer_data(self, queryset):
+        return self.get_serializer(queryset, many=True).data
+
+    def _get_or_set(self, use_cache, key, get_value_method):
+        if use_cache:
+            value = cache.get(key)
+            if value is None:
+                value = get_value_method()
+                # Arbitrarily cache pages for 10 minutes
+                cache.set(key, value, 10 * 60)
+            return value
+        return get_value_method()
+
+
+class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
     """Provide a read-write view of incoming patchsets.
 
     list:
