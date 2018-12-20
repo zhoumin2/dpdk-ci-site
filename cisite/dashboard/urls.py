@@ -51,4 +51,7 @@ urlpatterns = [
     path('about/',
          views.AboutView.as_view(),
          name='about'),
+    path('row/<int:offset>/',
+         views.PatchSetRow.as_view(),
+         name='patchset-row'),
 ]

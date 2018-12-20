@@ -73,8 +73,14 @@ without activating the virtual environment first, since it looks for
 ```
 $ cd cisite
 $ python manage.py migrate
+$ npm run build # used to transpile js for ie11 support
 $ python manage.py runserver 0:8000
 ```
 
 Use the last argument to be able to access the server from another
 system; omit it if you only need to access from localhost.
+
+If doing Javascript development, it will be helpful to have the scripts auto transpile with:
+```
+$ npm run dev
+```
