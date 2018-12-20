@@ -262,6 +262,9 @@ class PatchSetList(BaseDashboardView):
             context['patchsets'] = resp_json['results']
             context['start'] = offset
             context['end'] = end
+            # Limit chosen based on speed when cached (overall page load) and
+            # speed when uncached (overall page load AND first row response)
+            context['limit'] = 4
             context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
@@ -301,7 +304,7 @@ class PatchSetRow(PatchSetList):
                 'without_series': False,
                 'ordering': '-id',
                 'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
-                'limit': 1,
+                'limit': self.request.GET.get('limit') or 1,
             })
             resp.raise_for_status()
             resp_json = resp.json()

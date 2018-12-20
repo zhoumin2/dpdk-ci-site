@@ -32,7 +32,7 @@
           {% endif %}
         </tr>
       </thead>
-      <tbody id="dashboard-table" data-start="{{ start }}" data-end="{{ end }}">
+      <tbody id="dashboard-table" data-start="{{ start }}" data-end="{{ end }}" data-limit="{{ limit }}">
         {# Initially show placeholder rows until items are loaded #}
         {% for i in range %}
         <tr id="row-{{ i }}">
