@@ -53,13 +53,14 @@ class BaseTestCase(StaticLiveServerTestCase):
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'tarballs/1/'),
             json={
+                'id': 1,
                 'url': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
                 'patchset': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
                 'branch': 'dpdk',
                 'commit_id': 'ee73f98ef481f61eab2f7289f033c6f9113eee8a',
                 'job_name': 'Apply-One-Patch-Set',
                 'build_id': 936,
-                'tarball_url': 'https://dpdklab.iol.unh.edu/jenkins/job/Get-Latest-Git-Master/26/artifact/dpdk.tar.gz',
+                'tarball_url': urljoin(settings.JENKINS_URL, 'job/Get-Latest-Git-Master/26/artifact/dpdk.tar.gz'),
                 'runs': [
                     urljoin(settings.API_BASE_URL, 'testruns/1/'),
                 ],

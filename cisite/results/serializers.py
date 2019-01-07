@@ -416,7 +416,7 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
         """Specify fields to pull from Tarball model."""
 
         model = Tarball
-        fields = ('url', 'patchset', 'branch', 'commit_id', 'job_name',
+        fields = ('id', 'url', 'patchset', 'branch', 'commit_id', 'job_name',
                   'build_id', 'tarball_url', 'runs', 'date', 'commit_url')
         read_only_fields = ('date', 'commit_url')
 

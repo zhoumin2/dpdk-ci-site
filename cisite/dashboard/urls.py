@@ -54,4 +54,6 @@ urlpatterns = [
     path('row/<int:offset>/',
          views.PatchSetRow.as_view(),
          name='patchset-row'),
+    path('tarballs/<str:pk>/<str:filename>',
+         views.CIDownloadView.as_view(), name='tarball-download'),
 ]

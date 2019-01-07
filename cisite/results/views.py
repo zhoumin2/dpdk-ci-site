@@ -36,6 +36,7 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer
+from shared.util import requests_to_response
 
 logger = getLogger('results')
 
@@ -184,6 +185,18 @@ class TarballViewSet(viewsets.ModelViewSet):
     queryset = TarballSerializer.setup_eager_loading(Tarball.objects.all())
     serializer_class = TarballSerializer
     filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
+
+    @detail_route(methods=['get'])
+    def download(self, request, pk):
+        """Download the artifact using the Jenkins user."""
+        tarball = self.get_object()
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        r = requests.get(tarball.tarball_url,
+                         verify=settings.CA_CERT_BUNDLE,
+                         auth=auth)
+
+        return requests_to_response(r)
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
