@@ -54,10 +54,16 @@ class Dashboard {
         }
       });
     }).catch(e => {
-      for (let i = 0; i < emptyRows.length; i++) {
-        emptyRows[i].innerHTML = `<td></td><td>Error getting patch information:<br>${e}</td>`;
+      let text = `Error getting patch information:<br>${e}`;
+      // Happens when changing pages during a fetch in Firefox. Ignore it.
+      if (e.message === 'NetworkError when attempting to fetch resource.') {
+        text = '<br><br>';
+      } else {
+        logError(e);
       }
-      logError(e);
+      for (let i = 0; i < emptyRows.length; i++) {
+        emptyRows[i].innerHTML = `<td></td><td>${text}</td>`;
+      }
     });
   }
 }
