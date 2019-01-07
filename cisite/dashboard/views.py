@@ -24,6 +24,7 @@ import math
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
     ipa_session, ParseIPAChangePassword, pw_get
+from shared.util import requests_to_response
 
 logger = getLogger('dashboard')
 
@@ -655,7 +656,7 @@ class UploadView(View):
             url = urljoin(settings.API_BASE_URL,
                           settings.PRIVATE_STORAGE_URL[1:] + path)
             r = s.get(url)
-            return HttpResponse(r, content_type=r.headers['content-type'])
+            return requests_to_response(r)
 
 
 class Rerun(LoginRequiredMixin, View):
