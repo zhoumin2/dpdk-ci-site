@@ -20,10 +20,12 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 import json
 import math
+import os
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
     ipa_session, ParseIPAChangePassword, pw_get
+from shared.util import requests_to_response
 
 logger = getLogger('dashboard')
 
@@ -358,6 +360,7 @@ class DashboardDetail(BaseDashboardView):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
                 if tarball.get('date'):
                     tarball['date'] = parse_datetime(tarball['date'])
+                self.set_ci_download_url(tarball)
                 context['tarball'] = tarball
                 context['environments'] = {x: None for x in envs}
                 for url in tarball['runs']:
@@ -466,6 +469,17 @@ class DashboardDetail(BaseDashboardView):
             # can't use special characters in django templates...
             new_parameters[parameter['name'].replace('/', '_')] = parameter
         measurement['parameters'] = new_parameters
+
+    def set_ci_download_url(self, tarball):
+        """Returns a url based on the id and filename.
+
+        Even though a filename is not necessary, it looks more natural on the client.
+        """
+        # hopefully the API never returns parameters
+        tarball['tarball_name'] = os.path.basename(tarball['tarball_url'])
+        args = [tarball['id'], tarball['tarball_name']]
+        tarball['tarball_url'] = self.request.build_absolute_uri(
+            reverse('tarball-download', args=args))
 
 
 class Preferences(LoginRequiredMixin, View):
@@ -655,7 +669,22 @@ class UploadView(View):
             url = urljoin(settings.API_BASE_URL,
                           settings.PRIVATE_STORAGE_URL[1:] + path)
             r = s.get(url)
-            return HttpResponse(r, content_type=r.headers['content-type'])
+            return requests_to_response(r)
+
+
+class CIDownloadView(View):
+    """Proxy CI downloads."""
+
+    def get(self, request, pk, filename):
+        """Get from API
+
+        Filename parameter, although not used, is used to allow client URL to
+        have an arbitrary filename, which looks better to the client.
+        """
+        with api_session(self.request) as s:
+            r = s.get(urljoin(settings.API_BASE_URL,
+                              f'tarballs/{pk}/download/'))
+        return requests_to_response(r)
 
 
 class Rerun(LoginRequiredMixin, View):

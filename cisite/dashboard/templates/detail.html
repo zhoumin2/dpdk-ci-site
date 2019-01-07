@@ -46,6 +46,10 @@
       <dt class="col">Date Submitted</dt>
       <dd class="col-10">{{ patchset.date|date:"DATETIME_FORMAT" }}</dd>
     </div>
+    <div class="row">
+      <dt class="col">Tarball</dt>
+      <dd class="col-10"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
+    </div>
   </dl>
   <ul>
     {% for p in patchset.patches %}
