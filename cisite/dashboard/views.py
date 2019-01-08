@@ -149,7 +149,7 @@ class LoginView(auth_views.LoginView):
                            allow_redirects=False)
                 r.raise_for_status()
                 self.request.session['api_sessionid'] = r.cookies['sessionid']
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.ConnectionError:
                 logger.exception(
                     f'Connection closed into backend API: {login_url}')
                 auth_logout(self.request)
