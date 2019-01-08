@@ -175,7 +175,6 @@ class BranchViewSet(viewsets.ModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
     filter_fields = ('name', 'last_commit_id')
-    lookup_field = 'name'
 
 
 class TarballViewSet(viewsets.ModelViewSet):
@@ -185,6 +184,8 @@ class TarballViewSet(viewsets.ModelViewSet):
     queryset = TarballSerializer.setup_eager_loading(Tarball.objects.all())
     serializer_class = TarballSerializer
     filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    ordering_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'date')
 
     @detail_route(methods=['get'])
     def download(self, request, pk):
