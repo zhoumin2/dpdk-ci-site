@@ -31,14 +31,14 @@
         {% else %}
         {{ tarball.branch }}
         {% endif %}
-        (<a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a>)
+        (<code><a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a></code>)
       </dd>
     </div>
     {% elif patchset.commit_id %}
     <div class="row">
       <dt class="col">Applied on</dt>
       <dd class="col-10">
-        <a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a>
+        <code><a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a></code>
       </dd>
     </div>
     {% endif %}
