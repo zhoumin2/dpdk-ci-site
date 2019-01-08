@@ -61,7 +61,7 @@
     </nav>
 
     {% if banner %}
-    <p class="border bg-{{ banner.bg_class }}">{{ banner.text }}</p>
+    <p class="p-3 rounded bg-{{ banner.bg_class }} text-{{ banner.text_class }}">{{ banner.text }}</p>
     {% endif %}
 
     {% block content %}

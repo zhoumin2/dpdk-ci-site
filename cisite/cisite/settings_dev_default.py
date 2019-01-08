@@ -82,6 +82,7 @@ LOGGING = {
 
 #DASHBOARD_BANNER = {
 #    'bg_class': 'warning',
+#    'text_class': 'dark',
 #    'text': 'hello world'
 #}
 
