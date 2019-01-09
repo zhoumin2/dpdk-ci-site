@@ -11,7 +11,9 @@ from django.core.cache import cache
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.auth.models import Group, User
+from django.contrib.contenttypes.models import ContentType
 from django_auth_ldap.backend import LDAPBackend
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -258,8 +260,11 @@ class TestRunViewSet(viewsets.ModelViewSet):
         """Rerun a test run."""
         tr = self.get_object()
         pipeline_url = f'{tr.environment.pipeline_url}/buildWithParameters/'
-        logger.info(f'{request.user} reran {pipeline_url} for '
-                    f'test run {pk}')
+        message = f'{request.user} reran {pipeline_url} for test run {pk}'
+        logger.info(message)
+        LogEntry.objects.log_action(
+            request.user.id, ContentType.objects.get_for_model(TestRun).pk, pk,
+            repr(tr), CHANGE, message)
         auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
                                            settings.JENKINS_API_TOKEN)
         tb_url = request.build_absolute_uri(tr.tarball.get_absolute_url())
