@@ -77,6 +77,13 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'ERROR',
         },
+# Uncomment this if trying to debug database queries or to help trace where
+# queries occur to try to opimize them. Keep in mind that this contains a lot
+# of output and may affect performance.
+#        'django.db.backends': {
+#            'handlers': ['console'],
+#            'level': 'DEBUG',
+#        },
     },
 }
 
