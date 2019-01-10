@@ -103,6 +103,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     """Present user profile on form."""
 
     inlines = [SubscriptionInline]
+    readonly_fields = ('user',)
 
     def get_form(self, request, obj=None, **kwargs):
         """Save object being used before calling superclass function."""
@@ -127,6 +128,7 @@ class EnvironmentAdmin(GuardedModelAdmin):
 
     inlines = [ContactPolicyInline, MeasurementInline]
     list_display = ('__str__', 'contact_policy_link', 'environment_actions')
+    list_select_related = ('contact_policy',)
     readonly_fields = ('predecessor', 'environment_actions')
 
     def contact_policy_link(self, obj):
@@ -202,8 +204,22 @@ class EnvironmentAdmin(GuardedModelAdmin):
         )
 
 
+@admin.register(TestRun)
+class TestRunAdmin(GuardedModelAdmin):
+    """Define TestRun module in admin interface."""
+
+    inlines = [TestResultInline]
+    readonly_fields = ('tarball',)
+    list_select_related = ('tarball',)
+
+
+@admin.register(Tarball)
+class TarballAdmin(GuardedModelAdmin):
+    """Define Tarball module in admin interface."""
+
+    readonly_fields = ('patchset',)
+
+
 admin.site.register(Branch)
 admin.site.register(Measurement, GuardedModelAdmin, inlines=[ParameterInline])
 admin.site.register(PatchSet)
-admin.site.register(Tarball)
-admin.site.register(TestRun, GuardedModelAdmin, inlines=[TestResultInline])
