@@ -149,8 +149,8 @@ class PatchSet(models.Model):
     @property
     def time_to_last_test(self):
         """Return the time from submission to last test run."""
-        tarball = self.tarballs.last()
-        return tarball.runs.last().timestamp - self.completed_timestamp
+        return (self.last_tarball.runs.last().timestamp -
+                self.completed_timestamp)
 
     @cached_property
     def status(self):
@@ -162,7 +162,7 @@ class PatchSet(models.Model):
         elif not self.tarballs.exists():
             return "Pending"
         else:
-            return self.tarballs.last().status
+            return self.last_tarball.status
 
     def status_class(self):
         """Return the background context class to be used on the dashboard."""
@@ -178,26 +178,30 @@ class PatchSet(models.Model):
         """"Returns whether the patchset had an apply error or build error."""
         return self.apply_error or self.build_error
 
+    @cached_property
+    def last_tarball(self):
+        return self.tarballs.last()
+
     @property
     def passed(self):
         """Return the number of passed environments."""
         if self.has_error or not self.tarballs.exists():
             return 0
-        return self.tarballs.last().passed
+        return self.last_tarball.passed
 
     @property
     def failed(self):
         """Return the number of failed environments."""
         if self.has_error or not self.tarballs.exists():
             return 0
-        return self.tarballs.last().failed
+        return self.last_tarball.failed
 
     @property
     def incomplete(self):
         """Return the number of incomplete environments."""
         if self.has_error or not self.tarballs.exists():
             return 0
-        return self.tarballs.last().incomplete
+        return self.last_tarball.incomplete
 
     @property
     def commit_url(self):
