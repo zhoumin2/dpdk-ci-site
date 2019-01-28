@@ -82,7 +82,7 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                   'time_to_last_test', 'series_id', 'pw_series_url',
                   'completed_timestamp', 'pw_is_active', 'build_log',
                   'passed', 'failed', 'incomplete', 'build_error', 'has_error',
-                  'commit_id', 'commit_url')
+                  'commit_id', 'commit_url', 'branch')
         read_only_fields = ('complete', 'tarballs',
                             'status', 'status_class', 'status_tooltip',
                             'time_to_last_test')
@@ -350,7 +350,8 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         model = TestRun
         fields = ('id', 'url', 'timestamp', 'log_output_file',
                   'tarball', 'results', 'environment',
-                  'report_timestamp', 'log_upload_file')
+                  'report_timestamp', 'log_upload_file', 'branch',
+                  'commit_id', 'commit_url')
 
     def update(self, instance, validated_data):
         """Update a test run based on the validated POST data.

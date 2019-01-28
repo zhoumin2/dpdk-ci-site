@@ -132,6 +132,11 @@ class PatchSet(models.Model):
         null=True, blank=True, max_length=255,
         upload_to=partial(upload_model_path, 'build_log'),
         help_text='Build log of applying and building the patch.')
+    branch = models.CharField(
+        max_length=64, blank=True,
+        help_text='The branch that the patch set was applied to. The branch '
+                  'in the tarball should be used instead of this. This should '
+                  'be used when no tarball exists.')
     commit_id = models.CharField(
         max_length=40, blank=True,
         help_text='The most recent git commit id that the patch set was '
@@ -205,8 +210,8 @@ class PatchSet(models.Model):
 
     @property
     def commit_url(self):
-        if self.commit_id is None:
-            return None
+        if not self.commit_id:
+            return ''
         return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
 
@@ -737,6 +742,12 @@ class TestRun(models.Model):
     report_timestamp = models.DateTimeField(
         null=True, blank=True,
         help_text='Date and time of last e-mail report of this test run')
+    branch = models.CharField(max_length=64, blank=True,
+                              help_text='The branch of the baseline used')
+    # this can be different from the tarball commit_id if rerunning old tests
+    # where the baseline has changed
+    commit_id = models.CharField('git commit hash', max_length=40, blank=True,
+                                 help_text='The commit id of the baseline used')
 
     def clean(self):
         """Check that all expected measurements' environment matches."""
@@ -778,6 +789,12 @@ class TestRun(models.Model):
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface."""
         return reverse('testrun-detail', args=(self.id,))
+
+    @property
+    def commit_url(self):
+        if not self.commit_id:
+            return ''
+        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
 
 class TestResult(models.Model):

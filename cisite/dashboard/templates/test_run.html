@@ -1,12 +1,25 @@
-<p>Test run at: {{ r.timestamp|date:"DATETIME_FORMAT" }}
-  {% if request.user.is_superuser %}
-  ({{ r.timedelta }} since patchset posted)
-  {% endif %}
-</p>
 <dl>
   <div class="row">
-  <dt class="col">Fail/Total</dt>
-  <dd class="col-10">{{ r.failure_count }}/{{ r.results|length }}</dd>
+    <dt class="col">Test run at</dt>
+    <dd class="col-10">
+      {{ r.timestamp|date:"DATETIME_FORMAT" }}
+      {% if request.user.is_superuser %}
+      ({{ r.timedelta }} since patchset posted)
+      {% endif %}
+    </dd>
+  </div>
+  {% if r.commit_id %}
+  <div class="row">
+    <dt class="col">Baseline</dt>
+    <dd class="col-10">
+      {{ r.branch }}
+      (<code><a href="{{ r.commit_url }}">{{ r.commit_id }}</a></code>)
+    </dd>
+  </div>
+  {% endif %}
+  <div class="row">
+    <dt class="col">Fail/Total</dt>
+    <dd class="col-10">{{ r.failure_count }}/{{ r.results|length }}</dd>
   </div>
 </dl>
 {% for tc in r.testcases.values %}
