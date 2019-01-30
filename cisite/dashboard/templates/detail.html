@@ -22,28 +22,23 @@
       <dt class="col">Submitter</dt>
       <dd class="col-10">{{ patchset.submitter }}</dd>
     </div>
-    {% if tarball.branch %}
-    <div class="row">
-      <dt class="col">Baseline</dt>
-      <dd class="col-10">
-        {% if tarball.branch == 'dpdk' %}
-        master
-        {% else %}
-        {{ tarball.branch }}
-        {% endif %}
-        (<code><a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a></code>)
-      </dd>
-    </div>
-    {% elif patchset.commit_id %}
+    {# patches that fail applying will have the commit id in the patchset (tarball will not be defined) #}
+    {% if tarball or patchset.commit_id %}
     <div class="row">
       <dt class="col">Applied on</dt>
       <dd class="col-10">
-        <code><a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a></code>
+        {% if tarball %}
+        {{ tarball.branch }}
+        (<code><a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a></code>)
+        {% elif patchset.commit_id %}
+        {{ patchset.branch }}
+        (<code><a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a></code>)
+        {% endif %}
       </dd>
     </div>
     {% endif %}
     <div class="row">
-      <dt class="col">Date Submitted</dt>
+      <dt class="col">Date submitted</dt>
       <dd class="col-10">{{ patchset.date|date:"DATETIME_FORMAT" }}</dd>
     </div>
     {% if tarball.tarball_url %}
