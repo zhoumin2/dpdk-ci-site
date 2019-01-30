@@ -214,6 +214,10 @@ class PatchSet(models.Model):
             return ''
         return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface and rebuilds."""
+        return reverse('patchset-detail', args=(self.id,))
+
 
 class Branch(models.Model):
     """Model a DPDK repository branch."""

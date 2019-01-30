@@ -156,7 +156,7 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
     If not query parameters are provided, list all patchsets.
     """
 
-    permission_classes = (permissions.IsAdminUserOrReadOnly,)
+    permission_classes = (permissions.PatchSetPermission,)
     queryset = PatchSetSerializer.setup_eager_loading(PatchSet.objects.all())
     serializer_class = PatchSetSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
@@ -168,6 +168,33 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
     parser_classes = (JSONMultiPartParser, JSONParser, FormParser)
     ordering_fields = ('apply_error', 'id', 'is_public', 'tarballs',
                        'completed_timestamp', 'series_id', 'build_error')
+
+    @detail_route(methods=['post'], url_name='rebuild',
+                  url_path='rebuild/(?P<branch>.*)')
+    def rebuild(self, request, pk, branch):
+        """Rebuild a patchset."""
+        ps = self.get_object()
+        ps.apply_error = False
+        ps.build_error = False
+        ps.save()
+        pipeline_url = f'{settings.JENKINS_URL}job/Apply-Custom-Patch-Set/' \
+            'buildWithParameters/'
+        message = f'{request.user} rebuilt {pipeline_url} for patchset {pk} ' \
+                  f'with branch {branch}'
+        logger.info(message)
+        LogEntry.objects.log_action(
+            request.user.id, ContentType.objects.get_for_model(PatchSet).pk, pk,
+            repr(ps), CHANGE, message)
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        ps_url = request.build_absolute_uri(ps.get_absolute_url())
+        params = dict(PATCHSET_META_URL=ps_url, BRANCH=branch)
+        resp = requests.post(pipeline_url,
+                             verify=settings.CA_CERT_BUNDLE,
+                             auth=auth,
+                             params=params)
+        resp.raise_for_status()
+        return Response({'status': 'pending'})
 
 
 class BranchViewSet(viewsets.ModelViewSet):
