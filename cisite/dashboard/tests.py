@@ -112,6 +112,8 @@ class BaseTestCase(StaticLiveServerTestCase):
             'incomplete': 0,
             'passed': 0,
             'failed': 0,
+            'build_error': False,
+            'has_error': False
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,
@@ -208,6 +210,8 @@ class BaseTestCase(StaticLiveServerTestCase):
             'incomplete': 0,
             'passed': 0,
             'failed': 0,
+            'build_error': False,
+            'has_error': False
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,
