@@ -7,7 +7,7 @@ from django.urls import reverse, path
 from django.utils.html import format_html
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Tarball, TestResult, TestRun, \
-    Subscription, UserProfile
+    Subscription, UserProfile, TestCase
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
 
@@ -223,3 +223,4 @@ class TarballAdmin(GuardedModelAdmin):
 admin.site.register(Branch)
 admin.site.register(Measurement, GuardedModelAdmin, inlines=[ParameterInline])
 admin.site.register(PatchSet)
+admin.site.register(TestCase)
