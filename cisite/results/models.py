@@ -64,6 +64,20 @@ def upload_model_path_test_run(field, instance, filename):
            f'dpdk_{commit_hash}_{ps_id}{friendly_datetime}_{nic_name}{ext}'
 
 
+class CommitURLMixin:
+    """Create a commit_url property for a model.
+
+    The model requires a commit_id string and a branch foreign key.
+    """
+
+    @property
+    def commit_url(self):
+        if not self.commit_id or not self.branch:
+            return ''
+        # Formatted for cgit
+        return f'{self.branch.web_url}/commit/?id={self.commit_id}'
+
+
 class PatchSetQuerySet(models.QuerySet):
     """Provide queries specific for patchsets."""
 
@@ -74,7 +88,7 @@ class PatchSetQuerySet(models.QuerySet):
         return self.exclude(tarballs=None)
 
 
-class PatchSet(models.Model):
+class PatchSet(models.Model, CommitURLMixin):
     """Model a single patchset."""
 
     statuses = {
@@ -132,8 +146,9 @@ class PatchSet(models.Model):
         null=True, blank=True, max_length=255,
         upload_to=partial(upload_model_path, 'build_log'),
         help_text='Build log of applying and building the patch.')
-    branch = models.CharField(
-        max_length=64, blank=True,
+    branch = models.ForeignKey(
+        'Branch', on_delete=models.SET_NULL, related_name='patchsets',
+        null=True, blank=True,
         help_text='The branch that the patch set was applied to. The branch '
                   'in the tarball should be used instead of this. This should '
                   'be used when no tarball exists.')
@@ -208,12 +223,6 @@ class PatchSet(models.Model):
             return 0
         return self.last_tarball.incomplete
 
-    @property
-    def commit_url(self):
-        if not self.commit_id:
-            return ''
-        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
-
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface and rebuilds."""
         return reverse('patchset-detail', args=(self.id,))
@@ -227,6 +236,9 @@ class Branch(models.Model):
         help_text='Name of the branch')
     repository_url = models.URLField(
         max_length=1024, help_text='Upstream URL of the repository')
+    web_url = models.URLField(
+        max_length=1024, blank=True,
+        help_text='Upstream URL of the repository that can be browsed')
     regexp = models.CharField(
         max_length=256, blank=True,
         help_text='Regular expression of subject lines that should be applied'
@@ -245,10 +257,12 @@ class Branch(models.Model):
         return self.name
 
 
-class Tarball(models.Model):
+class Tarball(models.Model, CommitURLMixin):
     """Model a tarball constructed by a patchset."""
 
-    branch = models.CharField(max_length=64, blank=False,
+    branch = models.ForeignKey(
+        'Branch', on_delete=models.SET_NULL, related_name='tarballs',
+        null=True, blank=True,
         help_text='DPDK branch that the patch set was applied to')
     commit_id = models.CharField('git commit hash', max_length=40, blank=False,
         help_text='git commit id that the patch set was applied to')
@@ -271,10 +285,6 @@ class Tarball(models.Model):
     def __str__(self):
         """Return string representation of tarball record."""
         return self.tarball_url
-
-    @property
-    def commit_url(self):
-        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
     @cached_property
     def status(self):
@@ -726,7 +736,7 @@ class Parameter(models.Model):
             value=self.value, unit=self.unit)
 
 
-class TestRun(models.Model):
+class TestRun(models.Model, CommitURLMixin):
     """Model a test run of a patch set."""
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -746,8 +756,10 @@ class TestRun(models.Model):
     report_timestamp = models.DateTimeField(
         null=True, blank=True,
         help_text='Date and time of last e-mail report of this test run')
-    branch = models.CharField(max_length=64, blank=True,
-                              help_text='The branch of the baseline used')
+    branch = models.ForeignKey(
+        'Branch', on_delete=models.SET_NULL, related_name='runs',
+        null=True, blank=True,
+        help_text='The branch of the baseline used')
     # this can be different from the tarball commit_id if rerunning old tests
     # where the baseline has changed
     commit_id = models.CharField('git commit hash', max_length=40, blank=True,
@@ -793,12 +805,6 @@ class TestRun(models.Model):
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface."""
         return reverse('testrun-detail', args=(self.id,))
-
-    @property
-    def commit_url(self):
-        if not self.commit_id:
-            return ''
-        return f'https://git.dpdk.org/dpdk/commit/?id={self.commit_id}'
 
 
 class TestResult(models.Model):
