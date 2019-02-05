@@ -86,7 +86,7 @@ def _get_displayed_page_numbers(current, final):
     return included
 
 
-def _get_page_links(page_numbers, current, url_func):
+def _get_page_links(page_numbers, current):
     """
     Given a list of page numbers and `None` page breaks,
     return a list of `PageLink` objects.
@@ -97,7 +97,6 @@ def _get_page_links(page_numbers, current, url_func):
             page_link = PAGE_BREAK
         else:
             page_link = PageLink(
-                url=url_func(page_number),
                 number=page_number,
                 is_active=(page_number == current),
                 is_break=False
@@ -106,7 +105,7 @@ def _get_page_links(page_numbers, current, url_func):
     return page_links
 
 
-PageLink = namedtuple('PageLink', ['url', 'number', 'is_active', 'is_break'])
+PageLink = namedtuple('PageLink', ['number', 'is_active', 'is_break'])
 
 
-PAGE_BREAK = PageLink(url=None, number=None, is_active=False, is_break=True)
+PAGE_BREAK = PageLink(number=None, is_active=False, is_break=True)
