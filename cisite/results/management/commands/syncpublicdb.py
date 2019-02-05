@@ -56,8 +56,8 @@ class Command(BaseCommand):
         models.append(model)
 
         # Select only specific models we care about from results
-        for model_name in ['testcase', 'environment', 'tarball', 'measurement',
-                           'testrun', 'patchset', 'testresult']:
+        for model_name in ['branch', 'testcase', 'environment', 'tarball',
+                           'measurement', 'testrun', 'patchset', 'testresult']:
             model = results_app_config.get_model(model_name)
             models.append(model)
 
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 # to hopefully avoid possible data leaks when new models are
                 # added that require permissions, hence it will "fail-safe"
                 # into checking for permissions.
-                if model._meta.model_name in ['group', 'testcase',
+                if model._meta.model_name in ['branch', 'group', 'testcase',
                                               'tarball', 'patchset']:
                     objects = model._default_manager
                 else:
