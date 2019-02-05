@@ -67,6 +67,17 @@ class TestRunPermission(DjangoObjectPermissionsOrAnonReadOnly):
         return super().has_object_permission(request, view, obj)
 
 
+class PatchSetPermission(IsAdminUserOrReadOnly):
+    """Allows specific actions to be run outside of the object permissions."""
+
+    def has_object_permission(self, request, view, obj):
+        """Return true if permission should be granted."""
+        if view.action == 'rebuild':
+            return request.user.is_authenticated
+
+        return super().has_object_permission(request, view, obj)
+
+
 class UserProfileObjectPermission(DjangoObjectPermissions):
     """Allow user to access models attached to their user profile.
 

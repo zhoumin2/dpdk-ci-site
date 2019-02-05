@@ -1593,3 +1593,37 @@ class TestRerun(test.TestCase):
         """Make sure a user of a different group can't rerun the test."""
         resp = self.client.post(reverse('testrun-rerun', args=(self.tr.id,)))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+@requests_mock.Mocker(real_http=True)
+class TestRebuild(test.TestCase):
+    """Test the rebuild permissions."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.user.groups.add(self.group)
+        self.ps = PatchSet.objects.create()
+        ps_url = 'http://testserver' + self.ps.get_absolute_url()
+        self.pipeline_url = f'{settings.JENKINS_URL}job/'\
+            'Apply-Custom-Patch-Set/buildWithParameters/?' \
+            f'PATCHSET_META_URL={ps_url}&' \
+            f'BRANCH=branch'
+
+    def test_valid_user(self, m):
+        """Make sure authenticated users can rebuild the patchset."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('patchset-rebuild',
+                                        args=(self.ps.id, 'branch')))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_anonymous(self, m):
+        """Make sure anonymous users can't rebuild the patchset."""
+        resp = self.client.post(reverse('patchset-rebuild',
+                                        args=(self.ps.id, 'branch')))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)

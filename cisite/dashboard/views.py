@@ -444,6 +444,11 @@ class DashboardDetail(BaseDashboardView):
                 api_resp.raise_for_status()
                 context['patchset']['build_log'] = api_resp.text
 
+            if context['patchset']['has_error']:
+                api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
+                api_resp.raise_for_status()
+                context['branches'] = api_resp.json()['results']
+
             for env_url, env in context['environments'].items():
                 # Fill in details of missing environments so they can be
                 # displayed in the template
@@ -716,3 +721,23 @@ class StatsView(BaseDashboardView):
         context['grafana_url'] = settings.GRAFANA_URL
         context['grafana_graphs'] = settings.GRAFANA_GRAPHS
         return context
+
+
+class Rebuild(LoginRequiredMixin, View):
+    """Proxy a rebuild to the results view."""
+
+    def post(self, request, ps_id, *args, **kwargs):
+        with api_session(self.request) as s:
+            branch = request.POST.get('branch')
+            api_resp = s.post(urljoin(settings.API_BASE_URL,
+                                      f'patchsets/{ps_id}/rebuild/{branch}/'))
+            api_resp.raise_for_status()
+            messages.success(request,
+                             f'The patchset is now rebuilding on {branch}. '
+                             'Please check back in at least 10 minutes for an '
+                             'updated result.')
+        next_url = request.GET.get('next')
+        if next_url:
+            return HttpResponseRedirect(next_url)
+        else:
+            return HttpResponseRedirect(reverse('dashboard'))
