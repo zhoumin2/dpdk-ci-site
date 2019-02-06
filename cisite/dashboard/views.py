@@ -52,16 +52,19 @@ def text_color_classes(bg_class):
 
 
 def parse_page(page):
-    """Parse the page to a 0-indexed number."""
+    """Parse the page to a positive 0-indexed number.
+
+    If the page number is not a number or less than 0, then it will be set to 0.
+    """
     if page is None:
         page = 0
     else:
         try:
             page = int(page) - 1
         except ValueError:
-            # fail silently, since this should not happen under normal
-            # conditions
             page = 0
+    if page < 0:
+        page = 0
     return page
 
 
@@ -95,15 +98,14 @@ def paginate_rest(page, context, count):
     if pages == 0:
         pages = 1
 
-    # page wrapping
-    if page < 0:
-        page %= pages
-        page += 1
-
-    # _get_displayed_page_numbers() throws an assertion error, so just throw a
-    # 404 ourselves
+    # depending on the page the user is on and if they switch between filters,
+    # just set the current page to the max page if page > pages.
+    # this avoids the assertion error thrown by _get_displayed_page_numbers.
+    # the behavior follows the REST API, where instead of redirecting
+    # to the last page with real results, this returns a page with an
+    # empty table (since the extra offset is still sent to the REST API).
     if page > pages:
-        raise Http404
+        page = pages
 
     page_numbers = _get_displayed_page_numbers(page, pages)
     context['pages'] = _get_page_links(page_numbers, page)
@@ -237,6 +239,39 @@ class BaseDashboardView(TemplateView):
         patchset['passed_range'] = range(patchset['passed'])
         patchset['failed_range'] = range(patchset['failed'])
 
+    def set_shown(self, context):
+        """Sets the shown context and returns whether to show active ps."""
+        shown = self.request.GET.get('patchsets', 'active')
+        context['shown'] = {}
+        if shown == 'all':
+            context['shown']['text'] = 'all'
+            context['shown']['all'] = True
+            return ''
+        elif shown == 'inactive':
+            context['shown']['text'] = 'inactive'
+            context['shown']['inactive'] = True
+            return False
+        # 'active' and fallback, set active to True
+        context['shown']['text'] = 'active'
+        context['shown']['active'] = True
+        return True
+
+    def update_patchsets(self, context):
+        with requests.Session() as pw_session:
+            for patchset in context['patchsets']:
+                series = pw_get(patchset['pw_series_url'], pw_session)
+                if not series['name']:
+                    series['name'] = f'Untitled series #{series["id"]}'
+                patchset['series'] = series
+                patchset['patchwork_range_str'] = \
+                    self.patchwork_range_str(series)
+                patchset['submitter'] = self.get_patchset_submitter(series)
+                if 'time_to_last_test' in patchset:
+                    patchset['time_to_last_test'] = format_timedelta(
+                        timedelta(
+                            seconds=float(patchset['time_to_last_test'])))
+                self.add_patchset_ranges(patchset)
+
 
 class PatchSetList(BaseDashboardView):
     """Display the list of patches on the dashboard."""
@@ -274,41 +309,8 @@ class PatchSetList(BaseDashboardView):
         self.update_patchsets(context)
         return context
 
-    def set_shown(self, context):
-        """Sets the shown context and returns whether to show active ps."""
-        shown = self.request.GET.get('patchsets', 'active')
-        context['shown'] = {}
-        if shown == 'all':
-            context['shown']['text'] = 'all'
-            context['shown']['all'] = True
-            return ''
-        elif shown == 'inactive':
-            context['shown']['text'] = 'inactive'
-            context['shown']['inactive'] = True
-            return False
-        # 'active' and fallback, set active to True
-        context['shown']['text'] = 'active'
-        context['shown']['active'] = True
-        return True
 
-    def update_patchsets(self, context):
-        with requests.Session() as pw_session:
-            for patchset in context['patchsets']:
-                series = pw_get(patchset['pw_series_url'], pw_session)
-                if not series['name']:
-                    series['name'] = f'Untitled series #{series["id"]}'
-                patchset['series'] = series
-                patchset['patchwork_range_str'] = \
-                    self.patchwork_range_str(series)
-                patchset['submitter'] = self.get_patchset_submitter(series)
-                if 'time_to_last_test' in patchset:
-                    patchset['time_to_last_test'] = format_timedelta(
-                        timedelta(
-                            seconds=float(patchset['time_to_last_test'])))
-                self.add_patchset_ranges(patchset)
-
-
-class PatchSetRow(PatchSetList):
+class PatchSetRow(BaseDashboardView):
     """Display the list of patches on the dashboard."""
 
     template_name = 'dashboard_row.html'
