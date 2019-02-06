@@ -125,6 +125,11 @@ class PatchSet(models.Model, CommitURLMixin):
             'tooltip': 'A tarball has not yet been generated for this '
                        'patch series',
         },
+        'Not Applicable': {
+            'class': 'secondary',
+            'tooltip': 'The patch series is not active in Patchwork or is '
+                       'not required to be tested',
+        },
     }
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -179,6 +184,8 @@ class PatchSet(models.Model, CommitURLMixin):
             return "Apply Error"
         elif self.build_error:
             return "Build Error"
+        elif not self.tarballs.exists() and not self.pw_is_active:
+            return "Not Applicable"
         elif not self.tarballs.exists():
             return "Pending"
         else:
