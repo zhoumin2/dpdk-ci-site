@@ -28,11 +28,9 @@
       <dt class="col">Applied on</dt>
       <dd class="col-10">
         {% if tarball %}
-        {{ tarball.branch }}
-        (<code><a href="{{ tarball.commit_url }}">{{ tarball.commit_id }}</a></code>)
+        {% include "commit.html" with obj=tarball %}
         {% elif patchset.commit_id %}
-        {{ patchset.branch }}
-        (<code><a href="{{ patchset.commit_url }}">{{ patchset.commit_id }}</a></code>)
+        {% include "commit.html" with obj=patchset %}
         {% endif %}
       </dd>
     </div>

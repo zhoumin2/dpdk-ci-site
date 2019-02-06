@@ -1,0 +1,14 @@
+{# This is formatted so that the parenthesis is next to the commit id if a url exists. #}
+{# With the way Django renders HTML, this is the cleanest I could make this template. #}
+{% spaceless %}
+{# Some objects may have a commit_id but don't have a branch. #}
+{% if obj.branch %}
+{{ obj.branch.name }}
+({% endif %}<code>
+  {# Some objects may not have a commit_url if they don't have a branch. #}
+  {% if obj.commit_url %}
+  <a href="{{ obj.commit_url }}">{% endif %}{{ obj.commit_id }}{% if obj.commit_url %}</a>
+  {% endif %}
+</code>{% if obj.branch %})
+{% endif %}
+{% endspaceless %}

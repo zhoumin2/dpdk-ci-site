@@ -322,6 +322,8 @@ class DashboardDetail(BaseDashboardView):
     """Display the details for a particular patchset on the dashboard."""
 
     template_name = 'detail.html'
+    # cache branches
+    branches = {}
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
@@ -360,6 +362,7 @@ class DashboardDetail(BaseDashboardView):
                 tarball = s.get(context['patchset']['tarballs'][-1]).json()
                 if tarball.get('date'):
                     tarball['date'] = parse_datetime(tarball['date'])
+                self.set_branch(tarball, s)
                 self.set_ci_download_url(tarball)
                 context['tarball'] = tarball
                 context['environments'] = {x: None for x in envs}
@@ -368,6 +371,7 @@ class DashboardDetail(BaseDashboardView):
                     if resp.status_code >= HTTPStatus.BAD_REQUEST:
                         continue
                     run = resp.json()
+                    self.set_branch(run, s)
                     if run['log_upload_file']:
                         run['log_upload_file'] = build_upload_url(
                             self.request, run['log_upload_file'])
@@ -443,6 +447,7 @@ class DashboardDetail(BaseDashboardView):
                 api_resp = s.get(context['patchset']['build_log'])
                 api_resp.raise_for_status()
                 context['patchset']['build_log'] = api_resp.text
+                self.set_branch(context['patchset'], s)
 
             if context['patchset']['has_error']:
                 api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
@@ -485,6 +490,19 @@ class DashboardDetail(BaseDashboardView):
         args = [tarball['id'], tarball['tarball_name']]
         tarball['tarball_url'] = self.request.build_absolute_uri(
             reverse('tarball-download', args=args))
+
+    def set_branch(self, item, session):
+        """Set and cache branch on object."""
+        if not item['branch']:
+            return
+        if item['branch'] in self.branches:
+            branch = self.branches[item['branch']]
+        else:
+            resp = session.get(item['branch'])
+            resp.raise_for_status()
+            branch = resp.json()
+            self.branches[item['branch']] = branch
+        item['branch'] = branch
 
 
 class Preferences(LoginRequiredMixin, View):

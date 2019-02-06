@@ -397,7 +397,8 @@ class BranchSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull in for BranchSerializer."""
 
         model = Branch
-        fields = ('url', 'name', 'repository_url', 'regexp', 'last_commit_id')
+        fields = ('url', 'name', 'repository_url', 'regexp', 'last_commit_id',
+                  'web_url')
 
 
 class TarballSerializer(serializers.HyperlinkedModelSerializer,

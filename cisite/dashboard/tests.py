@@ -51,12 +51,21 @@ class BaseTestCase(StaticLiveServerTestCase):
                 ]
             })
         m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'branches/1/'),
+            json={
+                'id': 1,
+                'url': urljoin(settings.API_BASE_URL, 'branches/1/'),
+                'name': 'dpdk',
+                'last_commit_id': '0' * 40,
+                'repository_url': 'http://git.invalid'
+            })
+        m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'tarballs/1/'),
             json={
                 'id': 1,
                 'url': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
                 'patchset': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
-                'branch': 'dpdk',
+                'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
                 'commit_id': 'ee73f98ef481f61eab2f7289f033c6f9113eee8a',
                 'job_name': 'Apply-One-Patch-Set',
                 'build_id': 936,
@@ -113,7 +122,8 @@ class BaseTestCase(StaticLiveServerTestCase):
             'passed': 0,
             'failed': 0,
             'build_error': False,
-            'has_error': False
+            'has_error': False,
+            'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,
@@ -191,7 +201,8 @@ class BaseTestCase(StaticLiveServerTestCase):
                 ],
                 'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
                 'report_timestamp': None,
-                'log_upload_file': None
+                'log_upload_file': None,
+                'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
             })
         ps_1 = {
             'url': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
@@ -211,7 +222,8 @@ class BaseTestCase(StaticLiveServerTestCase):
             'passed': 0,
             'failed': 0,
             'build_error': False,
-            'has_error': False
+            'has_error': False,
+            'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
         }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL,

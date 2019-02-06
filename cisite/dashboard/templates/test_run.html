@@ -12,8 +12,7 @@
   <div class="row">
     <dt class="col">Baseline</dt>
     <dd class="col-10">
-      {{ r.branch }}
-      (<code><a href="{{ r.commit_url }}">{{ r.commit_id }}</a></code>)
+      {% include "commit.html" with obj=r %}
     </dd>
   </div>
   {% endif %}

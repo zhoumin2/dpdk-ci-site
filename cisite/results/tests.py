@@ -22,12 +22,20 @@ from rest_framework.test import APITestCase
 from tempfile import NamedTemporaryFile
 from .models import PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
-    Subscription, UserProfile, upload_model_path, upload_model_path_test_run
+    Subscription, UserProfile, Branch,\
+    upload_model_path, upload_model_path_test_run
 from .serializers import EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
 from .urls import upload_model_path as upload_model_path_url, \
     upload_model_path_test_run as upload_model_path_test_run_url
 from .views import HardwareDescriptionDownloadView, TestRunLogDownloadView
+
+
+def create_branch():
+    """Create a dummy branch object for use by tests."""
+    return Branch.objects.create(
+        name=str(Branch.objects.count()), repository_url='http://git.invalid',
+        last_commit_id='0' * 40)
 
 
 def create_test_run(environment, **kwargs):
@@ -36,7 +44,7 @@ def create_test_run(environment, **kwargs):
     if not tb:
         ps = PatchSet.objects.create()
         tb = Tarball.objects.create(
-            branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
+            branch=create_branch(), tarball_url='http://host.invalid/dpdk.tar.gz',
             commit_id="0" * 40, patchset=ps)
     tr_kwargs = {
         'timestamp': now(),
@@ -458,7 +466,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
         group = Group.objects.create(name="TestGroup")
         user.groups.add(group)
         tarball = Tarball.objects.create(
-            branch="master",
+            branch=create_branch(),
             commit_id="0000000000000000000000000000000000000000",
             tarball_url='http://host.invalid/dpdk.tar.gz')
         cls.tarball_url = reverse(
@@ -487,7 +495,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             report_timestamp=None,
             commit_id='',
             commit_url='',
-            branch='',
+            branch=None,
             results=[dict(result='PASS',
                           difference=-0.85,
                           expected_value=None,
@@ -723,7 +731,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_waiting(self):
         """Verify that status with tarball but no results is Waiting."""
-        Tarball.objects.create(branch="master", commit_id="0" * 40,
+        Tarball.objects.create(branch=create_branch(), commit_id="0" * 40,
                                tarball_url='http://host.invalid/dpdk.tar.gz',
                                patchset=self.test_ps)
         self.assertEqual(self.test_ps.status, 'Waiting')
@@ -982,7 +990,8 @@ class EnvironmentTestCase(test.TestCase):
         """
         env = self.create_environment("test")
         tb = Tarball.objects.create(
-            tarball_url='http://example.com/dpdk.tar.gz', branch='master',
+            tarball_url='http://example.com/dpdk.tar.gz',
+            branch=create_branch(),
             commit_id='0000000000000000000000000000000000000000')
         TestRun.objects.create(timestamp=now(),
                                log_output_file='http://example.com/log.tar.gz',
@@ -1055,7 +1064,7 @@ class TestResultTestCase(test.TestCase):
         TestCase.objects.create(
             name='nic_single_core_perf',
             description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
-        cls.test_tb = Tarball.objects.create(branch="master",
+        cls.test_tb = Tarball.objects.create(branch=create_branch(),
                 commit_id="0000000000000000000000000000000000000000",
                 tarball_url='http://host.invalid/dpdk.tar.gz')
         grp = Group.objects.create(name='group')
@@ -1409,7 +1418,8 @@ class TestDownloadURL(test.TestCase):
     def test_upload_model_path_test_run_no_ps(self):
         """Verify no patchset on tarball is valid."""
         tb = Tarball.objects.create(
-            branch="master", tarball_url='http://host.invalid/dpdk.tar.gz',
+            branch=create_branch(),
+            tarball_url='http://host.invalid/dpdk.tar.gz',
             commit_id="0" * 40)
         tr_kwargs = {
             'timestamp': now(),
