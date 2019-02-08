@@ -4,8 +4,9 @@ class Dashboard {
     const start = parseInt(table.dataset.start)
     const end = parseInt(table.dataset.end)
     const limit = parseInt(table.dataset.limit)
+    const shown = table.dataset.shown
     for (let i = start; i < end; i += limit) {
-      this.getAndAddRow(i, table, limit);
+      this.getAndAddRow(i, table, limit, shown);
     }
   }
 
@@ -14,7 +15,7 @@ class Dashboard {
    * @param {number} offset
    * @param {HTMLTableSectionElement} table
    */
-  getAndAddRow(offset, table, limit) {
+  getAndAddRow(offset, table, limit, shown) {
     let emptyRows = [];
     for (let i = offset; i < offset + limit; i++) {
       let element = document.getElementById(`row-${i}`);
@@ -22,7 +23,7 @@ class Dashboard {
         emptyRows.push(element);
       }
     }
-    fetch(`row/${offset}/?limit=${limit}`).then(response => {
+    fetch(`row/${offset}/?limit=${limit}&patchsets=${shown}`).then(response => {
       response.text().then(text => {
         if (response.ok) {
           // put text into html element to utilize dom api

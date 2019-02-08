@@ -77,9 +77,9 @@ def paginate_rest(page, context, count):
 
     The `context` dictionary will get modified with the following:
     {
-        next_url: url|None
-        previous_url: url|None
-        page_links: [{is_break, is_active, url, page}]
+        next_page: page|None
+        previous_page: page|None
+        page_numbers: [{is_break, is_active, number}]
     }
     (This is similar to DRF pagination.py)
     """
@@ -106,16 +106,15 @@ def paginate_rest(page, context, count):
         raise Http404
 
     page_numbers = _get_displayed_page_numbers(page, pages)
-    context['page_links'] = _get_page_links(
-        page_numbers, page, lambda num: f'?page={num}')
+    context['pages'] = _get_page_links(page_numbers, page)
 
-    context['next_url'] = None
+    context['next_page'] = None
     if page != pages:
-        context['next_url'] = f'?page={page + 1}'
+        context['next_page'] = page + 1
 
-    context['previous_url'] = None
+    context['previous_page'] = None
     if page > 1:
-        context['previous_url'] = f'?page={page - 1}'
+        context['previous_page'] = page - 1
 
 
 class AuthenticationForm(auth_forms.AuthenticationForm):
@@ -247,12 +246,13 @@ class PatchSetList(BaseDashboardView):
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
+        active = self.set_shown(context)
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
             offset = page * settings.REST_FRAMEWORK['PAGE_SIZE']
             resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets/'), params={
-                'pw_is_active': True,
+                'pw_is_active': active,
                 'without_series': False,
                 'ordering': '-id',
                 'offset': offset,
@@ -273,6 +273,23 @@ class PatchSetList(BaseDashboardView):
 
         self.update_patchsets(context)
         return context
+
+    def set_shown(self, context):
+        """Sets the shown context and returns whether to show active ps."""
+        shown = self.request.GET.get('patchsets', 'active')
+        context['shown'] = {}
+        if shown == 'all':
+            context['shown']['text'] = 'all'
+            context['shown']['all'] = True
+            return ''
+        elif shown == 'inactive':
+            context['shown']['text'] = 'inactive'
+            context['shown']['inactive'] = True
+            return False
+        # 'active' and fallback, set active to True
+        context['shown']['text'] = 'active'
+        context['shown']['active'] = True
+        return True
 
     def update_patchsets(self, context):
         with requests.Session() as pw_session:
@@ -299,11 +316,12 @@ class PatchSetRow(PatchSetList):
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
+        active = self.set_shown(context)
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
             resp = s.get(urljoin(settings.API_BASE_URL, 'patchsets/'), params={
-                'pw_is_active': True,
+                'pw_is_active': active,
                 'without_series': False,
                 'ordering': '-id',
                 'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
