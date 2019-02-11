@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.http import Http404
 from django import test
 from django.urls import reverse
 import requests_mock
@@ -718,14 +717,14 @@ class PaginationTests(test.TestCase):
         self.assertIsNone(context['previous_page'])
 
     def test_negatives(self):
-        """Test that wrapping occurs."""
+        """Test that set to 0 occurs."""
         context = {}
         paginate_rest(parse_page(-1), context, 20)
-        self.assertEqual(context['previous_page'], 9)
+        self.assertIsNone(context['previous_page'])
 
         context = {}
         paginate_rest(parse_page(-11), context, 20)
-        self.assertEqual(context['previous_page'], 9)
+        self.assertIsNone(context['previous_page'])
 
         context = {}
         paginate_rest(parse_page(-1), context, 2)
@@ -738,12 +737,21 @@ class PaginationTests(test.TestCase):
         self.assertIsNone(context['previous_page'])
 
     def test_pages_greater_than_page(self):
-        """Test that we get a 404 if page > pages."""
-        with self.assertRaises(Http404):
-            paginate_rest(parse_page(11), {}, 20)
+        """Test that we get max page if page > pages."""
+        context = {}
+        paginate_rest(parse_page(11), context, 20)
+        self.assertIsNone(context['next_page'])
+        self.assertEqual(context['pages'][-1].number, 10)
 
-        with self.assertRaises(Http404):
-            paginate_rest(parse_page(2), {}, 2)
+        context = {}
+        paginate_rest(parse_page(999), context, 20)
+        self.assertIsNone(context['next_page'])
+        self.assertEqual(context['pages'][-1].number, 10)
+
+        context = {}
+        paginate_rest(parse_page(2), context, 2)
+        self.assertIsNone(context['next_page'])
+        self.assertEqual(context['pages'][-1].number, 1)
 
 
 class ParseIPAChangePasswordTests(TestCase):
