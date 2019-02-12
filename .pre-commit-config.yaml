@@ -49,9 +49,3 @@ repos:
       - id: trailing-whitespace
         stages: ["commit"]
         language_version: "python3.6"
-
-  - repo: ssh://git@bitbucket.iol.unh.edu:7999/ofa/code-review-standards.git
-    rev: v2018.05.2
-    hooks:
-      - id: iol-commit-message-format
-        stages: ["commit-msg"]
