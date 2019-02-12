@@ -1,4 +1,4 @@
-# Internal Website for DPDK Performance Test Lab
+# CI Website for DPDK Community Lab
 
 This is a Django-based website and API for the DPDK performance test lab.
 
