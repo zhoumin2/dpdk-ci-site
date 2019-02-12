@@ -1,4 +1,9 @@
-"""Model data for patchsets, environments, and test results."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Model data for patchsets, environments, and test results.
+"""
 
 import json
 import os

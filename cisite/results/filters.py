@@ -1,4 +1,8 @@
-"""Filter querysets for results database objects.
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Filter querysets for results database objects.
 
 This file contains custom filter sets for the results application.
 """

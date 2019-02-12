@@ -1,4 +1,9 @@
-"""Define signals for results models."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define signals for results models.
+"""
 
 from .models import ContactPolicy, Environment, Measurement, TestResult, \
     TestRun, Subscription, UserProfile

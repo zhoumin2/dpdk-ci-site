@@ -1,4 +1,8 @@
-"""Implement setprivate command.
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Implement setprivate command.
 
 This command sets all the results for the environment to be private. This is
 to bypass the web interface in case the operation takes too long.

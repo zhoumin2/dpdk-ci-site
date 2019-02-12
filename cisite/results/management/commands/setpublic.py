@@ -1,4 +1,8 @@
-"""Implement setpublic command.
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Implement setpublic command.
 
 This command sets all the results for the environment to be public. This is
 to bypass the web interface in case the operation takes too long.

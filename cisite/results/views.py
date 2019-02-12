@@ -1,4 +1,9 @@
-"""Render views for results database objects."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Render views for results database objects.
+"""
 
 import requests
 import uuid

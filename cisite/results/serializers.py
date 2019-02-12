@@ -1,4 +1,9 @@
-"""Define serializers for results models."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define serializers for results models.
+"""
 
 from django.conf import settings
 from django.contrib.auth.models import Group, User

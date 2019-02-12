@@ -1,4 +1,9 @@
-"""Define URL Configuration for dashboard app."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define URL Configuration for dashboard app.
+"""
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views

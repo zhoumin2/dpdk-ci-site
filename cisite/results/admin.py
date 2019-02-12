@@ -1,4 +1,10 @@
-"""Register admin interface for DPDK CI site results models."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Register admin interface for DPDK CI site results models.
+"""
+
 from django.contrib import admin
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect

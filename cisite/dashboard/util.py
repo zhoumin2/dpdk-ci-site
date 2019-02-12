@@ -1,4 +1,9 @@
-"""Define extra utility methods for the dashboard."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define extra utility methods for the dashboard.
+"""
 
 import json
 

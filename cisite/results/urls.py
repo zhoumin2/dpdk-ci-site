@@ -1,4 +1,9 @@
-"""Configure Django URLconf for results app."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Configure Django URLconf for results app.
+"""
 
 from django.conf import settings
 from django.urls import include, path

@@ -1,4 +1,9 @@
-"""Define signal handlers for dashboard."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define signal handlers for dashboard.
+"""
 
 from urllib.parse import urljoin
 from django.conf import settings
