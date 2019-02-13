@@ -19,7 +19,8 @@ function logError(details) {
 	}
 	var query = [], data = {
 		context: navigator.userAgent,
-		details: details
+		details: details,
+		trace: Error().stack
 	};
 	for (var key in data) {
 		query.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
