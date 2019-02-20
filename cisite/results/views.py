@@ -203,7 +203,7 @@ class BranchViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    filter_fields = ('name', 'last_commit_id')
+    filter_fields = ('name', 'last_commit_id', 'repository_url')
 
 
 class TarballViewSet(viewsets.ModelViewSet):
