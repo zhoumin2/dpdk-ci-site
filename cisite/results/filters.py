@@ -65,7 +65,7 @@ class PatchSetFilter(FilterSet):
         """Set up class fields automatically."""
 
         model = PatchSet
-        fields = ('apply_error', 'build_error', 'pw_is_active')
+        fields = ('apply_error', 'build_error', 'pw_is_active', 'series_id')
 
     def has_tarball_filter(self, queryset, name, value):
         """Filter based on the value of the complete query field."""
