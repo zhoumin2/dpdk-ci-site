@@ -1,4 +1,9 @@
-"""Define custom permissions for results app."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define custom permissions for results app.
+"""
 
 from guardian.utils import get_anonymous_user
 from rest_framework.permissions import BasePermission, \

@@ -1,4 +1,9 @@
-"""Define parsers for results API."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define parsers for results API.
+"""
 
 import json
 from rest_framework.parsers import MultiPartParser, ParseError

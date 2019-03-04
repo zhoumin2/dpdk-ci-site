@@ -1,4 +1,10 @@
-"""Custom forms for the admin interface."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Custom forms for the admin interface.
+"""
+
 from django import forms
 
 

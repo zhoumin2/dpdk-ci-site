@@ -1,4 +1,9 @@
-"""Define dashboard views."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define dashboard views.
+"""
 
 from datetime import timedelta
 from logging import getLogger

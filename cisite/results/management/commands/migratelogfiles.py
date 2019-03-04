@@ -1,4 +1,8 @@
-"""Implement migratelogfiles command.
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Implement migratelogfiles command.
 
 This command migrates logs from Jenkins to Django's private file storage.
 """

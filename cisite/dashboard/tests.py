@@ -1,4 +1,9 @@
-"""Define tests for dashboard app."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define tests for dashboard app.
+"""
 
 import json
 

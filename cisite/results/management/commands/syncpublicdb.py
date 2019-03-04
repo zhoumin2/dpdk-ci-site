@@ -1,8 +1,13 @@
-"""Implement syncpublicdb command.
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Implement syncpublicdb command.
 
 This command will sync public results by flushing the public database, then
 syncing public models from the default database to the public database.
 """
+
 import tempfile
 import warnings
 

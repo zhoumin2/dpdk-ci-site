@@ -1,3 +1,8 @@
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+"""
+
 from django import template
 
 register = template.Library()

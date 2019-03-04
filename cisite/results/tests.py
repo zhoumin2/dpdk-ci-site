@@ -1,4 +1,9 @@
-"""Define test cases for results app."""
+"""
+SPDX-License-Identifier: BSD-3-Clause
+Developed by UNH-IOL dpdklab@iol.unh.edu.
+
+Define test cases for results app.
+"""
 
 from copy import deepcopy
 from datetime import datetime
