@@ -1622,11 +1622,13 @@ class TestRebuild(test.TestCase):
         self.group = Group.objects.create(name='TestGroup')
         self.user.groups.add(self.group)
         self.ps = PatchSet.objects.create()
+        self.branch = create_branch()
         ps_url = 'http://testserver' + self.ps.get_absolute_url()
+        branch_url = 'http://testserver' + self.branch.get_absolute_url()
         self.pipeline_url = f'{settings.JENKINS_URL}job/'\
             'Apply-Custom-Patch-Set/buildWithParameters/?' \
             f'PATCHSET_META_URL={ps_url}&' \
-            f'BRANCH=branch'
+            f'BRANCH={branch_url}'
 
     def test_valid_user(self, m):
         """Make sure authenticated users can rebuild the patchset."""
@@ -1634,11 +1636,29 @@ class TestRebuild(test.TestCase):
 
         self.client.login(username=self.user.username, password='AbCdEfGh')
         resp = self.client.post(reverse('patchset-rebuild',
-                                        args=(self.ps.id, 'branch')))
+                                        args=(self.ps.id, self.branch.name)))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_anonymous(self, m):
         """Make sure anonymous users can't rebuild the patchset."""
         resp = self.client.post(reverse('patchset-rebuild',
-                                        args=(self.ps.id, 'branch')))
+                                        args=(self.ps.id, self.branch.name)))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_no_branch_exists(self, m):
+        """Make sure a 404 gets returned for a branch that does not exist."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('patchset-rebuild',
+                                        args=(self.ps.id, 'does-not-exist')))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_no_ps_exists(self, m):
+        """Make sure a 404 gets returned for a patchset that does not exist."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('patchset-rebuild',
+                                        args=(999999, self.branch.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

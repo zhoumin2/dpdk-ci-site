@@ -268,6 +268,10 @@ class Branch(models.Model):
         """Return string representation of branch record."""
         return self.name
 
+    def get_absolute_url(self):
+        """Return url to REST API for use with admin interface and rebuilds."""
+        return reverse('branch-detail', args=(self.id,))
+
 
 class Tarball(models.Model, CommitURLMixin):
     """Model a tarball constructed by a patchset."""

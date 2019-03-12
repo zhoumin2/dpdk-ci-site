@@ -13,6 +13,7 @@ from functools import partial
 from logging import getLogger
 
 from django.core.cache import cache
+from django.shortcuts import get_list_or_404
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
@@ -190,10 +191,14 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
         LogEntry.objects.log_action(
             request.user.id, ContentType.objects.get_for_model(PatchSet).pk, pk,
             repr(ps), CHANGE, message)
+
+        branches = get_list_or_404(Branch, name=branch)
+        branch_url = request.build_absolute_uri(branches[0].get_absolute_url())
+
         auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
                                            settings.JENKINS_API_TOKEN)
         ps_url = request.build_absolute_uri(ps.get_absolute_url())
-        params = dict(PATCHSET_META_URL=ps_url, BRANCH=branch)
+        params = dict(PATCHSET_META_URL=ps_url, BRANCH=branch_url)
         resp = requests.post(pipeline_url,
                              verify=settings.CA_CERT_BUNDLE,
                              auth=auth,
