@@ -49,7 +49,9 @@
         {% for i in range %}
         <tr id="row-{{ i }}">
           <td title="Fetching patch information...">
-            <i class="fas fa-sync-alt fa-spin"></i>
+            <div class="spinner-border spinner-border-sm text-secondary" role="status">
+              <span class="sr-only">Fetching patch information...</span>
+            </div>
           </td>
           <td>
             <div>&nbsp;</div>
