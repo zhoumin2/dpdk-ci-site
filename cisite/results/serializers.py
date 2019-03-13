@@ -346,7 +346,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
     _SELECT_RELATED_FIELDS = ('environment', 'tarball')
     _PREFETCH_RELATED_FIELDS = ('results',)
 
-    results = TestResultSerializer(many=True, allow_empty=False)
+    results = TestResultSerializer(many=True, allow_empty=True)
     environment = EnvironmentHyperlinkedField()
 
     class Meta:
