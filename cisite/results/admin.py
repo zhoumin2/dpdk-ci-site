@@ -6,6 +6,7 @@ Register admin interface for DPDK CI site results models.
 """
 
 from django.contrib import admin
+from django.contrib.admin.models import LogEntry
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -224,6 +225,13 @@ class TarballAdmin(GuardedModelAdmin):
     """Define Tarball module in admin interface."""
 
     readonly_fields = ('patchset',)
+
+
+@admin.register(LogEntry)
+class LogEntryAdmin(admin.ModelAdmin):
+    """Define a mostly read-only LogEntry module in admin interface."""
+    readonly_fields = ('content_type', 'user', 'action_time', 'object_id',
+                       'object_repr', 'action_flag', 'change_message')
 
 
 admin.site.register(Branch)
