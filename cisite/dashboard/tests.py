@@ -449,7 +449,7 @@ class DetailViewTests(BaseTestCase):
         """Test that the anonymous page loads."""
         ps = self.setup_mock_anonymous(m)
 
-        response = self.client.get(reverse('dashboard-detail',
+        response = self.client.get(reverse('patchset_detail',
                                            args=(ps['id'],)))
 
         self.assertEqual(response.status_code, 200)
@@ -466,7 +466,7 @@ class DetailViewTests(BaseTestCase):
         self.setup_mock_active(m, [env])
         ps = self.setup_mock_test_runs(m, fail=True)
 
-        response = self.client.get(reverse('dashboard-detail',
+        response = self.client.get(reverse('patchset_detail',
                                            args=(ps['id'],)),
                                    follow=True)
         self.assertEqual(response.status_code, 200)
@@ -495,7 +495,7 @@ class DetailViewTests(BaseTestCase):
         self.setup_mock_active(m, [env])
         ps = self.setup_mock_test_runs(m)
 
-        response = self.client.get(reverse('dashboard-detail',
+        response = self.client.get(reverse('patchset_detail',
                                            args=(ps['id'],)),
                                    follow=True)
         self.assertEqual(response.status_code, 200)
@@ -527,7 +527,7 @@ class DetailViewTests(BaseTestCase):
         ps = self.setup_mock_test_runs(m)
         self.setup_mock_active(m, [cloned_env])
 
-        response = self.client.get(reverse('dashboard-detail',
+        response = self.client.get(reverse('patchset_detail',
                                            args=(ps['id'],)),
                                    follow=True)
         self.assertEqual(response.status_code, 200)

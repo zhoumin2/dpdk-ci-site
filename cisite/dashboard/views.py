@@ -185,19 +185,8 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
-    def get_patchset_submitter(self, series):
-        """Returns the patchset submitter as it should be output.
-
-        The output will be just the name for an anonymous user or the name
-        plus e-mail for a logged in user. This should prevent spambots from
-        harvesting e-mails off of our dashboard.
-        """
-        submitter = series['submitter']
-        ret = submitter.get('name') or '(unknown)'
-        request = self.request
-        if request.user.is_authenticated and submitter.get('email'):
-            ret += ' <' + submitter['email'] + '>'
-        return ret
+    # cache branches
+    branches = {}
 
     def add_static_context_data(self, context):
         """Add static context data included with every dashboard view.
@@ -209,13 +198,6 @@ class BaseDashboardView(TemplateView):
         context['enable_admin'] = settings.ENABLE_ADMIN
         context['enable_rest_api'] = settings.ENABLE_REST_API
         return context
-
-    def patchwork_range_str(self, series):
-        """Return the range of patchwork IDs as an HTML string."""
-        res = str(series['patches'][0]['id'])
-        if len(series['patches']) > 1:
-            res += f'&ndash;{series["patches"][-1]["id"]}'
-        return res
 
     def get_context_data(self, **kwargs):
         """Get the static context data for all dashboard views."""
@@ -238,13 +220,49 @@ class BaseDashboardView(TemplateView):
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=HTTPStatus.SERVICE_UNAVAILABLE)
 
-    def add_patchset_ranges(self, patchset):
+    def add_status_ranges(self, patchset):
         """Pass in the patchset to apply a range."""
         patchset['incomplete_range'] = range(patchset['incomplete'])
         patchset['passed_range'] = range(patchset['passed'])
         patchset['failed_range'] = range(patchset['failed'])
 
-    def set_shown(self, context):
+    def set_branch(self, item, session):
+        """Set and cache branch on object."""
+        if not item['branch']:
+            return
+        if item['branch'] in self.branches:
+            branch = self.branches[item['branch']]
+        else:
+            resp = session.get(item['branch'])
+            resp.raise_for_status()
+            branch = resp.json()
+            self.branches[item['branch']] = branch
+        item['branch'] = branch
+
+
+class PatchSet(BaseDashboardView):
+    def get_patchset_submitter(self, series):
+        """Returns the patchset submitter as it should be output.
+
+        The output will be just the name for an anonymous user or the name
+        plus e-mail for a logged in user. This should prevent spambots from
+        harvesting e-mails off of our dashboard.
+        """
+        submitter = series['submitter']
+        ret = submitter.get('name') or '(unknown)'
+        request = self.request
+        if request.user.is_authenticated and submitter.get('email'):
+            ret += ' <' + submitter['email'] + '>'
+        return ret
+
+    def patchwork_range_str(self, series):
+        """Return the range of patchwork IDs as an HTML string."""
+        res = str(series['patches'][0]['id'])
+        if len(series['patches']) > 1:
+            res += f'&ndash;{series["patches"][-1]["id"]}'
+        return res
+
+    def set_shown_patchset(self, context):
         """Sets the shown context and returns whether to show active ps."""
         shown = self.request.GET.get('patchsets', 'active')
         context['shown'] = {}
@@ -275,18 +293,18 @@ class BaseDashboardView(TemplateView):
                     patchset['time_to_last_test'] = format_timedelta(
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
-                self.add_patchset_ranges(patchset)
+                self.add_status_ranges(patchset)
 
 
-class PatchSetList(BaseDashboardView):
+class PatchSetList(PatchSet):
     """Display the list of patches on the dashboard."""
 
-    template_name = 'dashboard.html'
+    template_name = 'patchset_list.html'
 
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
-        active = self.set_shown(context)
+        active = self.set_shown_patchset(context)
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
@@ -315,15 +333,15 @@ class PatchSetList(BaseDashboardView):
         return context
 
 
-class PatchSetRow(BaseDashboardView):
+class PatchSetRow(PatchSet):
     """Display the list of patches on the dashboard."""
 
-    template_name = 'dashboard_row.html'
+    template_name = 'patchset_row.html'
 
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
-        active = self.set_shown(context)
+        active = self.set_shown_patchset(context)
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
@@ -343,154 +361,97 @@ class PatchSetRow(BaseDashboardView):
         return context
 
 
-class DashboardDetail(BaseDashboardView):
-    """Display the details for a particular patchset on the dashboard."""
+class Tarball(BaseDashboardView):
+    def populate_tarball_context(self, context, s, envs):
+        if context['tarball'].get('date'):
+            context['tarball']['date'] = parse_datetime(context['tarball']['date'])
 
-    template_name = 'detail.html'
-    # cache branches
-    branches = {}
+        self.set_branch(context['tarball'], s)
+        self.set_ci_download_url(context['tarball'])
+        context['environments'] = {x: None for x in envs}
 
-    def get_context_data(self, **kwargs):
-        """Return contextual data about the patchset for the test runs."""
-        context = super().get_context_data(**kwargs)
-        with api_session(self.request) as s:
-            api_resp = s.get(urljoin(settings.API_BASE_URL,
-                                     f'patchsets/{self.kwargs["id"]}/'))
-            if api_resp.status_code == HTTPStatus.NOT_FOUND:
-                raise Http404
-            context['patchset'] = api_resp.json()
-            # since we now rely on series information, raise a 404 if there is
-            # no series attached
-            if not context['patchset']['series_id']:
-                raise Http404
+        for url in context['tarball']['runs']:
+            resp = s.get(url)
+            if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                continue
 
-            series = pw_get(context['patchset']['pw_series_url'])
-            context['patchset']['patches'] = series['patches']
-            context['patchset']['patchwork_range_str'] =\
-                self.patchwork_range_str(series)
-            self.add_patchset_ranges(context['patchset'])
-            # assume UTC
-            context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
-            context['patchset']['submitter'] = self.get_patchset_submitter(series)
-            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
-                             params={'active': 'true'})
-            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
-                                        HTTPStatus.FORBIDDEN]:
-                envs = dict()
-            else:
-                api_resp.raise_for_status()
-                envs = api_resp.json()['results']
-                envs = {x['url']: x for x in envs}
+            run = resp.json()
+            self.set_branch(run, s)
 
-            context['environments'] = dict()
-            if context['patchset'].get('tarballs', []):
-                tarball = s.get(context['patchset']['tarballs'][-1]).json()
-                if tarball.get('date'):
-                    tarball['date'] = parse_datetime(tarball['date'])
-                self.set_branch(tarball, s)
-                self.set_ci_download_url(tarball)
-                context['tarball'] = tarball
-                context['environments'] = {x: None for x in envs}
-                for url in tarball['runs']:
-                    resp = s.get(url)
-                    if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                        continue
-                    run = resp.json()
-                    self.set_branch(run, s)
-                    if run['log_upload_file']:
-                        run['log_upload_file'] = build_upload_url(
-                            self.request, run['log_upload_file'])
-                    run['timestamp'] = parse_datetime(run['timestamp'])
-                    delta = run['timestamp'] - context['patchset']['date']
-                    run['timedelta'] = format_timedelta(delta)
-                    run['failure_count'] = 0
-                    run['testcases'] = {}
-                    for result in run['results']:
-                        resp = s.get(result['measurement'])
-                        # in case the user does not have permission
-                        if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                            continue
-                        measurement = resp.json()
-                        self.set_parameter_keys(measurement)
-                        result['measurement'] = measurement
-                        if result['result'].upper() == 'FAIL':
-                            run['failure_count'] += 1
-                        tc = result['measurement']['testcase']
-                        if not run['testcases'].get(tc):
-                            run['testcases'][tc] = s.get(tc).json()
-                            run['testcases'][tc]['results'] = []
-                        run['testcases'][tc]['results'].append(result)
+            if run['log_upload_file']:
+                run['log_upload_file'] = build_upload_url(
+                    self.request, run['log_upload_file'])
 
-                    # Get the latest version of the environment, since previous
-                    # versions won't show up in the list of active environments
-                    # that we obtained above
-                    env_url = run['environment']
-                    resp = s.get(env_url)
-                    # in case the user does not have permission
-                    if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                        continue
-                    env = resp.json()
+            run['timestamp'] = parse_datetime(run['timestamp'])
+            run['failure_count'] = 0
+            run['testcases'] = {}
 
-                    while (env_url not in context['environments'].keys() and
-                            env.get('successor')):
-                        env_url = env['successor']
-                        env = s.get(env_url).json()
+            for result in run['results']:
+                resp = s.get(result['measurement'])
+                # in case the user does not have permission
+                if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                    continue
 
-                    if env.get('live_since'):
-                        env['live_since'] = parse_datetime(env['live_since'])
+                measurement = resp.json()
+                self.set_parameter_keys(measurement)
+                result['measurement'] = measurement
+                if result['result'].upper() == 'FAIL':
+                    run['failure_count'] += 1
 
-                    # parse the absolute url to our proxied url
-                    if env.get('hardware_description'):
-                        env['hardware_description'] = build_upload_url(
-                            self.request, env['hardware_description'])
+                tc = result['measurement']['testcase']
+                if not run['testcases'].get(tc):
+                    run['testcases'][tc] = s.get(tc).json()
+                    run['testcases'][tc]['results'] = []
 
-                    # if the user is not in the owning group, then don't show
-                    # certain elements, such as links (since they won't have access
-                    # anyways)
-                    group = s.get(env['owner']).json()
-                    user = self.request.user
-                    show_elements = user.groups.filter(name=group['name']).exists() or \
-                        user.is_staff
+                run['testcases'][tc]['results'].append(result)
 
-                    # avoid duplicate replacements since we try to get the
-                    # latest environment multiple times inside the test run
-                    # loop
-                    if not context['environments'][env_url]:
-                        env['runs'] = []
-                        # hide rerun button to invalid users
-                        if not show_elements:
-                            env['pipeline_url'] = None
-                        context['environments'][env_url] = env
+            # Get the latest version of the environment, since previous
+            # versions won't show up in the list of active environments
+            # that we obtained above
+            env_url = run['environment']
+            resp = s.get(env_url)
+            # in case the user does not have permission
+            if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                continue
 
-                    # hide download artifact button to invalid users
-                    if not show_elements:
-                        run['log_upload_file'] = None
+            env = resp.json()
 
-                    context['environments'][env_url]['runs'].append(run)
+            while (env_url not in context['environments'].keys() and
+                   env.get('successor')):
+                env_url = env['successor']
+                env = s.get(env_url).json()
 
-            elif context['patchset']['build_log']:
-                api_resp = s.get(context['patchset']['build_log'])
-                api_resp.raise_for_status()
-                context['patchset']['build_log'] = api_resp.text
-                self.set_branch(context['patchset'], s)
+            if env.get('live_since'):
+                env['live_since'] = parse_datetime(env['live_since'])
 
-            if context['patchset']['has_error']:
-                api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
-                api_resp.raise_for_status()
-                context['branches'] = api_resp.json()['results']
+            # parse the absolute url to our proxied url
+            if env.get('hardware_description'):
+                env['hardware_description'] = build_upload_url(
+                    self.request, env['hardware_description'])
 
-            for env_url, env in context['environments'].items():
-                # Fill in details of missing environments so they can be
-                # displayed in the template
-                if env is None:
-                    context['environments'][env_url] = envs[env_url]
-                elif 'runs' in context['environments'][env_url]:
-                    # also reverse the runs so that the latest run is first
-                    context['environments'][env_url]['runs'] = \
-                        list(reversed(context['environments'][env_url]['runs']))
+            # if the user is not in the owning group, then don't show
+            # certain elements, such as links (since they won't have access
+            # anyways)
+            group = s.get(env['owner']).json()
+            user = self.request.user
+            show_elements = (user.groups.filter(name=group['name']).exists() or
+                             user.is_staff)
 
-            context['status_classes'] = text_color_classes(context['patchset']['status_class'])
-            return context
+            # avoid duplicate replacements since we try to get the
+            # latest environment multiple times inside the test run
+            # loop
+            if not context['environments'][env_url]:
+                env['runs'] = []
+                # hide rerun button to invalid users
+                if not show_elements:
+                    env['pipeline_url'] = None
+                context['environments'][env_url] = env
+
+            # hide download artifact button to invalid users
+            if not show_elements:
+                run['log_upload_file'] = None
+
+            context['environments'][env_url]['runs'].append(run)
 
     def set_parameter_keys(self, measurement):
         """Update the parameter list to be an object with name as the key.
@@ -516,18 +477,178 @@ class DashboardDetail(BaseDashboardView):
         tarball['tarball_url'] = self.request.build_absolute_uri(
             reverse('tarball-download', args=args))
 
-    def set_branch(self, item, session):
-        """Set and cache branch on object."""
-        if not item['branch']:
-            return
-        if item['branch'] in self.branches:
-            branch = self.branches[item['branch']]
-        else:
-            resp = session.get(item['branch'])
+    def set_shown_tarball(self, context):
+        """Sets the shown context and returns whether to show active ps."""
+        shown = self.request.GET.get('tarballs', 'without')
+        context['shown'] = {}
+        if shown == 'all':
+            context['shown']['text'] = 'all'
+            context['shown']['all'] = True
+            return ''
+        elif shown == 'with':
+            context['shown']['text'] = 'with associated patch set'
+            context['shown']['with'] = True
+            return True
+        # 'without' and fallback, set withot to True
+        context['shown']['text'] = 'without associated patch set'
+        context['shown']['without'] = True
+        return False
+
+
+class PatchSetDetail(Tarball, PatchSet):
+    """Display the details for a particular patchset on the dashboard."""
+
+    template_name = 'patchset_detail.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the patchset for the test runs."""
+        context = super().get_context_data(**kwargs)
+        with api_session(self.request) as s:
+            api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                     f'patchsets/{self.kwargs["id"]}/'))
+            if api_resp.status_code == HTTPStatus.NOT_FOUND:
+                print("RAISED1")
+                raise Http404
+            context['patchset'] = api_resp.json()
+            # since we now rely on series information, raise a 404 if there is
+            # no series attached
+            if not context['patchset']['series_id']:
+                print("RAISED2")
+                raise Http404
+
+            series = pw_get(context['patchset']['pw_series_url'])
+            context['patchset']['patches'] = series['patches']
+            context['patchset']['patchwork_range_str'] = \
+                self.patchwork_range_str(series)
+            self.add_status_ranges(context['patchset'])
+            # assume UTC
+            context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
+            context['patchset']['submitter'] = self.get_patchset_submitter(series)
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                             params={'active': 'true'})
+            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
+                                        HTTPStatus.FORBIDDEN]:
+                envs = dict()
+            else:
+                api_resp.raise_for_status()
+                envs = api_resp.json()['results']
+                envs = {x['url']: x for x in envs}
+
+            context['environments'] = dict()
+            if context['patchset'].get('tarballs', []):
+                context['tarball'] = s.get(context['patchset']['tarballs'][-1]).json()
+                self.populate_tarball_context(context, s, envs)
+
+            elif context['patchset']['build_log']:
+                api_resp = s.get(context['patchset']['build_log'])
+                api_resp.raise_for_status()
+                context['patchset']['build_log'] = api_resp.text
+                self.set_branch(context['patchset'], s)
+
+            if context['patchset']['has_error']:
+                api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
+                api_resp.raise_for_status()
+                context['branches'] = api_resp.json()['results']
+
+            for env_url, env in context['environments'].items():
+                # Fill in details of missing environments so they can be
+                # displayed in the template
+                if env is None:
+                    context['environments'][env_url] = envs[env_url]
+                elif 'runs' in context['environments'][env_url]:
+                    # also reverse the runs so that the latest run is first
+                    context['environments'][env_url]['runs'] = \
+                        list(reversed(context['environments'][env_url]['runs']))
+
+            context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+            return context
+
+
+class TarballList(Tarball):
+    """Display the list of master comparisons on the dashboard."""
+
+    template_name = 'tarball_list.html'
+
+    def get_context_data(self, **kwargs):
+        """Return extra data for the dashboard template."""
+        context = super().get_context_data(**kwargs)
+
+        with api_session(self.request) as s:
+            page = parse_page(self.request.GET.get('page'))
+            offset = page * settings.REST_FRAMEWORK['PAGE_SIZE']
+            without = self.set_shown_tarball(context)
+
+            resp = s.get(urljoin(settings.API_BASE_URL, 'tarballs/'), params={
+                'has_patchset': without,
+                'ordering': '-date',
+                'offset': offset,
+            })
+
             resp.raise_for_status()
-            branch = resp.json()
-            self.branches[item['branch']] = branch
-        item['branch'] = branch
+            resp_json = resp.json()
+
+            context['tarballs'] = resp_json['results']
+            for tarball in context['tarballs']:
+                self.set_branch(tarball, s)
+                self.add_status_ranges(tarball)
+                tarball['date'] = parse_datetime(tarball['date'])
+
+                if tarball['patchset']:
+                    resp = s.get(tarball['patchset'])
+                    resp.raise_for_status()
+                    tarball['patchset'] = resp.json()
+
+            paginate_rest(page, context, resp_json['count'])
+
+        return context
+
+
+class TarballDetail(Tarball):
+    """Display the details for a particular patchset on the dashboard."""
+
+    template_name = 'tarball_detail.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the tarball for the test runs."""
+        context = super().get_context_data(**kwargs)
+        with api_session(self.request) as s:
+            api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                     f'tarballs/{self.kwargs["id"]}/'))
+            if api_resp.status_code == HTTPStatus.NOT_FOUND:
+                raise Http404
+            context['tarball'] = api_resp.json()
+            self.add_status_ranges(context['tarball'])
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                             params={'active': 'true'})
+            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
+                                        HTTPStatus.FORBIDDEN]:
+                envs = dict()
+            else:
+                api_resp.raise_for_status()
+                envs = api_resp.json()['results']
+                envs = {x['url']: x for x in envs}
+
+            context['environments'] = dict()
+
+            self.populate_tarball_context(context, s, envs)
+
+            if context['tarball']['patchset']:
+                resp = s.get(context['tarball']['patchset'])
+                resp.raise_for_status()
+                context['tarball']['patchset'] = resp.json()
+
+            for env_url, env in context['environments'].items():
+                # Fill in details of missing environments so they can be
+                # displayed in the template
+                if env is None:
+                    context['environments'][env_url] = envs[env_url]
+                elif 'runs' in context['environments'][env_url]:
+                    # also reverse the runs so that the latest run is first
+                    context['environments'][env_url]['runs'] = \
+                        list(reversed(context['environments'][env_url]['runs']))
+
+            context['status_classes'] = text_color_classes(context['tarball']['status_class'])
+            return context
 
 
 class Preferences(LoginRequiredMixin, View):

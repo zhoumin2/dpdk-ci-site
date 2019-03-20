@@ -1,0 +1,18 @@
+<h1>
+  Test Results
+  <small><span class="badge badge-{{ obj.status_class }} align-middle">{{ obj.status }}</span></small>
+</h1>
+{% if obj.incomplete > 0 or obj.passed > 0 or obj.failed > 0 %}
+<p title="Summary of tests: {{ obj.incomplete }} incomplete, {{ obj.passed }} passed, and {{ obj.failed }} failed.">
+  <span class="mr-2">Test summary:</span>
+  {% for i in obj.incomplete_range %}
+  <span class="bg-secondary px-2 mr-1"></span>
+  {% endfor %}
+  {% for i in obj.passed_range %}
+  <span class="bg-success px-2 mr-1"></span>
+  {% endfor %}
+  {% for i in obj.failed_range %}
+  <span class="bg-danger px-2 mr-1"></span>
+  {% endfor %}
+</p>
+{% endif %}

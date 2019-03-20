@@ -9,7 +9,7 @@
     <title>{% block title %}Dashboard{% endblock %} - DPDK Performance Test Lab</title>
 </head>
 <body>
-  <nav class="navbar navbar-expand-sm navbar-light bg-light">
+  <nav class="navbar navbar-expand-md navbar-light bg-light">
     <div class="container">
       <a class="navbar-brand" href="{% url 'dashboard' %}">
         <img src="{% static 'DPDK_logo_horizontal.svg' %}" width="89" height="25" class="d-inline-block align-middle" alt="DPDK">
@@ -22,6 +22,12 @@
       {% block navbar %}
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'patchset_list' %}">Patch sets</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'tarball_list' %}">Tarballs</a>
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'stats' %}">Stats</a>
           </li>
