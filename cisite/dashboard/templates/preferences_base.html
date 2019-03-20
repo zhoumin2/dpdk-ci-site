@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Preferences{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block breadcrumb_items %}
   <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-  {% block breadcrumb_preference %}
-  {% endblock %}
+  <li class="breadcrumb-item"><a href="{% url 'preferences' %}">Preferences</a></li>
+  <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
 {% endblock %}
 
 {% block content %}
@@ -13,13 +13,17 @@
     <div class="col-sm-4 col-lg-3">
       <div class="nav flex-column nav-pills" role="tablist" aria-orientation="vertical">
         <a class="nav-link{% if title == 'Subscriptions' %} active{% endif %}" href="{% url 'subscriptions' %}" role="tab">Subscriptions</a>
+        {% if enable_rest_api %}
+        <a class="nav-link{% if title == 'REST API Preferences' %} active{% endif %}" href="{% url 'rest_api_preferences' %}" role="tab">REST API</a>
+        {% endif %}
         <a class="nav-link{% if title == 'Password change' %} active{% endif %}" href="{% url 'password_change' %}" role="tab">Password change</a>
       </div>
     </div>
     <div class="col">
       <div class="tab-content">
-      {% block preference %}
-      {% endblock %}
+        <h2>{{ title }}</h2>
+        {% block preference %}
+        {% endblock %}
       </div>
     </div>
   </div>

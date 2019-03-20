@@ -4,28 +4,29 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define dashboard views.
 """
-
+import json
+import math
+import os
 from datetime import timedelta
-from logging import getLogger
 from http import HTTPStatus
+from logging import getLogger
 from urllib.parse import urljoin
+
 import requests
 import requests.exceptions
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import forms as auth_forms
-from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout as auth_logout
-from django.views.generic import TemplateView, View
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
-import json
-import math
-import os
+from django.views.generic import TemplateView, View
+from rest_framework.authtoken.models import Token
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
@@ -674,7 +675,18 @@ class TarballDetail(Tarball):
             return context
 
 
-class Preferences(LoginRequiredMixin, View):
+class BasePreferencesView(LoginRequiredMixin, BaseDashboardView):
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+        # Set next to homepage in case of logout, so that it doesn't just
+        # redirect to the login page
+        context['next'] = reverse('dashboard')
+        context['enable_rest_api'] = settings.ENABLE_REST_API
+        return context
+
+
+class Preferences(BasePreferencesView):
     """Show user preferences."""
 
     def get(self, *args, **kwargs):
@@ -682,21 +694,7 @@ class Preferences(LoginRequiredMixin, View):
         return HttpResponseRedirect(reverse('subscriptions'))
 
 
-class NextToHomeMixin():
-    """Set the next context to the homepage.
-
-    This is used when, for example, logging out of a page that normally
-    requires a login, such as the prefrences page.
-    """
-
-    def get_context_data(self, **kwargs):
-        """Set the next context to the homepage."""
-        context = super().get_context_data(**kwargs)
-        context['next'] = reverse('dashboard')
-        return context
-
-
-class Subscriptions(LoginRequiredMixin, NextToHomeMixin, BaseDashboardView):
+class Subscriptions(BasePreferencesView):
     """Show subscription preferences.
 
     DELETE, PATCH, and POST are proxy subscription calls to REST API.
@@ -781,7 +779,7 @@ class PasswordChangeForm(auth_forms.PasswordChangeForm):
             return super().clean_old_password()
 
 
-class PasswordChangeView(BaseDashboardView, NextToHomeMixin, auth_views.PasswordChangeView):
+class PasswordChangeView(BasePreferencesView, auth_views.PasswordChangeView):
     """Change password view."""
 
     form_class = PasswordChangeForm
@@ -824,8 +822,43 @@ class PasswordChangeView(BaseDashboardView, NextToHomeMixin, auth_views.Password
         return super(auth_views.PasswordChangeView, self).form_valid(form)
 
 
-class PasswordChangeDoneView(BaseDashboardView, NextToHomeMixin, auth_views.PasswordChangeDoneView):
+class PasswordChangeDoneView(BasePreferencesView, auth_views.PasswordChangeDoneView):
     """Inherit BaseDashboardView for context."""
+
+
+class RESTAPIPreferences(BasePreferencesView):
+    """Show REST API preferences."""
+
+    template_name = 'rest_api_preferences.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+        token = Token.objects.filter(user=self.request.user).first()
+        if token:
+            context['api_token_created'] = token.created
+        context['api_url'] = settings.API_BASE_URL
+        context['title'] = 'REST API Preferences'
+        return context
+
+    def get(self, *args, **kwargs):
+        """Raise 404 if rest api is not enabled."""
+        if not settings.ENABLE_REST_API:
+            raise Http404
+
+        return super().get(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Generate or Regenerate a new API key"""
+        if not settings.ENABLE_REST_API:
+            raise Http404
+
+        Token.objects.filter(user=self.request.user).delete()
+        Token.objects.create(user=self.request.user)
+
+        token = Token.objects.filter(user=self.request.user).first()
+        messages.add_message(request, messages.INFO, f'Your API Token: {token}')
+        return HttpResponseRedirect(reverse('rest_api_preferences'))
 
 
 class AboutView(BaseDashboardView):

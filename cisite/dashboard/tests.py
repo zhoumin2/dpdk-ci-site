@@ -6,20 +6,21 @@ Define tests for dashboard app.
 """
 
 import json
-
 from urllib.parse import urljoin
 
+import requests_mock
+from django import test
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django import test
 from django.urls import reverse
-import requests_mock
-from results.tests import create_test_environment
+from rest_framework.authtoken.models import Token
+
 from results.models import Subscription, TestCase
-from .views import paginate_rest, parse_page
+from results.tests import create_test_environment
 from .util import ParseIPAChangePassword
+from .views import paginate_rest, parse_page
 
 
 class BaseTestCase(StaticLiveServerTestCase):
@@ -675,6 +676,68 @@ class SubscriptionsViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
         self.assertEqual(response.context['env_sub_pairs'][0]['subscription'], None)
+
+
+class RESTAPIPreferencesTests(BaseTestCase):
+    """Test the REST API Preference view."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.grp = Group.objects.create(name='Group')
+        self.user.groups.add(self.grp)
+
+    def test_no_rest_api(self):
+        """Make sure preferences does not exist when REST API is disabled."""
+        with self.settings(API_BASE_URL=self.live_server_url):
+            response = self.client.post(
+                reverse('login'),
+                {'username': 'joevendor', 'password': 'AbCdEfGh'},
+                follow=True)
+            self.assertTrue(response.context['user'].is_active)
+
+        with self.settings(ENABLE_REST_API=False):
+            response = self.client.get(reverse('rest_api_preferences'))
+            self.assertEqual(response.status_code, 404)
+
+            response = self.client.post(reverse('rest_api_preferences'))
+            self.assertEqual(response.status_code, 404)
+
+            # just get some preferences page that works to see if API is in
+            # the page (navigation)
+            response = self.client.get(reverse('password_change'))
+            self.assertNotContains(response, "API")
+
+    def test_with_rest_api(self):
+        """Make sure preferences works as expected when enabled"""
+        with self.settings(API_BASE_URL=self.live_server_url):
+            response = self.client.post(
+                reverse('login'),
+                {'username': 'joevendor', 'password': 'AbCdEfGh'},
+                follow=True)
+            self.assertTrue(response.context['user'].is_active)
+
+        response = self.client.get(reverse('rest_api_preferences'))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertFalse(Token.objects.filter(user=self.user))
+        response = self.client.post(reverse('rest_api_preferences'))
+        # redirects on success
+        self.assertEqual(response.status_code, 302)
+        token = Token.objects.filter(user=self.user).first()
+        self.assertTrue(token)
+
+        # make sure token gets replaced
+        response = self.client.post(reverse('rest_api_preferences'))
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(token, Token.objects.filter(user=self.user).first())
+
+        # just get some preferences page that works to see if API is in
+        # the page (navigation)
+        response = self.client.get(reverse('password_change'))
+        self.assertContains(response, "API")
 
 
 class PaginationTests(test.TestCase):
