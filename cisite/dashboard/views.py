@@ -591,7 +591,9 @@ class TarballList(Tarball):
             for tarball in context['tarballs']:
                 self.set_branch(tarball, s)
                 self.add_status_ranges(tarball)
-                tarball['date'] = parse_datetime(tarball['date'])
+
+                if tarball['date']:
+                    tarball['date'] = parse_datetime(tarball['date'])
 
                 if tarball['patchset']:
                     resp = s.get(tarball['patchset'])

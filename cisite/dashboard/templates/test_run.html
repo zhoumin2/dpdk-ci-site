@@ -3,7 +3,7 @@
     <dt class="col">Test run at</dt>
     <dd class="col-10">
       {{ r.timestamp|date:"DATETIME_FORMAT" }}
-      {% if request.user.is_superuser %}
+      {% if r.timedelta and request.user.is_superuser %}
       ({{ r.timedelta }} since patchset posted)
       {% endif %}
     </dd>
@@ -58,7 +58,7 @@
 <a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a>
 {% endif %}
 {% if environment.pipeline_url %}
-<form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
+<form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={{ request.path }}" method="POST">
   {% csrf_token %}
   <input type="submit" class="btn btn-warning" value="Rerun">
 </form>
