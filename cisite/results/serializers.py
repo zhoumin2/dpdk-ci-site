@@ -421,7 +421,9 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
 
         model = Tarball
         fields = ('id', 'url', 'patchset', 'branch', 'commit_id', 'job_name',
-                  'build_id', 'tarball_url', 'runs', 'date', 'commit_url')
+                  'build_id', 'tarball_url', 'runs', 'date', 'commit_url',
+                  'status', 'status_class', 'status_tooltip',
+                  'passed', 'failed', 'incomplete')
         read_only_fields = ('date', 'commit_url')
 
 

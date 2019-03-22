@@ -8,6 +8,7 @@ Model data for patchsets, environments, and test results.
 import json
 import os
 import uuid
+from abc import abstractmethod
 
 from django.apps import apps
 from django.conf import settings
@@ -93,9 +94,17 @@ class PatchSetQuerySet(models.QuerySet):
         return self.exclude(tarballs=None)
 
 
-class PatchSet(models.Model, CommitURLMixin):
-    """Model a single patchset."""
+class TarballQuerySet(models.QuerySet):
+    """Provide queries specific for tarballs."""
 
+    def without_patchset(self):
+        return self.filter(patchset=None)
+
+    def with_patchset(self):
+        return self.exclude(patchset=None)
+
+
+class StatusMixin:
     statuses = {
         'Pass': {
             'class': 'success',
@@ -136,6 +145,24 @@ class PatchSet(models.Model, CommitURLMixin):
                        'not required to be tested',
         },
     }
+
+    @abstractmethod
+    def status(self):
+        """Return a string status"""
+        pass
+
+    def status_class(self):
+        """Return the background context class to be used on the dashboard."""
+        return self.statuses.get(self.status, dict()).get('class', 'warning')
+
+    def status_tooltip(self):
+        """Return the status tooltip to be used on the dashboard."""
+        return self.statuses.get(self.status, dict()).get('tooltip',
+                                                          self.status)
+
+
+class PatchSet(models.Model, CommitURLMixin, StatusMixin):
+    """Model a single patchset."""
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     is_public = models.BooleanField(default=True,
@@ -195,15 +222,6 @@ class PatchSet(models.Model, CommitURLMixin):
             return "Pending"
         else:
             return self.last_tarball.status
-
-    def status_class(self):
-        """Return the background context class to be used on the dashboard."""
-        return self.statuses.get(self.status, dict()).get('class', 'warning')
-
-    def status_tooltip(self):
-        """Return the status tooltip to be used on the dashboard."""
-        return self.statuses.get(self.status, dict()).get('tooltip',
-                                                          self.status)
 
     @cached_property
     def has_error(self):
@@ -273,7 +291,7 @@ class Branch(models.Model):
         return reverse('branch-detail', args=(self.id,))
 
 
-class Tarball(models.Model, CommitURLMixin):
+class Tarball(models.Model, CommitURLMixin, StatusMixin):
     """Model a tarball constructed by a patchset."""
 
     branch = models.ForeignKey(
@@ -297,6 +315,8 @@ class Tarball(models.Model, CommitURLMixin):
     date = models.DateTimeField(
         null=True, default=now,
         help_text='When this tarball was generated')
+
+    objects = models.Manager.from_queryset(TarballQuerySet)()
 
     def __str__(self):
         """Return string representation of tarball record."""

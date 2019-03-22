@@ -35,7 +35,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter, \
-    DjangoObjectPermissionsFilterWithAnonPerms
+    DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter
 from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
 from . import permissions
@@ -222,9 +222,9 @@ class TarballViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = TarballSerializer.setup_eager_loading(Tarball.objects.all())
     serializer_class = TarballSerializer
-    filter_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     ordering_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'date')
+    filter_class = TarballFilter
 
     @detail_route(methods=['get'])
     def download(self, request, pk):

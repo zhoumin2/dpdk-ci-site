@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Tarball {{ tarball.id }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item" aria-current="page"><a href="{% url 'tarball_list' %}">Tarballs</a></li>
+<li class="breadcrumb-item active" aria-current="page">Tarball</li>
+{% endblock %}
+
+{% block content %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ message  }}
+</div>
+{% endfor %}
+<h1>Tarball {{ tarball.id }}</h1>
+<dl>
+  <div class="row">
+    <dt class="col">Tarball Info</dt>
+    <dd class="col-10">
+      {% include "commit.html" with obj=tarball %}
+    </dd>
+  </div>
+  <div class="row">
+    <dt class="col">Date created</dt>
+    <dd class="col-10">{{ tarball.date|date:"DATETIME_FORMAT" }}</dd>
+  </div>
+  {% if tarball.tarball_url %}
+  <div class="row">
+    <dt class="col">Tarball</dt>
+    <dd class="col-10"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
+  </div>
+  {% endif %}
+  {% if tarball.patchset %}
+  <div class="row">
+    <dt class="col">Associated patch set</dt>
+    <dd class="col-10"><a href="{% url 'patchset_detail' tarball.patchset.id %}">{{ tarball.patchset.id }}</a></dd>
+  </div>
+  {% endif %}
+</dl>
+{% include 'test_status.html' with obj=tarball %}
+{% include 'environment_results.html' %}
+{% include 'disclaimers.html' %}
+{% endblock %}
+
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.1/anchor.min.js" integrity="sha256-pB/deHc9CGfFpJRjC43imB29Rse8tak+5eXqntO94ck=" crossorigin="anonymous"></script>
+<script>anchors.add('h2');</script>
+{% endblock %}

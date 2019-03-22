@@ -58,7 +58,7 @@
 <a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a>
 {% endif %}
 {% if environment.pipeline_url %}
-<form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={% url 'dashboard-detail' patchset.id %}" method="POST">
+<form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" class="btn btn-warning" value="Rerun">
 </form>

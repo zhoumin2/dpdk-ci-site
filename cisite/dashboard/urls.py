@@ -3,6 +3,12 @@ SPDX-License-Identifier: BSD-3-Clause
 Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define URL Configuration for dashboard app.
+
+For dashboard to result API mapping, use an underscore (_) instead of a
+dash (-), since the DRF uses a dash to separate words.
+For example:
+patchset-detail -> Results API URL
+patchset_detail -> Dashboard URL
 """
 
 from django.conf import settings
@@ -19,6 +25,12 @@ urlpatterns = [
                  cache_page(60 * 10)(
                      views.PatchSetList.as_view()))),
          name='dashboard'),
+    path('patchsets/',
+         cache_control(private=True)(
+             vary_on_cookie(
+                 cache_page(60 * 10)(
+                     views.PatchSetList.as_view()))),
+         name='patchset_list'),
     path('accounts/login/', views.LoginView.as_view(),
          name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(),
@@ -27,8 +39,8 @@ urlpatterns = [
          cache_control(private=True)(
              vary_on_cookie(
                  cache_page(60 * 10)(
-                     views.DashboardDetail.as_view()))),
-         name='dashboard-detail'),
+                     views.PatchSetDetail.as_view()))),
+         name='patchset_detail'),
     path('testruns/<int:tr_id>/rerun/',
          views.Rerun.as_view(),
          name='dashboard_rerun'),
@@ -62,6 +74,21 @@ urlpatterns = [
     path('row/<int:offset>/',
          views.PatchSetRow.as_view(),
          name='patchset-row'),
-    path('tarballs/<str:pk>/<str:filename>',
+    path('patchsets/row/<int:offset>/',
+         views.PatchSetRow.as_view(),
+         name='patchset-row'),
+    path('tarballs/',
+         cache_control(private=True)(
+             vary_on_cookie(
+                 cache_page(60 * 10)(
+                     views.TarballList.as_view()))),
+         name='tarball_list'),
+    path('tarballs/<int:id>/',
+         cache_control(private=True)(
+             vary_on_cookie(
+                 cache_page(60 * 10)(
+                     views.TarballDetail.as_view()))),
+         name='tarball_detail'),
+    path('tarballs/<int:pk>/<str:filename>',
          views.CIDownloadView.as_view(), name='tarball-download'),
 ]

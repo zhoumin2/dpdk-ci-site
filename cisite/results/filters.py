@@ -13,7 +13,7 @@ from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_anonymous_user
 from rest_framework.filters import DjangoObjectPermissionsFilter
 
-from .models import Environment, PatchSet, Subscription
+from .models import Environment, PatchSet, Subscription, Tarball
 
 
 class EnvironmentFilter(FilterSet):
@@ -131,3 +131,23 @@ class DjangoObjectPermissionsFilterWithAnonPerms(DjangoObjectPermissionsFilter):
         return super().filter_queryset(request, queryset, view) | \
             get_objects_for_user(get_anonymous_user(), permission, queryset,
                                  **extra)
+
+
+class TarballFilter(FilterSet):
+    has_patchset = BooleanFilter(
+        name='has_patchset', label='has patchset', method='has_patchset_filter',
+        help_text='If present, limits to tarballs with or without a corresponding patchset.')
+
+    class Meta:
+        """Set up class fields automatically."""
+
+        model = Tarball
+        fields = ('job_name', 'build_id', 'branch', 'commit_id', 'patchset')
+
+    def has_patchset_filter(self, queryset, name, value):
+        """Filter based on the value of the complete query field."""
+        assert name == 'has_patchset', 'Unexpected query field name'
+        if value:
+            return queryset.with_patchset()
+        else:
+            return queryset.without_patchset()

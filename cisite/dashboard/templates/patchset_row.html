@@ -21,7 +21,7 @@
     <td>
       <div class="d-flex justify-content-between flex-column flex-md-row">
         <div>
-          <a href="{% url 'dashboard-detail' ps.id %}">{{ ps.patchwork_range_str|safe }}</a>
+          <a href="{% url 'patchset_detail' ps.id %}">{{ ps.patchwork_range_str|safe }}</a>
           {% if ps.series.version > 1 %}
           <span class="badge badge-pill badge-secondary" title="Patch version">v{{ ps.series.version }}</span>
           {% endif %}

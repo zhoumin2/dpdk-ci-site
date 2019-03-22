@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load templatehelpers %}
+
+{% block title %}Tarballs{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item" aria-current="page"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active" aria-current="page">Tarballs</li>
+{% endblock %}
+
+{% block content %}
+<p>
+  Below is the current CI performance testing status for tarballs created
+  unrelated to submitted patches. Possible statuses are Waiting, Incomplete,
+  Possible Regression, and Pass. NIC vendors may log in to view detailed
+  performance results for their hardware.
+</p>
+{% for message in messages %}
+<div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ message  }}
+</div>
+{% endfor %}
+<div class="dropdown mb-3 d-flex justify-content-end">
+  <button type="button" class="btn btn-secondary dropdown-toggle" id="withPatchsetFilter" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Showing: {{ shown.text }} tarballs
+  </button>
+  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="withPatchsetFilter">
+    <h6 class="dropdown-header">Select which tarballs are shown</h6>
+    <a class="dropdown-item {{ shown.without|yesno:'active,,' }}" href="{% query_transform tarballs='without' %}">Without associated patch sets</a>
+    <a class="dropdown-item {{ shown.all|yesno:'active,,' }}" href="{% query_transform tarballs='all' %}">With and without associated patch sets</a>
+    <a class="dropdown-item {{ shown.with|yesno:'active,,' }}" href="{% query_transform tarballs='with' %}">With associated patch sets</a>
+  </div>
+</div>
+<div class="table-responsive-sm">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th title="Tarball result. More information can be found by hovering over a status or by seeing the about page.">Status</th>
+        {% if request.GET.tarballs == 'all' or request.GET.tarballs == 'with' %}
+        <th class="text-nowrap" title="Associated patch set">Patch set</th>
+        {% endif %}
+        <th title="Tarball created from commit">Tarball</th>
+        <th title="Tarball created date">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tarballs %}
+      <tr>
+        <td>
+          <span class="badge badge-{{ t.status_class }}" title="{{ t.status_tooltip }}">{{ t.status }}</span>
+          {% if t.incomplete > 0 or t.passed > 0 or t.failed > 0 %}
+          {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
+          <div class="text-nowrap" title="Summary of tests on all active environments: {{ t.incomplete }} incomplete, {{ t.passed }} passed, and {{ t.failed }} failed">
+            {% for i in t.incomplete_range %}
+            <span class="bg-secondary px-2 mr-1"></span>
+            {% endfor %}
+            {% for i in t.passed_range %}
+            <span class="bg-success px-2 mr-1"></span>
+            {% endfor %}
+            {% for i in t.failed_range %}
+            <span class="bg-danger px-2 mr-1"></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </td>
+        {% if request.GET.tarballs == 'all' or request.GET.tarballs == 'with' %}
+        <td>
+          {% if t.patchset %}
+          <a href="{% url 'patchset_detail' t.patchset.id %}">{{ t.patchset.id }}</a>
+          {% endif %}
+        </td>
+        {% endif %}
+        <td class="text-truncate">
+          <div class="d-flex justify-content-between">
+            <a href="{% url 'tarball_detail' t.id %}">{{ t.id }}</a>
+            <small><span class="text-muted" title="Repo/Branch tarball was created from">{{ t.branch.name }}</span></small>
+          </div>
+          <div>
+            <small><code>{{ t.commit_id }}</code></small>
+          </div>
+        </td>
+        <td class="text-nowrap">
+          {{ t.date }}
+        </td>
+        {% if request.user.is_superuser %}
+        <td class="text-nowrap">{{ t.time_to_last_test }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include 'pagination.html' %}
+{% endblock %}
+
+{% block js %}
+<script>
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})
+</script>
+{% endblock %}
