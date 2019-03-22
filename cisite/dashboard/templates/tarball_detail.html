@@ -25,10 +25,12 @@
       {% include "commit.html" with obj=tarball %}
     </dd>
   </div>
+  {% if tarball.date %}
   <div class="row">
     <dt class="col">Date created</dt>
     <dd class="col-10">{{ tarball.date|date:"DATETIME_FORMAT" }}</dd>
   </div>
+  {% endif %}
   {% if tarball.tarball_url %}
   <div class="row">
     <dt class="col">Tarball</dt>

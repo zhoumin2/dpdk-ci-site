@@ -361,13 +361,15 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
             return count
 
         date = getattr(self, 'date', None)
-        if not date:
+        if not date and self.patchset:
             date = self.patchset.completed_timestamp
 
+        query = Q(date__isnull=True)
+        if date:
+            query |= Q(date__lte=date)
+
         Environment = apps.get_model('results', 'Environment')
-        active_envs = Environment.objects.filter(
-            Q(date__isnull=True) | Q(date__lte=date),
-            successor__isnull=True)
+        active_envs = Environment.objects.filter(query, successor__isnull=True)
 
         for env in active_envs.iterator():
             tr_qs = env.all_runs.filter(tarball__id=self.id)

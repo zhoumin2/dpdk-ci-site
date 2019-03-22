@@ -83,7 +83,7 @@
           </div>
         </td>
         <td class="text-nowrap">
-          {{ t.date }}
+          {{ t.date|default_if_none:"" }}
         </td>
         {% if request.user.is_superuser %}
         <td class="text-nowrap">{{ t.time_to_last_test }}</td>
