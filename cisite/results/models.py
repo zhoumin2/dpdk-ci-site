@@ -353,7 +353,9 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         environments that were live at the time the test run was completed
         (note that the reference time is *not* the same as for Incomplete).
         If the live_since value is null, then we also ignore failures because
-        we presume that the environment is not yet live.
+        we presume that the environment is not yet live. Test results with
+        no test runs are also considered a failure, as something may have gone
+        wrong.
         """
         count = {'passed': 0, 'failed': 0, 'incomplete': 0}
 
@@ -380,7 +382,8 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
             if getattr(env, 'live_since', None) and \
                     env.live_since <= tr.timestamp:
-                if tr.results.filter(result="FAIL").exists():
+                if (tr.results.filter(result="FAIL").exists() or
+                        not tr.results.exists()):
                     count['failed'] += 1
                     continue
                 if tr.results.filter(result="PASS").exists():
