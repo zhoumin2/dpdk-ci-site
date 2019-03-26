@@ -860,6 +860,14 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                   run=run)
         self.assertEqual(self.test_ps.status, 'Pass')
 
+    def test_status_fail_none(self):
+        """Verify that status is Possible Regression when no test results."""
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        create_test_run(self.env2, tarball=run.tarball)
+        self.assertEqual(self.test_ps.status, 'Possible Regression')
+
 
 class OwnerTestCase(test.TestCase):
     """Test the owner property of test result models."""
