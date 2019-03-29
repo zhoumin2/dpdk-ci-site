@@ -144,6 +144,11 @@ class StatusMixin:
             'tooltip': 'The patch series is not active in Patchwork or is '
                        'not required to be tested',
         },
+        'Indeterminate': {
+            'class': 'primary',
+            'tooltip': 'A result could not be determined and could mean '
+                       'that the test did not run to completion',
+        },
     }
 
     @abstractmethod
@@ -334,6 +339,9 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         if self.failed > 0:
             return "Possible Regression"
 
+        if self.indeterminate > 0:
+            return "Indeterminate"
+
         return "Pass"
 
     def get_absolute_url(self):
@@ -357,7 +365,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         no test runs are also considered a failure, as something may have gone
         wrong.
         """
-        count = {'passed': 0, 'failed': 0, 'incomplete': 0}
+        count = {'passed': 0, 'failed': 0, 'incomplete': 0, 'indeterminate': 0}
 
         if not self.runs.exists():
             return count
@@ -382,12 +390,12 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
             if getattr(env, 'live_since', None) and \
                     env.live_since <= tr.timestamp:
-                if (tr.results.filter(result="FAIL").exists() or
-                        not tr.results.exists()):
+                if tr.results.filter(result="FAIL").exists():
                     count['failed'] += 1
-                    continue
-                if tr.results.filter(result="PASS").exists():
+                elif tr.results.filter(result="PASS").exists():
                     count['passed'] += 1
+                else:
+                    count['indeterminate'] += 1
         return count
 
     @cached_property
@@ -404,6 +412,11 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
     def incomplete(self):
         """Return the number of incomplete environments."""
         return self.get_pass_fail_incomplete['incomplete']
+
+    @cached_property
+    def indeterminate(self):
+        """Return the number of indeterminate environments."""
+        return self.get_pass_fail_incomplete['indeterminate']
 
 
 def validate_contact_list(value):
