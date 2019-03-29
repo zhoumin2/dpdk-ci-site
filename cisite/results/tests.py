@@ -860,12 +860,27 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                   run=run)
         self.assertEqual(self.test_ps.status, 'Pass')
 
-    def test_status_fail_none(self):
-        """Verify that status is Possible Regression when no test results."""
+    def test_status_none(self):
+        """Verify that status is Indeterminate when no test results."""
         run = create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         create_test_run(self.env2, tarball=run.tarball)
+        self.assertEqual(self.test_ps.status, 'Indeterminate')
+
+    def test_status_fail_none(self):
+        """
+        Verify that status is Possible Regression when one environment fails
+        and one environment has no test results.
+        """
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        create_test_run(self.env2, tarball=run.tarball)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(result='FAIL', difference=-1.576,
+                                  measurement=self.env2.measurements.first(),
+                                  run=run)
         self.assertEqual(self.test_ps.status, 'Possible Regression')
 
 
