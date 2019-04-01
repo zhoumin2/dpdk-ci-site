@@ -456,9 +456,6 @@ class ContactPolicy(models.Model):
     class Meta:
         """Define metadata for contact policy model."""
 
-        permissions = (
-            ('view_contactpolicy', 'View contact policy'),
-        )
         verbose_name_plural = "contact policies"
 
     def clone(self, environment):
@@ -575,10 +572,6 @@ class Environment(models.Model):
 
     class Meta:
         """Specify how to set up environments."""
-
-        permissions = (
-            ('view_environment', 'View environment'),
-        )
 
     def clone(self):
         """Create and return an inactive copy of this object.
@@ -733,10 +726,6 @@ class Measurement(models.Model):
     class Meta:
         """Specify how to set up measurements."""
 
-        permissions = (
-            ('view_measurement', 'View measurement'),
-        )
-
     def __str__(self):
         """Return a string describing the measurement."""
         if get_anonymous_user().has_perm('view_measurement', self):
@@ -838,10 +827,6 @@ class TestRun(models.Model, CommitURLMixin):
     class Meta:
         """Specify how to set up test runs."""
 
-        permissions = (
-            ('view_testrun', 'View test run'),
-        )
-
     def __str__(self):
         """Return the patchset and timestamp as a string."""
         if get_anonymous_user().has_perm('view_testrun', self):
@@ -900,10 +885,6 @@ class TestResult(models.Model):
 
     class Meta:
         """Specify how to set up test results."""
-
-        permissions = (
-            ('view_testresult', 'View test result'),
-        )
 
     def __str__(self):
         """Return a string briefly describing the test result.

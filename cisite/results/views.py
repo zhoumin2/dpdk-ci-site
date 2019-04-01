@@ -27,7 +27,7 @@ from guardian.shortcuts import get_perms
 from guardian.utils import get_anonymous_user
 from private_storage.views import PrivateStorageDetailView
 from rest_framework.filters import OrderingFilter
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.parsers import JSONParser, FormParser
@@ -175,8 +175,8 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
     ordering_fields = ('apply_error', 'id', 'is_public', 'tarballs',
                        'completed_timestamp', 'series_id', 'build_error')
 
-    @detail_route(methods=['post'], url_name='rebuild',
-                  url_path='rebuild/(?P<branch>.*)')
+    @action(methods=['post'], detail=True, url_name='rebuild',
+            url_path='rebuild/(?P<branch>.*)')
     def rebuild(self, request, pk, branch):
         """Rebuild a patchset."""
         ps = self.get_object()
@@ -226,7 +226,7 @@ class TarballViewSet(viewsets.ModelViewSet):
     ordering_fields = ('job_name', 'build_id', 'branch', 'commit_id', 'date')
     filter_class = TarballFilter
 
-    @detail_route(methods=['get'])
+    @action(methods=['get'], detail=True)
     def download(self, request, pk):
         """Download the artifact using the Jenkins user."""
         tarball = self.get_object()
@@ -250,7 +250,7 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnvironmentSerializer
     filter_class = EnvironmentFilter
 
-    @detail_route(methods=['post'])
+    @action(methods=['post'], detail=True)
     def clone(self, request, pk=None):
         """Create a clone of this object.
 
@@ -292,7 +292,7 @@ class TestRunViewSet(viewsets.ModelViewSet):
     serializer_class = TestRunSerializer
     parser_classes = (JSONMultiPartParser,)
 
-    @detail_route(methods=['post'])
+    @action(methods=['post'], detail=True)
     def rerun(self, request, pk):
         """Rerun a test run."""
         tr = self.get_object()

@@ -20,8 +20,8 @@ class EnvironmentFilter(FilterSet):
     """Supply an "active" filter for environments."""
 
     active = BooleanFilter(
-        name='successor', label='active', lookup_expr='isnull',
-        help_text='If present, limits to active (if true) or inactive (if false) patchsets.')
+        field_name='successor', label='active', lookup_expr='isnull',
+        help_text='If present, limits to active (if true) or inactive (if false) environments.')
 
     class Meta:
         """Set up model association."""
@@ -48,11 +48,11 @@ class PatchSetFilter(FilterSet):
     """
 
     has_tarball = BooleanFilter(
-        name='has_tarball', label='has tarball', method='has_tarball_filter',
+        field_name='has_tarball', label='has tarball', method='has_tarball_filter',
         help_text='If present, limits to patchsets with or without a corresponding tarball built.')
 
     has_error = BooleanFilter(
-        name='has_error', label='has error', method='has_error_filter',
+        field_name='has_error', label='has error', method='has_error_filter',
         help_text='If present, limits to patchsets with apply errors or build errors.')
 
     # Django-filters does not allow isnull checks on integer filters.
@@ -97,7 +97,7 @@ class SubscriptionFilter(FilterSet):
     """
 
     mine = BooleanFilter(
-        name='mine', label='mine', method='mine_filter',
+        field_name='mine', label='mine', method='mine_filter',
         help_text='If present, limits to only your subscriptions.')
 
     class Meta:
@@ -135,7 +135,7 @@ class DjangoObjectPermissionsFilterWithAnonPerms(DjangoObjectPermissionsFilter):
 
 class TarballFilter(FilterSet):
     has_patchset = BooleanFilter(
-        name='has_patchset', label='has patchset', method='has_patchset_filter',
+        field_name='has_patchset', label='has patchset', method='has_patchset_filter',
         help_text='If present, limits to tarballs with or without a corresponding patchset.')
 
     class Meta:

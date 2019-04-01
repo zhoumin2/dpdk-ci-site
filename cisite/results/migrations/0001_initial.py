@@ -25,7 +25,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'verbose_name_plural': 'contact policies',
-                'permissions': (('view_contactpolicy', 'View contact policy'),),
             },
         ),
         migrations.CreateModel(
@@ -60,9 +59,6 @@ class Migration(migrations.Migration):
                 ('owner', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='auth.Group')),
                 ('predecessor', models.OneToOneField(blank=True, help_text='Environment that this was cloned from', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='successor', to='results.Environment')),
             ],
-            options={
-                'permissions': (('view_environment', 'View environment'),),
-            },
         ),
         migrations.CreateModel(
             name='Measurement',
@@ -73,9 +69,6 @@ class Migration(migrations.Migration):
                 ('higher_is_better', models.BooleanField(help_text='True if higher numbers are better, e.g., throughput; False otherwise, e.g., latency')),
                 ('environment', models.ForeignKey(help_text='Environment that measurement applies to', on_delete=django.db.models.deletion.CASCADE, related_name='measurements', to='results.Environment')),
             ],
-            options={
-                'permissions': (('view_measurement', 'View measurement'),),
-            },
         ),
         migrations.CreateModel(
             name='Parameter',
@@ -134,9 +127,6 @@ class Migration(migrations.Migration):
                 ('expected_value', models.FloatField(blank=True, help_text='Value of measurement expected by vendor', null=True)),
                 ('measurement', models.ForeignKey(help_text='Vendor expected measurement that this result corresponds to', on_delete=django.db.models.deletion.CASCADE, to='results.Measurement')),
             ],
-            options={
-                'permissions': (('view_testresult', 'View test result'),),
-            },
         ),
         migrations.CreateModel(
             name='TestRun',
@@ -147,9 +137,6 @@ class Migration(migrations.Migration):
                 ('environment', models.ForeignKey(help_text='Environment that this test run was executed on', on_delete=django.db.models.deletion.CASCADE, related_name='runs', to='results.Environment')),
                 ('tarball', models.ForeignKey(help_text='Tarball used for test run', on_delete=django.db.models.deletion.CASCADE, related_name='runs', to='results.Tarball')),
             ],
-            options={
-                'permissions': (('view_testrun', 'View test run'),),
-            },
         ),
         migrations.AddField(
             model_name='testresult',
