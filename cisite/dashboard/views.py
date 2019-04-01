@@ -507,13 +507,11 @@ class PatchSetDetail(Tarball, PatchSet):
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      f'patchsets/{self.kwargs["id"]}/'))
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
-                print("RAISED1")
                 raise Http404
             context['patchset'] = api_resp.json()
             # since we now rely on series information, raise a 404 if there is
             # no series attached
             if not context['patchset']['series_id']:
-                print("RAISED2")
                 raise Http404
 
             series = pw_get(context['patchset']['pw_series_url'])
@@ -525,7 +523,7 @@ class PatchSetDetail(Tarball, PatchSet):
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
             context['patchset']['submitter'] = self.get_patchset_submitter(series)
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
-                             params={'active': 'true'})
+                             params={'active': True})
             if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
                                         HTTPStatus.FORBIDDEN]:
                 envs = dict()
@@ -621,7 +619,7 @@ class TarballDetail(Tarball):
             context['tarball'] = api_resp.json()
             self.add_status_ranges(context['tarball'])
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
-                             params={'active': 'true'})
+                             params={'active': True})
             if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
                                         HTTPStatus.FORBIDDEN]:
                 envs = dict()
@@ -691,17 +689,15 @@ class Subscriptions(LoginRequiredMixin, NextToHomeMixin, BaseDashboardView):
                                      'subscriptions/?mine=true'))
             api_resp.raise_for_status()
             subscriptions = api_resp.json()
-            api_resp = s.get(urljoin(settings.API_BASE_URL,
-                                     'environments/'))
+            api_resp = s.get(
+                urljoin(settings.API_BASE_URL, 'environments/'),
+                params={'active': True})
             environments = api_resp.json()
 
         # [{"environment": Foo, "subscription": None}]
         env_sub_pairs = []
 
         for env in environments['results']:
-            # don't show old environments
-            if env['successor'] is not None:
-                continue
             # grab first subscription that contains the current environment
             sub = next(filter(lambda sub: sub['environment'] == env['url'],
                               subscriptions['results']), None)
