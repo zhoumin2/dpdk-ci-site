@@ -227,7 +227,10 @@ class BaseDashboardView(TemplateView):
         patchset['failed_range'] = range(patchset['failed'])
 
     def set_branch(self, item, session):
-        """Set and cache branch on object."""
+        """Set and cache branch on object.
+
+        Typically used from commit linking.
+        """
         if not item['branch']:
             return
         if item['branch'] in self.branches:
@@ -541,9 +544,12 @@ class PatchSetDetail(Tarball, PatchSet):
                 api_resp = s.get(context['patchset']['build_log'])
                 api_resp.raise_for_status()
                 context['patchset']['build_log'] = api_resp.text
+                # normally gathered from tarball, but since there is none,
+                # grab branch from patchset
                 self.set_branch(context['patchset'], s)
 
-            if context['patchset']['has_error']:
+            # Used for rebuilds
+            if self.request.user.is_authenticated:
                 api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
                 api_resp.raise_for_status()
                 context['branches'] = api_resp.json()['results']
