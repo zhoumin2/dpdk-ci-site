@@ -84,3 +84,35 @@ If doing Javascript development, it will be helpful to have the scripts auto tra
 ```
 $ npm run dev
 ```
+
+## Testing
+
+```sh
+./manage.py test --settings cisite.settings_test
+```
+
+## Docker
+
+If you prefer to use Docker instead, run the commands below:
+
+### Development with Docker
+
+```sh
+docker-compose up dev_migrate
+docker-compose up dev
+```
+
+### Testing with Docker
+
+```sh
+docker-compose up test_migrate
+docker-compose up test_style
+docker-compose up test
+```
+
+### Production with Docker
+
+```sh
+docker-compose up build
+# WIP: Run with local Apache/SQL/Memcached
+```
