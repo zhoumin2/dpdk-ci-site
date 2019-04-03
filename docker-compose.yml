@@ -1,0 +1,119 @@
+version: '3.4'
+
+services:
+
+##
+# Building
+##
+
+  # Build dev image
+  cisite_dev:
+    build:
+      context: .
+      target: dev
+    image: cisite_dev
+
+  # Build prod image
+  cisite_prod:
+    build:
+      context: .
+      target: prod
+    image: cisite_prod
+
+##
+# Production
+# WIP - Prod is ran with local Apache WSGI
+##
+
+  # Build prod
+  build:
+    image: cisite_prod
+    command: >
+      sh -c "./manage.py migrate --noinput &&
+             ./manage.py collectstatic --noinput &&
+             npm --prefix .. install &&
+             npm --prefix .. run build"
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_prod
+
+##
+# Development
+##
+
+  # Migrate dev
+  dev_migrate:
+    image: cisite_dev
+    command: ./manage.py migrate --noinput
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
+
+  # Build dev
+  dev_build:
+    image: cisite_dev
+    command: >
+      sh -c "npm --prefix .. install &&
+             npm --prefix .. run build"
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
+
+  # Run dev server
+  dev:
+    image: cisite_dev
+    command: >
+      sh -c "npm --prefix .. run dev &
+             ./manage.py runserver 0:8000"
+    volumes:
+      - .:/workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      - cisite_dev
+
+##
+# Testing
+##
+
+  # Migrate test (for dev and CI)
+  test_migrate:
+    image: cisite_dev
+    command: ./manage.py migrate --noinput --settings cisite.settings_test
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
+
+  # Test the style (for dev and CI)
+  test_style:
+    image: cisite_dev
+    command: pre-commit run --all-files
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
+
+  # Run tests (for dev and CI)
+  test:
+    image: cisite_dev
+    command:
+      ./manage.py test --noinput --settings cisite.settings_test
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
+
+  # Run tests with coverage (for dev and CI, but mostly for CI)
+  test_coverage:
+    image: cisite_dev
+    command: >
+      sh -c "coverage run ./manage.py test --noinput --settings cisite.settings_test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner &&
+             coverage html --include=results/\*.py --omit=results/migrations/\*.py"
+    volumes:
+      - .:/workspace
+    depends_on:
+      - cisite_dev
