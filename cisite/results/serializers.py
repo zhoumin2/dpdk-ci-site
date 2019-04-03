@@ -339,6 +339,12 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ('result_class',)
 
 
+class TestResultSerializerGet(TestResultSerializer):
+    """Serialize test result objects."""
+
+    measurement = MeasurementSerializer()
+
+
 class TestRunSerializer(serializers.HyperlinkedModelSerializer,
                         EagerLoadingMixin):
     """Serialize test run objects."""
@@ -393,6 +399,12 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         for result in results:
             TestResult.objects.create(run=run, **result)
         return run
+
+
+class TestRunSerializerGet(TestRunSerializer):
+    """Serialize test run objects."""
+
+    results = TestResultSerializerGet(many=True, allow_empty=True)
 
 
 class BranchSerializer(serializers.HyperlinkedModelSerializer):

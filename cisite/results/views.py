@@ -43,7 +43,7 @@ from .parsers import JSONMultiPartParser
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
-    TestCaseSerializer, TestRunSerializer, UserSerializer
+    TestCaseSerializer, TestRunSerializer, UserSerializer, TestRunSerializerGet
 from shared.util import requests_to_response
 
 logger = getLogger('results')
@@ -289,8 +289,22 @@ class TestRunViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoObjectPermissionsFilterWithAnonPerms,)
     permission_classes = (permissions.TestRunPermission,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
-    serializer_class = TestRunSerializer
     parser_classes = (JSONMultiPartParser,)
+
+    def get_serializer_class(self):
+        """
+        When running GET, it should also serialize the measurement. This avoids
+        clients requiring to send another x requests per result. This doesn't
+        add much to the existing serialization time, while saving lots of time
+        for clients by avoiding sending excess requests.
+
+        However, when running POST/PUT/etc, clients shouldn't have to also
+        populate the whole measurement, just set a URL to an existing
+        measurement.
+        """
+        if self.request.method == 'GET':
+            return TestRunSerializerGet
+        return TestRunSerializer
 
     @action(methods=['post'], detail=True)
     def rerun(self, request, pk):

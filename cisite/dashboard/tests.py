@@ -25,6 +25,30 @@ from .util import ParseIPAChangePassword
 class BaseTestCase(StaticLiveServerTestCase):
     """Base class for all dashboard test cases."""
 
+    _measurement = {
+        'url': urljoin(settings.API_BASE_URL, 'measurements/1/'),
+        'id': 1,
+        'name': 'throughput',
+        'unit': 'Mpps',
+        'higher_is_better': True,
+        'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
+        'parameters': [
+            {
+                'name': 'frame_size',
+                'id': 1,
+                'value': 64,
+                'unit': 'bytes'
+            },
+            {
+                'name': 'txd/rxd',
+                'id': 2,
+                'value': 128,
+                'unit': 'descriptors'
+            }
+        ],
+        'testcase': urljoin(settings.API_BASE_URL, 'testcases/1/')
+    }
+
     def tearDown(self):
         """Clear cache to fix an IntegrityError bug."""
         ContentType.objects.clear_cache()
@@ -146,35 +170,12 @@ class BaseTestCase(StaticLiveServerTestCase):
     def setup_mock_authenticated(self, m):
         """Set up the mock for logged in users."""
         self.setup_mock_common(m)
-        measurement = {
-            'url': urljoin(settings.API_BASE_URL, 'measurements/1/'),
-            'id': 1,
-            'name': 'throughput',
-            'unit': 'Mpps',
-            'higher_is_better': True,
-            'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
-            'parameters': [
-                {
-                    'name': 'frame_size',
-                    'id': 1,
-                    'value': 64,
-                    'unit': 'bytes'
-                },
-                {
-                    'name': 'txd/rxd',
-                    'id': 2,
-                    'value': 128,
-                    'unit': 'descriptors'
-                }
-            ],
-            'testcase': urljoin(settings.API_BASE_URL, 'testcases/1/')
-        }
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'measurements/1/'),
-            json=measurement)
+            json=self._measurement)
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'measurements/2/'),
-            json=measurement)
+            json=self._measurement)
 
     def setup_mock_test_runs(self, m, fail=False):
         """Call `setup_mock_authenticated` before this."""
@@ -191,7 +192,7 @@ class BaseTestCase(StaticLiveServerTestCase):
                         'result': 'PASS',
                         'difference': -0.185655863091204,
                         'expected_value': None,
-                        'measurement': urljoin(settings.API_BASE_URL, 'measurements/1/'),
+                        'measurement': self._measurement,
                         'result_class': 'success'
                     },
                     {
@@ -199,7 +200,7 @@ class BaseTestCase(StaticLiveServerTestCase):
                         'result': 'FAIL' if fail else 'PASS',
                         'difference': -0.664055231513893,
                         'expected_value': None,
-                        'measurement': urljoin(settings.API_BASE_URL, 'measurements/2/'),
+                        'measurement': self._measurement,
                         'result_class': 'success'
                     },
                 ],
