@@ -185,8 +185,9 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
-    # cache branches
-    branches = {}
+    # Request only cache (in regards to a single dashboard page load).
+    # The cache gets reset per request instead of lasting through the session.
+    request_cache = {}
 
     def add_static_context_data(self, context):
         """Add static context data included with every dashboard view.
@@ -207,6 +208,10 @@ class BaseDashboardView(TemplateView):
     def get(self, *args, **kwargs):
         """Handle GET requests to the dashboard."""
 
+        # Make sure the cache is reset, since it's used per request,
+        # not per session
+        self.request_cache = {}
+
         try:
             return super().get(*args, **kwargs)
         except requests.exceptions.ConnectionError:
@@ -219,6 +224,12 @@ class BaseDashboardView(TemplateView):
                                  'while rendering 503 view')
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=HTTPStatus.SERVICE_UNAVAILABLE)
+        finally:
+            for key in self.request_cache:
+                logger.debug(f'{key}: {self.request_cache[key]["hits"]} '
+                             'cache hit(s)')
+            # Save some memory
+            self.request_cache = {}
 
     def add_status_ranges(self, patchset):
         """Pass in the patchset to apply a range."""
@@ -226,21 +237,34 @@ class BaseDashboardView(TemplateView):
         patchset['passed_range'] = range(patchset['passed'])
         patchset['failed_range'] = range(patchset['failed'])
 
-    def set_branch(self, item, session):
-        """Set and cache branch on object.
-
-        Typically used from commit linking.
-        """
-        if not item['branch']:
-            return
-        if item['branch'] in self.branches:
-            branch = self.branches[item['branch']]
+    def get_cache_request(self, key, session):
+        """Get and cache the the return the response json of a GET request."""
+        if key in self.request_cache:
+            cache = self.request_cache[key]
+            cache['hits'] += 1
+            val = cache['value']
         else:
-            resp = session.get(item['branch'])
+            resp = session.get(key)
             resp.raise_for_status()
-            branch = resp.json()
-            self.branches[item['branch']] = branch
-        item['branch'] = branch
+            val = resp.json()
+            self.request_cache[key] = {'hits': 1, 'value': val}
+        return val
+
+    def set_cache_request(self, item, session, key):
+        """Set and cache the the return of a GET request.
+
+        This uses the value of the item[key] as the key for the cache and
+        replaces the value with the result of the request.
+
+        For example:
+        `item = {'branch': 'https://example.com/branch/1/'}`
+        `set_cache_request(item, ..., 'branch')`
+        Will transform into:
+        `item = {'branch': {'name': 'abcd', 'id': 1}}`
+        """
+        if not item[key]:
+            return
+        item[key] = self.get_cache_request(item[key], session)
 
 
 class PatchSet(BaseDashboardView):
@@ -369,7 +393,7 @@ class Tarball(BaseDashboardView):
         if context['tarball'].get('date'):
             context['tarball']['date'] = parse_datetime(context['tarball']['date'])
 
-        self.set_branch(context['tarball'], s)
+        self.set_cache_request(context['tarball'], s, 'branch')
         self.set_ci_download_url(context['tarball'])
         context['environments'] = {x: None for x in envs}
 
@@ -379,7 +403,7 @@ class Tarball(BaseDashboardView):
                 continue
 
             run = resp.json()
-            self.set_branch(run, s)
+            self.set_cache_request(run, s, 'branch')
 
             if run['log_upload_file']:
                 run['log_upload_file'] = build_upload_url(
@@ -390,20 +414,13 @@ class Tarball(BaseDashboardView):
             run['testcases'] = {}
 
             for result in run['results']:
-                resp = s.get(result['measurement'])
-                # in case the user does not have permission
-                if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                    continue
-
-                measurement = resp.json()
-                self.set_parameter_keys(measurement)
-                result['measurement'] = measurement
+                self.set_parameter_keys(result['measurement'])
                 if result['result'].upper() == 'FAIL':
                     run['failure_count'] += 1
 
                 tc = result['measurement']['testcase']
                 if not run['testcases'].get(tc):
-                    run['testcases'][tc] = s.get(tc).json()
+                    run['testcases'][tc] = self.get_cache_request(tc, s)
                     run['testcases'][tc]['results'] = []
 
                 run['testcases'][tc]['results'].append(result)
@@ -435,7 +452,7 @@ class Tarball(BaseDashboardView):
             # if the user is not in the owning group, then don't show
             # certain elements, such as links (since they won't have access
             # anyways)
-            group = s.get(env['owner']).json()
+            group = self.get_cache_request(env['owner'], s)
             user = self.request.user
             show_elements = (user.groups.filter(name=group['name']).exists() or
                              user.is_staff)
@@ -546,7 +563,7 @@ class PatchSetDetail(Tarball, PatchSet):
                 context['patchset']['build_log'] = api_resp.text
                 # normally gathered from tarball, but since there is none,
                 # grab branch from patchset
-                self.set_branch(context['patchset'], s)
+                self.set_cache_request(context['patchset'], s, 'branch')
 
             # Used for rebuilds
             if self.request.user.is_authenticated:
@@ -593,7 +610,7 @@ class TarballList(Tarball):
 
             context['tarballs'] = resp_json['results']
             for tarball in context['tarballs']:
-                self.set_branch(tarball, s)
+                self.set_cache_request(tarball, s, 'branch')
                 self.add_status_ranges(tarball)
 
                 if tarball['date']:
