@@ -1,15 +1,7 @@
 {% extends "preferences_base.html" %}
 {% load static %}
 
-{% block title %}Subscriptions{% endblock %}
-
-{% block breadcrumb_preference %}
-  <li class="breadcrumb-item"><a href="{% url 'preferences' %}">Preferences</a></li>
-  <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
-{% endblock %}
-
 {% block preference %}
-  <h2>{{ title }}</h2>
   <div class="card">
     <ul class="list-group list-group-flush">
       {% for env_sub in env_sub_pairs %}
