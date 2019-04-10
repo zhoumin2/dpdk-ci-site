@@ -21,39 +21,41 @@
     <dd class="col-10">{{ r.failure_count }}/{{ r.results|length }}</dd>
   </div>
 </dl>
-{% for tc in r.testcases.values %}
-<h4>Test Case: <a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
 <div class="table-responsive-sm">
   <table class="table table-hover">
     <thead>
       <tr>
         <th>Result</th>
-        <th>{{ tc.results.0.measurement.parameters.frame_size.name }}
-        ({{ tc.results.0.measurement.parameters.frame_size.unit }})</th>
-        <th>{{ tc.results.0.measurement.parameters.txd_rxd.name }}
-        ({{ tc.results.0.measurement.parameters.txd_rxd.unit }})</th>
-        <th>{{ tc.results.0.measurement.name }} Difference
-        ({{ tc.results.0.measurement.unit }})</th>
+        {% for parameter in r.results.0.measurement.parameters.values %}
+          <th>
+            {{ parameter.name }}
+            ({{ parameter.unit }})
+          </th>
+        {% endfor %}
+        <th>
+          {{ r.results.0.measurement.name }} Difference
+          ({{ r.results.0.measurement.unit }})
+        </th>
       </tr>
     </thead>
     <tbody>
-      {% for item in tc.results %}
-      {% if not environment.live_since or environment.live_since > r.timestamp %}
-      <tr class="table-secondary" title="This run does not affect the overall result above.">
-        <td class="text-{{ item.result_class }}">{{ item.result }}</td>
-      {% else %}
-      <tr class="table-{{ item.result_class }}">
-        <td>{{ item.result }}</td>
-      {% endif %}
-        <td>{{ item.measurement.parameters.frame_size.value }}</td>
-        <td>{{ item.measurement.parameters.txd_rxd.value }}</td>
-        <td>{{ item.difference|floatformat:"-5" }}</td>
-      </tr>
+      {% for item in r.results %}
+        {% if not environment.live_since or environment.live_since > r.timestamp %}
+          <tr class="table-secondary" title="This run does not affect the overall result above.">
+            <td class="text-{{ item.result_class }}">{{ item.result }}</td>
+        {% else %}
+          <tr class="table-{{ item.result_class }}">
+            <td>{{ item.result }}</td>
+        {% endif %}
+          {% for parameter in item.measurement.parameters.values %}
+            <td>{{ parameter.value }}</td>
+          {% endfor %}
+          <td>{{ item.difference|floatformat:"-5" }}</td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-{% endfor %}
 {% if r.log_upload_file %}
 <a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a>
 {% endif %}

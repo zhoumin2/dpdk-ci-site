@@ -29,34 +29,47 @@
         <dd class="col-10">x86_64-native-linuxapp-gcc</dd>
       </div>
     </dl>
-    {% if environment.runs|length > 0 %}
-    <h3>Detailed performance results</h3>
-    {% endif %}
-    {% if environment.runs|length > 1 %}
-    <ul class="nav nav-tabs">
-      {% for r in environment.runs %}
-      <li class="nav-item">
-        <a class="nav-link{{ forloop.first|yesno:' active,' }}" data-toggle="tab" href="#run-{{ r.id }}" role="tab" aria-controls="run-{{ r.id }}" aria-selected="{{ forloop.first|lower }}">
-          Run {{ forloop.revcounter }}
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-    <div class="tab-content">
-      {% for r in environment.runs %}
-      <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
-        {% include "test_run.html" %}
-      </div>
-      {% endfor %}
-    </div>
-    {% elif environment.runs|length == 1 %}
-    {% with environment.runs|first as r %}
-    {% include "test_run.html" %}
-    {% endwith %}
-    {% else %}
-    <p>There are not yet any runs for this patch set.</p>
-    {% endif %}
-    {% endif %}
+    {% for tc_url, tc in environment.testcases.items %}
+      {% if tc.runs|length > 1 %}
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="d-flex flex-column justify-content-lg-between flex-lg-row">
+              <h4 class="mb-lg-0"><a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
+              <ul class="nav nav-tabs card-header-tabs ml-2">
+                {% for r in tc.runs %}
+                <li class="nav-item">
+                  <a class="nav-link{{ forloop.first|yesno:' active,' }}" data-toggle="tab" href="#run-{{ r.id }}" role="tab" aria-controls="run-{{ r.id }}" aria-selected="{{ forloop.first|lower }}">
+                    Run {{ forloop.revcounter }}
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tab-content">
+              {% for r in tc.runs %}
+              <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
+                {% include "test_run.html" %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% elif tc.runs|length == 1 %}
+        <div class="card mb-4">
+          <h4 class="card-header"><a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
+          <div class="card-body">
+            {% with tc.runs|first as r %}
+              {% include "test_run.html" %}
+            {% endwith %}
+          </div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <p>There are not yet any runs for this patch set.</p>
+    {% endfor %}
+  {% endif %}
   </div>
 </div>
 {% empty %}
