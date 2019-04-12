@@ -4,6 +4,7 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define dashboard views.
 """
+import copy
 import json
 import math
 import os
@@ -390,58 +391,41 @@ class PatchSetRow(PatchSet):
 
 
 class Tarball(BaseDashboardView):
-    def populate_tarball_context(self, context, s, envs):
-        if context['tarball'].get('date'):
-            context['tarball']['date'] = parse_datetime(context['tarball']['date'])
+    def show_elements(self, s, owner):
+        # if the user is not in the owning group, then don't show
+        # certain elements, such as links (since they won't have access
+        # anyways)
+        group = self.get_cache_request(owner, s)
+        user = self.request.user
+        return user.groups.filter(name=group['name']).exists() or user.is_staff
 
-        self.set_cache_request(context['tarball'], s, 'branch')
-        self.set_ci_download_url(context['tarball'])
-        context['environments'] = {x: None for x in envs}
+    def populate_envs(self, s, runs):
+        """
+        Update environment dict based on the environments in the runs
+        """
+        # Populate active environments
+        api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                         params={'active': True})
+        if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
+                                    HTTPStatus.FORBIDDEN]:
+            envs = {}
+        else:
+            api_resp.raise_for_status()
+            envs = api_resp.json()['results']
+            envs = {x['url']: x for x in envs}
 
-        for url in context['tarball']['runs']:
-            resp = s.get(url)
-            if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                continue
+        # Populate inactive environments from old runs
+        for run_url, run in runs.items():
+            env = run['environment']
 
-            run = resp.json()
-            self.set_cache_request(run, s, 'branch')
+            # hide download artifact button to invalid users
+            if not self.show_elements(s, env['owner']):
+                run['log_upload_file'] = None
 
-            if run['log_upload_file']:
-                run['log_upload_file'] = build_upload_url(
-                    self.request, run['log_upload_file'])
+            envs[env['url']] = env
 
-            run['timestamp'] = parse_datetime(run['timestamp'])
-            run['failure_count'] = 0
-            run['testcases'] = {}
-
-            for result in run['results']:
-                self.set_parameter_keys(result['measurement'])
-                if result['result'].upper() == 'FAIL':
-                    run['failure_count'] += 1
-
-                tc = result['measurement']['testcase']
-                if not run['testcases'].get(tc):
-                    run['testcases'][tc] = self.get_cache_request(tc, s)
-                    run['testcases'][tc]['results'] = []
-
-                run['testcases'][tc]['results'].append(result)
-
-            # Get the latest version of the environment, since previous
-            # versions won't show up in the list of active environments
-            # that we obtained above
-            env_url = run['environment']
-            resp = s.get(env_url)
-            # in case the user does not have permission
-            if resp.status_code >= HTTPStatus.BAD_REQUEST:
-                continue
-
-            env = resp.json()
-
-            while (env_url not in context['environments'].keys() and
-                   env.get('successor')):
-                env_url = env['successor']
-                env = s.get(env_url).json()
-
+        # Update environment data
+        for env_url, env in envs.items():
             if env.get('live_since'):
                 env['live_since'] = parse_datetime(env['live_since'])
 
@@ -450,29 +434,99 @@ class Tarball(BaseDashboardView):
                 env['hardware_description'] = build_upload_url(
                     self.request, env['hardware_description'])
 
-            # if the user is not in the owning group, then don't show
-            # certain elements, such as links (since they won't have access
-            # anyways)
-            group = self.get_cache_request(env['owner'], s)
-            user = self.request.user
-            show_elements = (user.groups.filter(name=group['name']).exists() or
-                             user.is_staff)
+            # hide rerun button to invalid users
+            if not self.show_elements(s, env['owner']):
+                env['pipeline_url'] = None
 
-            # avoid duplicate replacements since we try to get the
-            # latest environment multiple times inside the test run
-            # loop
-            if not context['environments'][env_url]:
-                env['runs'] = []
-                # hide rerun button to invalid users
-                if not show_elements:
-                    env['pipeline_url'] = None
-                context['environments'][env_url] = env
+        return envs
 
+    def populate_runs(self, s, run_urls):
+        """
+        Return populated runs list along with an environment
+
+        The environment needs to be updated after this is called.
+        """
+        runs = {}
+
+        for run_url in run_urls:
+            resp = s.get(run_url)
+            if resp.status_code >= HTTPStatus.BAD_REQUEST:
+                continue
+            run = resp.json()
+
+            self.set_cache_request(run, s, 'branch')
+
+            if run['log_upload_file']:
+                run['log_upload_file'] = build_upload_url(
+                    self.request, run['log_upload_file'])
+
+            run['timestamp'] = parse_datetime(run['timestamp'])
+            run['failure_count'] = 0
+
+            for result in run['results']:
+                self.set_parameter_keys(result['measurement'])
+                if result['result'].upper() == 'FAIL':
+                    run['failure_count'] += 1
+
+            run['environment'] = s.get(run['environment']).json()
             # hide download artifact button to invalid users
-            if not show_elements:
+            if not self.show_elements(s, run['environment']['owner']):
                 run['log_upload_file'] = None
 
-            context['environments'][env_url]['runs'].append(run)
+            runs[run_url] = run
+
+        return runs
+
+    def populate_test_cases(self, s, runs):
+        # for each test case, add all runs
+        test_cases = {}
+        for run_url, run in runs.items():
+            if run['results']:
+                # Assume that there is only one testcase per run
+                tc = run['results'][0]['measurement']['testcase']
+                if tc not in test_cases:
+                    test_cases[tc] = {}
+                    test_cases[tc]['testcase'] = s.get(tc).json()
+                    test_cases[tc]['runs'] = []
+
+                test_cases[tc]['runs'].append(run)
+
+        return test_cases
+
+    def populate_tarball_context(self, context, s):
+        if context['tarball'].get('date'):
+            context['tarball']['date'] = parse_datetime(context['tarball']['date'])
+
+        self.set_cache_request(context['tarball'], s, 'branch')
+        self.set_ci_download_url(context['tarball'])
+
+        runs = self.populate_runs(s, context['tarball']['runs'])
+        envs = self.populate_envs(s, runs)
+        test_cases = self.populate_test_cases(s, runs)
+
+        # Order by envs { testcases { runs { results }}}
+        for env_url, env in envs.items():
+            env['testcases'] = {}
+
+            for tc_url, tc in test_cases.items():
+                runs = []
+                for run in tc['runs']:
+                    if env['id'] == run['environment']['id']:
+                        runs.append(run)
+
+                # only add test cases if runs exist
+                if not runs:
+                    continue
+
+                # reverse the runs so that the latest run is first
+                runs = list(reversed(runs))
+                # deepcopy, so that the reference is not the same between
+                # environments
+                env['testcases'][tc_url] = copy.deepcopy(tc['testcase'])
+                env['testcases'][tc_url]['runs'] = runs
+
+        # Finally, update the context
+        context['environments'] = envs
 
     def set_parameter_keys(self, measurement):
         """Update the parameter list to be an object with name as the key.
@@ -543,20 +597,11 @@ class PatchSetDetail(Tarball, PatchSet):
             # assume UTC
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
             context['patchset']['submitter'] = self.get_patchset_submitter(series)
-            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
-                             params={'active': True})
-            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
-                                        HTTPStatus.FORBIDDEN]:
-                envs = dict()
-            else:
-                api_resp.raise_for_status()
-                envs = api_resp.json()['results']
-                envs = {x['url']: x for x in envs}
 
             context['environments'] = dict()
             if context['patchset'].get('tarballs', []):
                 context['tarball'] = s.get(context['patchset']['tarballs'][-1]).json()
-                self.populate_tarball_context(context, s, envs)
+                self.populate_tarball_context(context, s)
 
             elif context['patchset']['build_log']:
                 api_resp = s.get(context['patchset']['build_log'])
@@ -571,16 +616,6 @@ class PatchSetDetail(Tarball, PatchSet):
                 api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
                 api_resp.raise_for_status()
                 context['branches'] = api_resp.json()['results']
-
-            for env_url, env in context['environments'].items():
-                # Fill in details of missing environments so they can be
-                # displayed in the template
-                if env is None:
-                    context['environments'][env_url] = envs[env_url]
-                elif 'runs' in context['environments'][env_url]:
-                    # also reverse the runs so that the latest run is first
-                    context['environments'][env_url]['runs'] = \
-                        list(reversed(context['environments'][env_url]['runs']))
 
             context['status_classes'] = text_color_classes(context['patchset']['status_class'])
             return context
@@ -642,34 +677,13 @@ class TarballDetail(Tarball):
                 raise Http404
             context['tarball'] = api_resp.json()
             self.add_status_ranges(context['tarball'])
-            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
-                             params={'active': True})
-            if api_resp.status_code in [HTTPStatus.UNAUTHORIZED,
-                                        HTTPStatus.FORBIDDEN]:
-                envs = dict()
-            else:
-                api_resp.raise_for_status()
-                envs = api_resp.json()['results']
-                envs = {x['url']: x for x in envs}
 
-            context['environments'] = dict()
-
-            self.populate_tarball_context(context, s, envs)
+            self.populate_tarball_context(context, s)
 
             if context['tarball']['patchset']:
                 resp = s.get(context['tarball']['patchset'])
                 resp.raise_for_status()
                 context['tarball']['patchset'] = resp.json()
-
-            for env_url, env in context['environments'].items():
-                # Fill in details of missing environments so they can be
-                # displayed in the template
-                if env is None:
-                    context['environments'][env_url] = envs[env_url]
-                elif 'runs' in context['environments'][env_url]:
-                    # also reverse the runs so that the latest run is first
-                    context['environments'][env_url]['runs'] = \
-                        list(reversed(context['environments'][env_url]['runs']))
 
             context['status_classes'] = text_color_classes(context['tarball']['status_class'])
             return context

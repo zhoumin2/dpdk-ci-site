@@ -479,15 +479,16 @@ class DetailViewTests(BaseTestCase):
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
-        self.assertEqual(len(env['runs'][0]['results']), 2)
+        run = env['testcases']['http://example.com/testcases/1/']['runs'][0]
+        self.assertEqual(len(run['results']), 2)
         self.assertEqual(env['id'], env['id'])
         self.assertEqual(env['nic_model'], 'XL710')
-        self.assertEqual(env['runs'][0]['failure_count'], 1)
-        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
-        self.assertEqual(env['runs'][0]['results'][1]['result'], 'FAIL')
-        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
+        self.assertEqual(run['failure_count'], 1)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertEqual(run['results'][1]['result'], 'FAIL')
+        self.assertAlmostEqual(run['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
+        self.assertAlmostEqual(run['results'][1]['difference'],
                                -0.664055, places=5)
 
     def test_auth_load(self, m):
@@ -508,20 +509,21 @@ class DetailViewTests(BaseTestCase):
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
-        self.assertEqual(len(env['runs'][0]['results']), 2)
+        run = env['testcases']['http://example.com/testcases/1/']['runs'][0]
+        self.assertEqual(len(run['results']), 2)
         self.assertEqual(env['id'], env['id'])
         self.assertEqual(env['nic_model'], 'XL710')
-        self.assertEqual(env['runs'][0]['failure_count'], 0)
-        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
-        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
+        self.assertEqual(run['failure_count'], 0)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(run['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
+        self.assertAlmostEqual(run['results'][1]['difference'],
                                -0.664055, places=5)
 
     def test_auth_successor(self, m):
-        """Verify that runs dictionary uses successor environment."""
+        """Verify that multiple environments exist, even with a successor."""
         self.setup_mock_authenticated(m)
-        self.setup_mock_environment(
+        env = self.setup_mock_environment(
             m, successor=urljoin(settings.API_BASE_URL, 'environments/2/'))
         cloned_env = self.setup_mock_environment(
             m, id=2,
@@ -537,17 +539,23 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
-        env = response.context['environments'][
+        self.assertEqual(len(response.context['environments']), 2)
+        cloned_env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(cloned_env['id'],)))]
-        self.assertEqual(len(env['runs'][0]['results']), 2)
-        self.assertEqual(env['id'], cloned_env['id'])
+        self.assertEqual(len(cloned_env['testcases']), 0)
+        env = response.context['environments'][
+            urljoin(settings.API_BASE_URL, reverse('environment-detail',
+                                                   args=(env['id'],)))]
+        run = env['testcases']['http://example.com/testcases/1/']['runs'][0]
+        self.assertEqual(len(run['results']), 2)
+        self.assertNotEqual(env['id'], cloned_env['id'])
         self.assertEqual(env['nic_model'], 'XL710')
-        self.assertEqual(env['runs'][0]['failure_count'], 0)
-        self.assertEqual(env['runs'][0]['results'][0]['result'], 'PASS')
-        self.assertAlmostEqual(env['runs'][0]['results'][0]['difference'],
+        self.assertEqual(run['failure_count'], 0)
+        self.assertEqual(run['results'][0]['result'], 'PASS')
+        self.assertAlmostEqual(run['results'][0]['difference'],
                                -0.185655, places=5)
-        self.assertAlmostEqual(env['runs'][0]['results'][1]['difference'],
+        self.assertAlmostEqual(run['results'][1]['difference'],
                                -0.664055, places=5)
 
 
