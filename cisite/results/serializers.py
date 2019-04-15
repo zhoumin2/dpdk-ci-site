@@ -118,7 +118,7 @@ class TestCaseSerializer(serializers.HyperlinkedModelSerializer):
         """Define how to serialize test cases."""
 
         model = TestCase
-        fields = ('url', 'name', 'description_url')
+        fields = ('url', 'name', 'description_url', 'pipeline')
 
 
 class MeasurementSerializer(serializers.HyperlinkedModelSerializer,
@@ -206,7 +206,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
                   'predecessor', 'successor', 'date', 'live_since',
-                  'hardware_description', 'pipeline_url')
+                  'hardware_description', 'pipeline')
         read_only_fields = ('contacts', 'predecessor', 'successor',
                             'date')
 

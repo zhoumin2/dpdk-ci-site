@@ -482,12 +482,16 @@ class Tarball(BaseDashboardView):
         test_cases = {}
         for run_url, run in runs.items():
             if run['results']:
+                measurement = run['results'][0]['measurement']
                 # Assume that there is only one testcase per run
-                tc = run['results'][0]['measurement']['testcase']
+                tc = measurement['testcase']
                 if tc not in test_cases:
                     test_cases[tc] = {}
                     test_cases[tc]['testcase'] = s.get(tc).json()
                     test_cases[tc]['runs'] = []
+
+                # Used for reruns
+                measurement['testcase'] = test_cases[tc]['testcase']
 
                 test_cases[tc]['runs'].append(run)
 
