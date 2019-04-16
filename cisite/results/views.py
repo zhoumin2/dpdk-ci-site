@@ -44,6 +44,7 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer, TestRunSerializerGet
+from urllib.parse import urljoin
 from shared.util import requests_to_response
 
 logger = getLogger('results')
@@ -310,12 +311,17 @@ class TestRunViewSet(viewsets.ModelViewSet):
     def rerun(self, request, pk):
         """Rerun a test run."""
         tr = self.get_object()
-        pipeline_url = f'{tr.environment.pipeline_url}/buildWithParameters/'
+        # assume 1 test case per test run
+        tc = tr.results.first().measurement.testcase.pipeline
+        pipeline = f'{tr.environment.pipeline}-{tc}'
+        pipeline_url = urljoin(settings.JENKINS_URL, f'job/{pipeline}/buildWithParameters/')
+
         message = f'{request.user} reran {pipeline_url} for test run {pk}'
         logger.info(message)
         LogEntry.objects.log_action(
             request.user.id, ContentType.objects.get_for_model(TestRun).pk, pk,
             repr(tr), CHANGE, message)
+
         auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
                                            settings.JENKINS_API_TOKEN)
         tb_url = request.build_absolute_uri(tr.tarball.get_absolute_url())

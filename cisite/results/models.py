@@ -11,7 +11,6 @@ import uuid
 from abc import abstractmethod
 
 from django.apps import apps
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.models import Group, User
@@ -24,7 +23,6 @@ from functools import partial
 from guardian.shortcuts import assign_perm, remove_perm
 from guardian.utils import get_anonymous_user
 from private_storage.fields import PrivateFileField
-from urllib.parse import urljoin
 
 
 def get_admin_group():
@@ -564,7 +562,8 @@ class Environment(models.Model):
                   'general hardware environment information.')
     pipeline = models.CharField(
         max_length=255, null=True, blank=True,
-        help_text='The pipeline used for running tests')
+        help_text='The pipeline name used for running tests. This is combined'
+                  'with the pipeline name of the test case.')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -624,12 +623,6 @@ class Environment(models.Model):
         TestRun = apps.get_model('results', 'TestRun')
         qs = TestRun.objects.filter(environment__id__in=self.all_ids)
         return qs
-
-    @property
-    def pipeline_url(self):
-        if self.pipeline is None:
-            return None
-        return urljoin(settings.JENKINS_URL, f'job/{self.pipeline}')
 
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface."""
@@ -696,6 +689,10 @@ class TestCase(models.Model):
         max_length=128, help_text='Name of test case as defined in DTS')
     description_url = models.URLField(
         help_text='External URL describing test case')
+    pipeline = models.CharField(
+        max_length=255, null=True, blank=True,
+        help_text='The pipeline name used for running tests. This is combined'
+                  'with the pipeline name of the environment.')
 
     def __str__(self):
         """Return the name of the test case."""

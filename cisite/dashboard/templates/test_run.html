@@ -59,7 +59,7 @@
 {% if r.log_upload_file %}
 <a class="btn btn-info" href="{{ r.log_upload_file }}">Download test result artifacts</a>
 {% endif %}
-{% if environment.pipeline_url %}
+{% if environment.pipeline and r.results.0.measurement.testcase.pipeline %}
 <form class="d-inline-flex" action="{% url 'dashboard_rerun' r.id %}?next={{ request.path }}" method="POST">
   {% csrf_token %}
   <input type="submit" class="btn btn-warning" value="Rerun">

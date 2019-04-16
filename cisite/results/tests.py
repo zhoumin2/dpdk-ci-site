@@ -179,7 +179,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             bios_version="4.2",
             live_since=None,
             hardware_description=None,
-            pipeline_url=None,
+            pipeline=None,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
@@ -1600,12 +1600,23 @@ class TestRerun(test.TestCase):
             'joevendor', 'joe@example.com', 'AbCdEfGh')
         self.group = Group.objects.create(name='TestGroup')
         self.user.groups.add(self.group)
-        self.pipeline = 'test'
-        self.env = create_test_environment(
-            owner=self.group, pipeline=self.pipeline)
-        self.tr = create_test_run(self.env)
+        env = create_test_environment(
+            owner=self.group, pipeline='pipeline-env')
+        tc = TestCase.objects.create(
+            name='nic_single_core_perf',
+            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
+            pipeline='pipeline-tc')
+        Measurement.objects.create(name='throughput', unit='Mpps',
+                                   higher_is_better=True,
+                                   environment=env,
+                                   testcase=tc)
+        self.tr = create_test_run(env)
+        TestResult.objects.create(result='PASS', difference=-0.002,
+                                  measurement=env.measurements.first(),
+                                  run=self.tr)
         tr_url = 'http://testserver' + self.tr.tarball.get_absolute_url()
-        self.pipeline_url = f'{settings.JENKINS_URL}job/{self.pipeline}/' \
+        pipeline = f'{env.pipeline}-{tc.pipeline}'
+        self.pipeline_url = f'{settings.JENKINS_URL}job/{pipeline}/' \
                             'buildWithParameters/?' \
                             f'TARBALL_META_URL={tr_url}'
 
