@@ -4,9 +4,13 @@ This is a Django-based website and API for the DPDK performance test lab.
 
 ## Local Installation
 
-Setting up a Python virtual environment for CentOS 7 (you can adapt
-for more modern distros by just installing Python 3.6 and then running
-venv/virtualenv directly):
+Python3.6+ is required.
+
+Try using the `./configure` script to create the environment.
+
+Below is an example to set up a Python virtual environment for CentOS 7 (you
+can adapt for more modern distros by just installing Python 3.6 and then
+running venv/virtualenv directly):
 
 ```
 $ sudo yum -y install centos-release-scl

@@ -26,12 +26,13 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 STATIC_URL = '/static/'
+STATIC_ROOT = 'static/'
 PRIVATE_STORAGE_ROOT = 'uploads/'
 PRIVATE_STORAGE_URL = '/uploads/'
 MEDIA_ROOT = 'uploads/public/'
 MEDIA_URL = '/uploads-public/'
 
-REST_FRAMEWORK['PAGE_SIZE'] = 100
+REST_FRAMEWORK['PAGE_SIZE'] = 10
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
