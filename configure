@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 
 """
 SPDX-License-Identifier: BSD-3-Clause
@@ -42,7 +42,7 @@ def which(cmd):
 
     If there is no such executable, return None.
     """
-    for d in os.getenv('PATH'):
+    for d in os.getenv('PATH').split(':'):
         path = os.path.join(d, cmd)
         if os.path.exists(path):
             return path
@@ -82,14 +82,15 @@ def main():
         print('Do not run this script as root', file=sys.stderr)
         sys.exit(1)
 
+    # if using python 3, then the minor must be >= 6
+    if sys.version_info.major == 3 and sys.version_info.minor < 6:
+        print('Python 3.6+ is required', file=sys.stderr)
+        sys.exit(1)
+
     logging.basicConfig(filename='config.log', filemode='w',
                         level=logging.INFO)
 
     logging.info(f'configure for DPDK cisite run at {datetime.now()}')
-    if os.path.isdir('.git'):
-        version = subprocess.run(['git', 'describe'], stdout=subprocess.PIPE)
-        if version.returncode == 0:
-            logging.info(f'DPDK cisite version {version.stdout}')
     logging.info(f'command line: {" ".join(sys.argv)}')
 
     log_checking('Checking for pre-commit tool in PATH')
@@ -103,29 +104,17 @@ def main():
     else:
         log_result('not found')
 
-    log_checking('Checking for Python 3.6 in PATH')
-    py_exe = which('python3.6')
-    if py_exe:
-        log_result(py_exe)
-    else:
-        log_result('not found')
-
     log_checking('Creating virtual environment in env')
     if os.path.isdir('venv'):
         log_result('already exists')
     else:
-        run(py_exe, '-m', 'venv', 'venv')
-        log_result('done')
+        run(sys.executable, '-m', 'venv', 'venv')
 
     curdir = os.path.realpath(os.curdir)
     py_exe = os.path.join(curdir, 'venv/bin/python3')
-    pip_exe = os.path.join(curdir, 'venv/bin/pip3')
-
-    log_checking('Installing latest version of pip and setuptools')
-    run(pip_exe, 'install', '--upgrade', 'pip', 'setuptools')
 
     log_checking('Installing project requirements')
-    run(pip_exe, 'install', '-r', REQUIREMENTS)
+    run(py_exe, '-m', 'pip', 'install', '--upgrade', '-r', REQUIREMENTS)
 
     log_checking('Installing settings.py')
     if os.path.isfile('cisite/cisite/settings.py'):
@@ -146,6 +135,12 @@ def main():
     if not have_db:
         log_checking('Load sample data into database')
         run(py_exe, 'manage.py', 'loaddata', 'demo')
+
+    print('\nDone! To run the server, run the following commands:\n\n'
+          'source venv/bin/activate\n'
+          'cd cisite\n'
+          './manage.py createsuperuser # do this once\n'
+          './manage.py runserver 0:8000')
 
 
 if __name__ == '__main__':

@@ -457,22 +457,6 @@
   fields: {branch: 1, commit_id: b259da7b24e75b967e63f549177e507163719d1a, build_id: null,
     tarball_url: 'https://dpdklab.iol.unh.edu/jenkins/job/Get-Latest-Git-Master/45/artifact/dpdk.tar.gz',
     job_name: 'Get-Latest-DPDK-Master', patchset: null}
-- model: results.contactpolicy
-  pk: 1
-  fields: {email_submitter: false, email_recipients: false, email_owner: false, email_success: false,
-    email_list: pmacarth@iol.unh.edu, environment: 1}
-- model: results.contactpolicy
-  pk: 2
-  fields: {email_submitter: false, email_recipients: false, email_owner: false, email_success: false,
-    email_list: pmacarth@iol.unh.edu, environment: 2}
-- model: results.contactpolicy
-  pk: 3
-  fields: {email_submitter: false, email_recipients: false, email_owner: false, email_success: false,
-    email_list: pmacarth@iol.unh.edu, environment: 3}
-- model: results.contactpolicy
-  pk: 4
-  fields: {email_submitter: false, email_recipients: false, email_owner: false, email_success: false,
-    email_list: pmacarth@iol.unh.edu, environment: 4}
 - model: results.measurement
   pk: 1
   fields: {name: throughput, unit: Mpps, higher_is_better: true, environment: 1, testcase_id: 1}
@@ -1830,38 +1814,6 @@
     groups: []
     user_permissions: []
 - model: auth.user
-  pk: 2
-  fields:
-    password: '!v9dLRAASlHYYDQ7maxBeePkOBQGmYBdBC4wcew53'
-    last_login: 2018-05-04 15:33:34+00:00
-    is_superuser: true
-    username: jplsek
-    first_name: Jeremy
-    last_name: Plsek
-    email: jplsek@iol.unh.edu
-    is_staff: true
-    is_active: true
-    date_joined: 2018-05-04 13:52:52+00:00
-    groups:
-    - [iol]
-    user_permissions: []
-- model: auth.user
-  pk: 3
-  fields:
-    password: pbkdf2_sha256$100000$cuJH4zWiPW5b$z1MhcSVBTnm9Cq8ZsoVGhRW305wMpQy6gHIyNxv8g3U=
-    last_login: 2018-06-05 20:03:24+00:00
-    is_superuser: true
-    username: pmacarth
-    first_name: Patrick
-    last_name: MacArthur
-    email: pmacarth@iol.unh.edu
-    is_staff: true
-    is_active: true
-    date_joined: 2018-05-15 20:54:26+00:00
-    groups:
-    - [iol]
-    user_permissions: []
-- model: auth.user
   pk: 4
   fields:
     password: '!iH4gdn7mJKdrCbJvbJIsLxS3kl9ocxNLrNV9TGwL'
@@ -1870,7 +1822,7 @@
     username: heimer
     first_name: Joe
     last_name: Heimerdinger
-    email: pmacarth@iol.unh.edu
+    email: heimer@localhost
     is_staff: false
     is_active: true
     date_joined: 2018-06-01 18:47:58+00:00
@@ -1886,23 +1838,13 @@
     username: acmevendor
     first_name: John
     last_name: Vendor
-    email: pmacarth@iol.unh.edu
+    email: acmevendor@localhost
     is_staff: false
     is_active: true
     date_joined: 2018-06-01 18:48:22+00:00
     groups:
     - [acme]
     user_permissions: []
-- model: authtoken.token
-  pk: 8a81b5e5c0f449947ceddd1b8c0c956d18df8893
-  fields:
-    user: [jplsek]
-    created: 2018-05-04 14:05:18+00:00
-- model: authtoken.token
-  pk: c70ee3ccc40c6837b27bbffb24c9d4054b1d562d
-  fields:
-    user: [pmacarth]
-    created: 2018-05-15 20:54:36+00:00
 - model: guardian.groupobjectpermission
   pk: 1
   fields:
