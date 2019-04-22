@@ -494,6 +494,19 @@ class Tarball(BaseDashboardView):
                 measurement['testcase'] = test_cases[tc]['testcase']
 
                 test_cases[tc]['runs'].append(run)
+            elif run['log_upload_file']:
+                # If there are no results, then it means there was a test
+                # harness error. Unfortunately, there is no test case attached
+                # to a test run, only to test results. This may get resolved
+                # when Bug 254 is resolved (since a test case would be attached
+                # to a test run)
+
+                if 'other' not in test_cases:
+                    test_cases['other'] = {}
+                    test_cases['other']['testcase'] = {'name': 'other'}
+                    test_cases['other']['runs'] = []
+
+                test_cases['other']['runs'].append(run)
 
         return test_cases
 
