@@ -72,6 +72,22 @@ without activating the virtual environment first, since it looks for
 * `GRAFANA_GRAPHS`: A list of urls from grafana to to display. For example:
   `GRAFANA_GRAPHS = [GRAFANA_URL + 'd/qao3xzbmz/master-comparison']`
 
+## Jenkins assumptions
+
+Currently, we use Jenkins as the CI. As such, there are a few assumptions that
+the API expects.
+
+Reruns are based on the environment pipeline name and the test case pipeline
+name, separated by a dash.
+
+Building a patchset is currently hardcoded to a job named Apply-Custom-Patch-Set.
+This is used for rebuilding a patchset onto a different branch.
+
+The CI job status API expects a Jenkins view called "Dashboard" to exist.
+
+The CI nodes API expects each Jenkins computer to have the label "public" if they
+are to be displayed.
+
 ## Running the server
 
 ```

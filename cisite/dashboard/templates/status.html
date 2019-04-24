@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Status{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active" aria-current="page">Status</li>
+{% endblock %}
+
+{% block content %}
+{% if jobs %}
+  <h1>Job Status</h1>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th scope="col">Status</th>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Typical Run Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+          <tr>
+            <td>{{ job.status }}</td>
+            <td>{{ job.name }}</td>
+            <td>{{ job.description }}</td>
+            <td>{{ job.estimatedDuration }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% if nodes %}
+  <h1>CI Nodes</h1>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+      <tr>
+        <th scope="col">Status</th>
+        <th scope="col">Name</th>
+        <th scope="col">Description</th>
+      </tr>
+      </thead>
+      <tbody>
+        {% for node in nodes %}
+          <tr>
+            <td>{{ node.status }}</td>
+            <td>{{ node.displayName }}</td>
+            <td>{{ node.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+<h1>CI Build Queue</h1>
+{% if queue %}
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Reason</th>
+      </tr>
+      </thead>
+      <tbody>
+        {% for queue_item in queue %}
+          <tr>
+            <td>{{ queue_item.task.name }}</td>
+            <td>{{ queue_item.why }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p>Empty</p>
+{% endif %}
+{% endblock %}

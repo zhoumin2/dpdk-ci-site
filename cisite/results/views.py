@@ -4,47 +4,48 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Render views for results database objects.
 """
-
-import requests
+import abc
 import uuid
-
 from collections import OrderedDict
 from functools import partial
+from http import HTTPStatus
 from logging import getLogger
+from urllib.parse import urljoin
 
-from django.core.cache import cache
-from django.shortcuts import get_list_or_404
-from rest_framework import viewsets
-from django.core.exceptions import PermissionDenied
+import requests
 from django.conf import settings
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
-from django_auth_ldap.backend import LDAPBackend
+from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
+from django.shortcuts import get_list_or_404
+from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import get_perms
 from guardian.utils import get_anonymous_user
 from private_storage.views import PrivateStorageDetailView
-from rest_framework.filters import OrderingFilter
+from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
+from rest_framework.filters import OrderingFilter
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.parsers import JSONParser, FormParser
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework import status
+
+from . import permissions
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter, \
     DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter
 from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
-from . import permissions
 from .parsers import JSONMultiPartParser
 from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer, TestRunSerializerGet
-from urllib.parse import urljoin
 from shared.util import requests_to_response
 
 logger = getLogger('results')
@@ -389,14 +390,16 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         return user.results_profile.subscription_set.all()
 
 
-class StatusViewSet(viewsets.ViewSet):
+class NonModelViewSet(viewsets.ViewSet):
+    """ViewSet to be used without a Model
 
+    List items are expected to have a primary key, pk.
+    """
+
+    @abc.abstractmethod
     def get_data(self, request):
-        data = [dict({'name': x}, **y) for x, y
-                in sorted(PatchSet.statuses.items())]
-        for pk, elem in enumerate(data):
-            elem['url'] = self.reverse_action('detail', args=[pk + 1])
-        return data
+        """Return the list representation of the model."""
+        pass
 
     def list(self, request):
         data = self.get_data(request)
@@ -413,3 +416,122 @@ class StatusViewSet(viewsets.ViewSet):
             return Response(self.get_data(request)[id])
         except IndexError:
             raise Http404
+
+
+class StatusViewSet(NonModelViewSet):
+
+    def get_data(self, request):
+        data = [dict({'name': x}, **y) for x, y
+                in sorted(PatchSet.statuses.items())]
+        for pk, elem in enumerate(data):
+            elem['url'] = self.reverse_action('detail', args=[pk + 1])
+        return data
+
+
+class CIJobsViewSet(NonModelViewSet):
+    """Return the CI jobs from the Dashboard view."""
+
+    def get_data(self, request):
+        if not settings.JENKINS_URL:
+            return []
+
+        job_list_url = f'{settings.JENKINS_URL}view/Dashboard/api/json'
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        s = requests.Session()
+        s.verify = settings.CA_CERT_BUNDLE
+        s.auth = auth
+
+        resp = s.get(job_list_url, params={
+            'tree': 'jobs[url,name,color]'
+        })
+        # in case the view does not exist
+        if resp.status_code == HTTPStatus.NOT_FOUND:
+            return []
+        jobs = resp.json()['jobs']
+
+        pk = 1
+        for job in jobs:
+            build = s.get(f'{job["url"]}lastBuild/api/json', params={
+                'tree': 'estimatedDuration'
+            }).json()
+            job_detail = s.get(f'{job["url"]}api/json', params={
+                'tree': 'description'
+            }).json()
+
+            # milliseconds
+            job['estimatedDuration'] = build['estimatedDuration']
+            job['description'] = job_detail['description']
+            job['url'] = self.reverse_action('detail', args=[pk])
+            job['status'] = 'running' if '_anime' in job['color'] else 'idle'
+
+            pk += 1
+
+        return jobs
+
+
+class CINodesViewSet(NonModelViewSet):
+    """Return the CI compute nodes."""
+
+    def get_data(self, request):
+        if not settings.JENKINS_URL:
+            return []
+
+        host_list_url = f'{settings.JENKINS_URL}computer/api/json'
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        s = requests.Session()
+        s.verify = settings.CA_CERT_BUNDLE
+        s.auth = auth
+
+        resp = s.get(host_list_url, params={
+            'tree': 'computer[assignedLabels[name],idle,displayName,description]'
+        })
+        resp.raise_for_status()
+        nodes = resp.json()['computer']
+
+        return_nodes = []
+        pk = 1
+        for node in nodes:
+            if 'public' not in [x['name'] for x in node['assignedLabels']]:
+                continue
+
+            node['url'] = self.reverse_action('detail', args=[pk])
+            node['status'] = 'idle' if node['idle'] else 'running'
+            return_nodes.append(node)
+            pk += 1
+
+        return return_nodes
+
+
+class CIBuildQueueViewSet(NonModelViewSet):
+    """Return the CI build queue."""
+
+    def get_data(self, request):
+        if not settings.JENKINS_URL:
+            return []
+
+        queue_list_url = f'{settings.JENKINS_URL}queue/api/json'
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        s = requests.Session()
+        s.verify = settings.CA_CERT_BUNDLE
+        s.auth = auth
+
+        resp = s.get(queue_list_url, params={
+            'tree': 'items[task[name],why]'
+        })
+        resp.raise_for_status()
+        queue = resp.json()['items']
+
+        return_queue = []
+        pk = 1
+        for queue_item in queue:
+            if 'name' not in queue_item['task']:
+                continue
+
+            queue_item['url'] = self.reverse_action('detail', args=[pk])
+            return_queue.append(queue_item)
+            pk += 1
+
+        return return_queue

@@ -25,6 +25,12 @@ router.register(r'users', views.UserViewSet)
 router.register(r'subscriptions', views.SubscriptionViewSet)
 router.register(r'statuses', views.StatusViewSet,
                 base_name=r'status')
+router.register(r'ci-jobs', views.CIJobsViewSet,
+                base_name='ci-job')
+router.register(r'ci-nodes', views.CINodesViewSet,
+                base_name='ci-node')
+router.register(r'ci-queue', views.CIBuildQueueViewSet,
+                base_name='ci-queue')
 
 
 def upload_model_path(model, field):
