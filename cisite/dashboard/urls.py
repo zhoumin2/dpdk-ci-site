@@ -94,4 +94,6 @@ urlpatterns = [
          name='tarball_detail'),
     path('tarballs/<int:pk>/<str:filename>',
          views.CIDownloadView.as_view(), name='tarball-download'),
+    path('status/',
+         views.CIStatusView.as_view(), name='ci-status'),
 ]

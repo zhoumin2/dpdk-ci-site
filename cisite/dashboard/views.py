@@ -990,3 +990,44 @@ class Rebuild(LoginRequiredMixin, View):
             return HttpResponseRedirect(next_url)
         else:
             return HttpResponseRedirect(reverse('dashboard'))
+
+
+class CIStatusView(BaseDashboardView):
+    """Display the CI status page."""
+
+    template_name = 'status.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        with api_session(self.request) as s:
+            # ci jobs
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-jobs/'))
+            jobs = api_resp.json()['results']
+
+            for job in jobs:
+                ms = job['estimatedDuration']
+                sec = (ms / 1000) % 60
+                sec = int(sec)
+                min = (ms / (1000 * 60)) % 60
+                min = int(min)
+                hour = int(ms / (1000 * 60 * 60))
+
+                ftime = ''
+                if hour > 1:
+                    ftime = f'{hour} hour, '
+                ftime += f'{min} min {sec} sec'
+                job['estimatedDuration'] = ftime
+
+            context['jobs'] = jobs
+
+            # ci nodes
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-nodes/'))
+            nodes = api_resp.json()['results']
+            context['nodes'] = nodes
+
+            # ci build queue
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-queue/'))
+            queue = api_resp.json()['results']
+            context['queue'] = queue
+
+        return context
