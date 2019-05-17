@@ -20,6 +20,8 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from functools import partial
+
+from guardian.models import UserObjectPermissionBase, GroupObjectPermissionBase
 from guardian.shortcuts import assign_perm, remove_perm
 from guardian.utils import get_anonymous_user
 from private_storage.fields import PrivateFileField
@@ -844,6 +846,16 @@ class TestRun(models.Model, CommitURLMixin):
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface."""
         return reverse('testrun-detail', args=(self.id,))
+
+
+class TestRunUserObjectPermission(UserObjectPermissionBase):
+    """Create a direct foreign key for faster permission checking"""
+    content_object = models.ForeignKey(TestRun, on_delete=models.CASCADE)
+
+
+class TestRunGroupObjectPermission(GroupObjectPermissionBase):
+    """Create a direct foreign key for faster permission checking"""
+    content_object = models.ForeignKey(TestRun, on_delete=models.CASCADE)
 
 
 class TestResult(models.Model):
