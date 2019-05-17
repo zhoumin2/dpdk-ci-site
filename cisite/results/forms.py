@@ -4,8 +4,12 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Custom forms for the admin interface.
 """
+from concurrent.futures.thread import ThreadPoolExecutor
 
 from django import forms
+
+# 1 worker so that set_private and set_public can't be executed at the same time
+executor = ThreadPoolExecutor(max_workers=1)
 
 
 class SetPublicForm(forms.Form):
@@ -13,7 +17,7 @@ class SetPublicForm(forms.Form):
 
     def form_action(self, environment, user):
         """Submit action."""
-        environment.set_public()
+        executor.submit(environment.set_public)
 
     def save(self, environment, user):
         """Save action."""
@@ -25,7 +29,7 @@ class SetPrivateForm(forms.Form):
 
     def form_action(self, environment, user):
         """Submit action."""
-        environment.set_private()
+        executor.submit(environment.set_private)
 
     def save(self, environment, user):
         """Save action."""

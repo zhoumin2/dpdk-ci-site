@@ -9,22 +9,26 @@ import json
 import os
 import uuid
 from abc import abstractmethod
+from functools import partial
+from logging import getLogger
 
 from django.apps import apps
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.contrib.auth.models import Group, User
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
-from functools import partial
-
 from guardian.models import UserObjectPermissionBase, GroupObjectPermissionBase
 from guardian.shortcuts import assign_perm, remove_perm
 from guardian.utils import get_anonymous_user
 from private_storage.fields import PrivateFileField
+
+from results.util import log_exception
+
+logger = getLogger('results')
 
 
 def get_admin_group():
@@ -638,48 +642,66 @@ class Environment(models.Model):
         """
         measurements = self.measurements.all()
         runs = self.runs.all()
-        results = []
-        for run in runs:
-            results += run.results.all()
+        results = 0
 
-        ret = [[self]]
-        if measurements:
-            ret += [measurements]
-        if runs:
-            ret += [runs]
-        if results:
-            ret += [results]
+        for run in runs:
+            results += run.results.all().count()
+
+        ret = [{
+            'environment': self,
+            'measurements': measurements.count(),
+            'runs': runs.count(),
+            'results': results
+        }]
+
         if self.predecessor:
             ret += self.predecessor.get_related()
+
         return ret
 
+    @log_exception
     def set_public(self):
         """Set AnonymousUser view permission to environment and related."""
+        logger.info(f'Setting environment {self.id} public...')
+
         anon = get_anonymous_user()
         assign_perm('view_environment', anon, self)
+
         for measurement in self.measurements.all():
             assign_perm('view_measurement', anon, measurement)
+
         for run in self.runs.all():
             # Although TestResult is serialized in the API, this is required
             # for syncing the public database.
             for result in run.results.all():
                 assign_perm('view_testresult', anon, result)
             assign_perm('view_testrun', anon, run)
+
+        logger.info(f'Done setting environment {self.id} public')
+
         # Required when syncing the public database, or else it will throw an
         # error that it can't find the foreign keys.
         if self.predecessor:
             self.predecessor.set_public()
 
+    @log_exception
     def set_private(self):
         """Set AnonymousUser view permission to environment and related."""
+        logger.info(f'Setting environment {self.id} private...')
+
         anon = get_anonymous_user()
         remove_perm('view_environment', anon, self)
+
         for measurement in self.measurements.all():
             remove_perm('view_measurement', anon, measurement)
+
         for run in self.runs.all():
             for result in run.results.all():
                 remove_perm('view_testresult', anon, result)
             remove_perm('view_testrun', anon, run)
+
+        logger.info(f'Done setting environment {self.id} private')
+
         if self.predecessor:
             self.predecessor.set_private()
 
