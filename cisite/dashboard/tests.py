@@ -209,6 +209,7 @@ class BaseTestCase(StaticLiveServerTestCase):
                 'report_timestamp': None,
                 'log_upload_file': None,
                 'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
+                'testcase': None,
             })
         ps_1 = {
             'url': urljoin(settings.API_BASE_URL, 'patchsets/1/'),

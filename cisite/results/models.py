@@ -804,6 +804,9 @@ class TestRun(models.Model, CommitURLMixin):
     # where the baseline has changed
     commit_id = models.CharField('git commit hash', max_length=40, blank=True,
                                  help_text='The commit id of the baseline used')
+    testcase = models.ForeignKey(
+        TestCase, on_delete=models.CASCADE, null=True, blank=True,
+        help_text='Test case that this test run applies to')
 
     def clean(self):
         """Check that all expected measurements' environment matches."""

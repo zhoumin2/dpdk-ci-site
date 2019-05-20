@@ -273,6 +273,7 @@ class TestCaseViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = TestCase.objects.all()
     serializer_class = TestCaseSerializer
+    filter_fields = ('name',)
 
 
 class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
