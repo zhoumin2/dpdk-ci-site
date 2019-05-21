@@ -6,7 +6,8 @@ Define tests for dashboard app.
 """
 
 import json
-from urllib.parse import urljoin
+import re
+from urllib.parse import urljoin, urlparse
 
 import requests_mock
 from django import test
@@ -111,13 +112,31 @@ class BaseTestCase(StaticLiveServerTestCase):
                 'url': urljoin(settings.API_BASE_URL, 'testcases/1/'),
                 'name': 'nic_single_core_perf',
                 'description_url':
-                    'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next'
+                    'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
+                'pipeline': 'testcase-pipeline'
             })
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'group/3/'),
             json={
                 'url': urljoin(settings.API_BASE_URL, 'group/3/'),
                 'name': 'acme',
+            })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'branches/'),
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [
+                    {
+                        "url": urljoin(settings.API_BASE_URL, 'branches/1/'),
+                        "name": "dpdk",
+                        "repository_url": "https://dpdk.org/git/dpdk",
+                        "regexp": "",
+                        "last_commit_id": "",
+                        "web_url": ""
+                    }
+                ]
             })
         with open('cisite/request_mapping.json') as f:
             mapping = json.load(f)
@@ -178,39 +197,43 @@ class BaseTestCase(StaticLiveServerTestCase):
             'GET', urljoin(settings.API_BASE_URL, 'measurements/2/'),
             json=self._measurement)
 
-    def setup_mock_test_runs(self, m, fail=False):
+    def setup_mock_test_runs(self, m, fail=False, **kwargs):
         """Call `setup_mock_authenticated` before this."""
+        tr = {
+            'id': 1,
+            'url': urljoin(settings.API_BASE_URL, 'testruns/1/'),
+            'timestamp': '2018-06-04T05:36:20Z',
+            'log_output_file': None,
+            'tarball': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
+            'results': [
+                {
+                    'id': 1,
+                    'result': 'PASS',
+                    'difference': -0.185655863091204,
+                    'expected_value': None,
+                    'measurement': self._measurement,
+                    'result_class': 'success'
+                },
+                {
+                    'id': 2,
+                    'result': 'FAIL' if fail else 'PASS',
+                    'difference': -0.664055231513893,
+                    'expected_value': None,
+                    'measurement': self._measurement,
+                    'result_class': 'success'
+                },
+            ],
+            'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
+            'report_timestamp': None,
+            'log_upload_file': None,
+            'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
+            'testcase': None,
+        }
+        tr.update(**kwargs)
         m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'testruns/1/'),
-            json={
-                'url': urljoin(settings.API_BASE_URL, 'testruns/1/'),
-                'timestamp': '2018-06-04T05:36:20Z',
-                'log_output_file': None,
-                'tarball': urljoin(settings.API_BASE_URL, 'tarballs/1/'),
-                'results': [
-                    {
-                        'id': 1,
-                        'result': 'PASS',
-                        'difference': -0.185655863091204,
-                        'expected_value': None,
-                        'measurement': self._measurement,
-                        'result_class': 'success'
-                    },
-                    {
-                        'id': 2,
-                        'result': 'FAIL' if fail else 'PASS',
-                        'difference': -0.664055231513893,
-                        'expected_value': None,
-                        'measurement': self._measurement,
-                        'result_class': 'success'
-                    },
-                ],
-                'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
-                'report_timestamp': None,
-                'log_upload_file': None,
-                'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
-                'testcase': None,
-            })
+            json=tr)
+
         ps_1 = {
             'url': urljoin(settings.API_BASE_URL, 'patchsets/1/'),
             'id': 1,
@@ -448,6 +471,14 @@ class PatchListViewTests(BaseTestCase):
 class DetailViewTests(BaseTestCase):
     """Test the detail view."""
 
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user('joevendor', 'joe@example.com',
+                                             'AbCdEfGh')
+        self.group = Group.objects.create(name='Group1')
+        self.user.groups.add(self.group)
+
     def test_anon_load(self, m):
         """Test that the anonymous page loads."""
         ps = self.setup_mock_anonymous(m)
@@ -558,6 +589,81 @@ class DetailViewTests(BaseTestCase):
                                -0.185655, places=5)
         self.assertAlmostEqual(run['results'][1]['difference'],
                                -0.664055, places=5)
+
+    def login(self, m):
+        """Login to the site while utilizing mocked requests.
+
+        Needed since the view checks if a logged in user is part of the
+        group to show the button.
+        """
+        with self.settings(API_BASE_URL=self.live_server_url):
+            m.register_uri(requests_mock.ANY, re.compile('http://localhost'),
+                           real_http=True)
+            response = self.client.post(
+                reverse('login'),
+                {'username': 'joevendor', 'password': 'AbCdEfGh'},
+                follow=True)
+            self.assertTrue(response.context['user'].is_active)
+
+    def get_live_url(self, url):
+        """Converts a url to the live url (such as testserver to localhost)"""
+        live = urlparse(self.live_server_url)
+        return urlparse(url)._replace(netloc=live.netloc).geturl()
+
+    def test_view_rerun(self, m):
+        """Verify that the rerun button shows for a proper user"""
+        self.login(m)
+
+        self.setup_mock_authenticated(m)
+        group = self.client.get(reverse('group-list')).json()['results'][0]
+        group_url = self.get_live_url(group['url'])
+        env = self.setup_mock_environment(m, pipeline='some-name',
+                                          owner=group_url)
+        ps = self.setup_mock_test_runs(
+            m, testcase=urljoin(settings.API_BASE_URL, 'testcases/1/'))
+        self.setup_mock_active(m, [env])
+
+        ps_url = reverse('patchset_detail', args=(ps['id'],))
+        response = self.client.get(ps_url)
+        self.assertContains(response, 'Rerun')
+
+    def test_view_rerun_anon(self, m):
+        """Verify that the rerun button does not show for anon"""
+        self.setup_mock_anonymous(m)
+        env = self.setup_mock_environment(m, pipeline='some-name')
+        ps = self.setup_mock_test_runs(
+            m, testcase=urljoin(settings.API_BASE_URL, 'testcases/1/'))
+        self.setup_mock_active(m, [env])
+
+        ps_url = reverse('patchset_detail', args=(ps['id'],))
+        response = self.client.get(ps_url)
+        self.assertNotContains(response, 'Rerun')
+
+    def test_view_download(self, m):
+        """Verify that the download button shows for a proper user"""
+        self.login(m)
+
+        self.setup_mock_authenticated(m)
+        group = self.client.get(reverse('group-list')).json()['results'][0]
+        group_url = self.get_live_url(group['url'])
+        env = self.setup_mock_environment(m, owner=group_url)
+        ps = self.setup_mock_test_runs(m, log_upload_file='http://localhost/download')
+        self.setup_mock_active(m, [env])
+
+        ps_url = reverse('patchset_detail', args=(ps['id'],))
+        response = self.client.get(ps_url)
+        self.assertContains(response, 'Download')
+
+    def test_view_download_anon(self, m):
+        """Verify that the download button does not show for anon"""
+        self.setup_mock_anonymous(m)
+        env = self.setup_mock_environment(m)
+        ps = self.setup_mock_test_runs(m, log_upload_file='http://localhost/download')
+        self.setup_mock_active(m, [env])
+
+        ps_url = reverse('patchset_detail', args=(ps['id'],))
+        response = self.client.get(ps_url)
+        self.assertNotContains(response, 'Download')
 
 
 @requests_mock.Mocker()

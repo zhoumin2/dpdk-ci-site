@@ -34,7 +34,13 @@
         <div class="card mb-4">
           <div class="card-header">
             <div class="d-flex flex-column justify-content-lg-between flex-lg-row">
-              <h4 class="mb-lg-0"><a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
+              <h4 class="mb-lg-0">
+                {% if tc.description_url %}
+                  <a href="{{ tc.description_url }}">{{ tc.name }}</a>
+                {% else %}
+                  {{ tc.name }}
+                {% endif %}
+              </h4>
               <ul class="nav nav-tabs card-header-tabs ml-2">
                 {% for r in tc.runs %}
                 <li class="nav-item">
@@ -58,7 +64,13 @@
         </div>
       {% elif tc.runs|length == 1 %}
         <div class="card mb-4">
-          <h4 class="card-header"><a href="{{ tc.description_url }}">{{ tc.name }}</a></h4>
+          <h4 class="card-header">
+            {% if tc.description_url %}
+              <a href="{{ tc.description_url }}">{{ tc.name }}</a>
+            {% else %}
+              {{ tc.name }}
+            {% endif %}
+          </h4>
           <div class="card-body">
             {% with tc.runs|first as r %}
               {% include "test_run.html" %}
