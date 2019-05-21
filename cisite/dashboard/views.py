@@ -481,7 +481,16 @@ class Tarball(BaseDashboardView):
         # for each test case, add all runs
         test_cases = {}
         for run_url, run in runs.items():
-            if run['results']:
+            if run['testcase']:
+                tc = run['testcase']
+                if tc not in test_cases:
+                    test_cases[tc] = {}
+                    test_cases[tc]['testcase'] = s.get(tc).json()
+                    test_cases[tc]['runs'] = []
+                test_cases[tc]['runs'].append(run)
+            elif run['results']:
+                # Legacy test case results check.
+                # If the test run does not have a test case, check its results.
                 measurement = run['results'][0]['measurement']
                 # Assume that there is only one testcase per run
                 tc = measurement['testcase']
@@ -495,6 +504,7 @@ class Tarball(BaseDashboardView):
 
                 test_cases[tc]['runs'].append(run)
             elif run['log_upload_file']:
+                # Legacy test case results check.
                 # If there are no results, then it means there was a test
                 # harness error. Unfortunately, there is no test case attached
                 # to a test run, only to test results. This may get resolved

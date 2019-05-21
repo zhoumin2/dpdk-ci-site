@@ -501,6 +501,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             commit_id='',
             commit_url='',
             branch=None,
+            testcase=None,
             results=[dict(result='PASS',
                           difference=-0.85,
                           expected_value=None,
