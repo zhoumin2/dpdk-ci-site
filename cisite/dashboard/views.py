@@ -436,7 +436,7 @@ class Tarball(BaseDashboardView):
 
             # hide rerun button to invalid users
             if not self.show_elements(s, env['owner']):
-                env['pipeline_url'] = None
+                env['pipeline'] = None
 
         return envs
 
@@ -478,45 +478,43 @@ class Tarball(BaseDashboardView):
         return runs
 
     def populate_test_cases(self, s, runs):
-        # for each test case, add all runs
-        test_cases = {}
+        # Legacy test case results check. Set test case to test run.
         for run_url, run in runs.items():
             if run['testcase']:
-                tc = run['testcase']
-                if tc not in test_cases:
-                    test_cases[tc] = {}
-                    test_cases[tc]['testcase'] = s.get(tc).json()
-                    test_cases[tc]['runs'] = []
-                test_cases[tc]['runs'].append(run)
-            elif run['results']:
-                # Legacy test case results check.
+                continue
+            if run['results']:
                 # If the test run does not have a test case, check its results.
-                measurement = run['results'][0]['measurement']
                 # Assume that there is only one testcase per run
-                tc = measurement['testcase']
-                if tc not in test_cases:
-                    test_cases[tc] = {}
-                    test_cases[tc]['testcase'] = s.get(tc).json()
-                    test_cases[tc]['runs'] = []
-
-                # Used for reruns
-                measurement['testcase'] = test_cases[tc]['testcase']
-
-                test_cases[tc]['runs'].append(run)
+                measurement = run['results'][0]['measurement']
+                run['testcase'] = measurement['testcase']
             elif run['log_upload_file']:
-                # Legacy test case results check.
                 # If there are no results, then it means there was a test
                 # harness error. Unfortunately, there is no test case attached
                 # to a test run, only to test results. This may get resolved
                 # when Bug 254 is resolved (since a test case would be attached
                 # to a test run)
+                run['testcase'] = 'other'
 
-                if 'other' not in test_cases:
-                    test_cases['other'] = {}
-                    test_cases['other']['testcase'] = {'name': 'other'}
-                    test_cases['other']['runs'] = []
+        # for each test case, add all runs
+        test_cases = {}
 
-                test_cases['other']['runs'].append(run)
+        for run_url, run in runs.items():
+            if not run['testcase']:
+                continue
+
+            tc = run['testcase']
+            if tc not in test_cases:
+                test_cases[tc] = {}
+                if tc == 'other':
+                    test_cases[tc]['testcase'] = {'name': 'other'}
+                else:
+                    test_cases[tc]['testcase'] = s.get(tc).json()
+                test_cases[tc]['runs'] = []
+
+            test_cases[tc]['runs'].append(run)
+
+            # Needed for reruns
+            run['testcase'] = test_cases[tc]['testcase']
 
         return test_cases
 
