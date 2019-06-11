@@ -136,6 +136,16 @@ def main():
         log_checking('Load sample data into database')
         run(py_exe, 'manage.py', 'loaddata', 'demo')
 
+    npm_exe = which('npm')
+    if not npm_exe:
+        log_result('npm is not installed!')
+        return 1
+
+    log_checking('Installing client JavaScript dependencies')
+    run(npm_exe, 'install')
+    log_checking('Building client JavaScript')
+    run(npm_exe, 'build')
+
     print('\nDone! To run the server, run the following commands:\n\n'
           'source venv/bin/activate\n'
           'cd cisite\n'
@@ -145,7 +155,7 @@ def main():
 
 if __name__ == '__main__':
     try:
-        main()
+        sys.exit(main())
     except SystemExit:
         # Let a sys.exit() progress as normal
         raise
