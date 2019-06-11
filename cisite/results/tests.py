@@ -698,19 +698,19 @@ class PatchSetModelTestCase(test.TransactionTestCase):
     def setUp(self):
         """Reset model properties."""
         super().setUp()
-        env_date = datetime(2017, 1, 1, tzinfo=utc)
+        self.env_date = datetime(2017, 1, 1, tzinfo=utc)
         TestCase.objects.create(
             name='nic_single_core_perf',
             description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
         self.test_ps = PatchSet.objects.create()
         self.env1 = create_test_environment(
-            inventory_id='IOL-IOL-1', date=env_date, live_since=env_date)
+            inventory_id='IOL-IOL-1', date=self.env_date, live_since=self.env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env1,
                                    testcase=TestCase.objects.first())
         self.env2 = create_test_environment(
-            inventory_id='IOL-IOL-2', date=env_date, live_since=env_date)
+            inventory_id='IOL-IOL-2', date=self.env_date, live_since=self.env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env2,
@@ -883,6 +883,27 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                   measurement=self.env2.measurements.first(),
                                   run=run)
         self.assertEqual(self.test_ps.status, 'Possible Regression')
+
+    def test_not_incomplete(self):
+        """
+        Verify that the status is Pass instead of Incomplete if live_since is
+        None for an environment.
+        """
+        run = create_test_run(self.env1)
+        run.tarball.patchset = self.test_ps
+        run.tarball.save()
+        TestResult.objects.create(
+            result='PASS', difference=-0.002,
+            measurement=self.env1.measurements.first(), run=run)
+        run = create_test_run(self.env2, tarball=run.tarball)
+        TestResult.objects.create(
+            result='PASS', difference=-0.021,
+            measurement=self.env2.measurements.first(), run=run)
+        env = create_test_environment(date=self.env_date)
+        Measurement.objects.create(
+            name='throughput', unit='Mpps', higher_is_better=True,
+            environment=env, testcase=TestCase.objects.first())
+        self.assertEqual(self.test_ps.status, 'Pass')
 
 
 class OwnerTestCase(test.TestCase):

@@ -92,6 +92,7 @@
     bios_version: A
     os_distro: Ubuntu 18.04
     predecessor: null
+    live_since: 2018-01-01 00:00:00+00:00
 - model: results.environment
   pk: 2
   fields:
@@ -123,6 +124,7 @@
     bios_version: A
     os_distro: Ubuntu 18.04
     predecessor: null
+    live_since: 2018-01-01 00:00:00+00:00
 - model: results.environment
   pk: 3
   fields:
@@ -154,6 +156,7 @@
     bios_version: A
     os_distro: Ubuntu 16.04
     predecessor: null
+    live_since: 2018-01-01 00:00:00+00:00
 - model: results.environment
   pk: 4
   fields:
