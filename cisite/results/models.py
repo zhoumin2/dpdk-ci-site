@@ -377,7 +377,8 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
             query |= Q(date__lte=date)
 
         Environment = apps.get_model('results', 'Environment')
-        active_envs = Environment.objects.filter(query, successor__isnull=True)
+        active_envs = Environment.objects.filter(
+            query, successor__isnull=True, live_since__isnull=False)
 
         for env in active_envs.iterator():
             tr_qs = env.all_runs.filter(tarball__id=self.id)
@@ -386,8 +387,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
                 continue
             tr = tr_qs.last()
 
-            if getattr(env, 'live_since', None) and \
-                    env.live_since <= tr.timestamp:
+            if env.live_since <= tr.timestamp:
                 if tr.results.filter(result="FAIL").exists():
                     count['failed'] += 1
                 elif tr.results.filter(result="PASS").exists():
