@@ -144,7 +144,7 @@ def main():
     log_checking('Installing client JavaScript dependencies')
     run(npm_exe, 'install')
     log_checking('Building client JavaScript')
-    run(npm_exe, 'build')
+    run(npm_exe, 'run', 'build')
 
     print('\nDone! To run the server, run the following commands:\n\n'
           'source venv/bin/activate\n'
