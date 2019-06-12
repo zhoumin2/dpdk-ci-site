@@ -5,10 +5,15 @@
 
     <h2>Items to be changed</h2>
     <ul>
-      {% for models in modified %}
-      {% for model in models %}
-      <li><a href="{{ model.get_absolute_url }}">{{ model }}</a></li>
-      {% endfor %}
+      {% for env in modified %}
+        <li>
+          <a href="{{ env.environment.get_absolute_url }}">{{ env.environment }}</a>
+          <ul>
+            <li>Measurements: {{ env.measurements }}</li>
+            <li>Runs: {{ env.runs }}</li>
+            <li>Results: {{ env.results }}</li>
+          </ul>
+        </li>
       {% endfor %}
     </ul>
 
