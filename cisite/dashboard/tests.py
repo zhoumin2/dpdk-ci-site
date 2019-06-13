@@ -738,13 +738,22 @@ class SubscriptionsViewTests(BaseTestCase):
         show up in the list.
         """
         # Add an environment that the user does not have access to
-        create_test_environment(owner=self.grp2)
+        env = create_test_environment(owner=self.grp2)
 
         with self.settings(API_BASE_URL=self.live_server_url):
             response = self.client.post(reverse('login'),
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
+            response = self.client.get(reverse('subscriptions'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['env_sub_pairs'], [])
+
+        # check if it shows up when the environment is public
+        env.set_public()
+
+        with self.settings(API_BASE_URL=self.live_server_url):
             response = self.client.get(reverse('subscriptions'))
 
         self.assertEqual(response.status_code, 200)

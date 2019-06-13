@@ -751,7 +751,7 @@ class Subscriptions(BasePreferencesView):
             subscriptions = api_resp.json()
             api_resp = s.get(
                 urljoin(settings.API_BASE_URL, 'environments/'),
-                params={'active': True})
+                params={'active': True, 'mine': True})
             environments = api_resp.json()
 
         # [{"environment": Foo, "subscription": None}]
