@@ -4,10 +4,9 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define custom permissions for results app.
 """
-
 from guardian.utils import get_anonymous_user
 from rest_framework.permissions import BasePermission, \
-    DjangoObjectPermissions, SAFE_METHODS
+    DjangoObjectPermissions, SAFE_METHODS, IsAuthenticated
 
 
 class IsAdminUserOrReadOnly(BasePermission):
@@ -94,3 +93,24 @@ class UserProfileObjectPermission(DjangoObjectPermissions):
         """Return true if permission should be granted."""
         user = request.user
         return user.is_staff or obj.user_profile.user == user
+
+
+class PrimaryContactObjectPermission(IsAuthenticated):
+    """Allow primary contact to administrate users in their group.
+
+    This allows the primary contact to list users in their group and remove
+    users from their group.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        """Return true if permission should be granted."""
+        # Let users of groups get detailed information, but make sure they
+        # can't do anything unless they are a primary contact (admins should
+        # do this from the admin interface if they need to)
+        if request.method in SAFE_METHODS:
+            return True
+        user = request.user
+        for group in obj.groups.all():
+            if user.has_perm('manage_group', group.results_vendor):
+                return True
+        return False

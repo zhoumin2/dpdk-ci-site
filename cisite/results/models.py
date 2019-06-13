@@ -1017,3 +1017,24 @@ class UserProfile(models.Model):
     def display_name(self):
         """Return the user's display name."""
         return ' '.join([self.user.first_name, self.user.last_name])
+
+
+class Vendor(models.Model):
+    """Define a vendor model.
+
+    This has a one-to-one relationship with a group and is used to store
+    extra group settings.
+    """
+
+    group = models.OneToOneField(
+        Group, on_delete=models.CASCADE, related_name='results_vendor',
+        help_text='The group that this vendor corresponds to.')
+
+    class Meta:
+        permissions = [
+            ('manage_group', 'Can manage the group'),
+        ]
+
+    def __str__(self):
+        """Return the name of the group that owns this vendor."""
+        return self.group.name

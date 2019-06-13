@@ -18,6 +18,7 @@ from django import test
 from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now, utc
+from guardian.shortcuts import assign_perm
 from guardian.utils import get_anonymous_user
 import rest_framework.exceptions
 import requests_mock
@@ -1717,4 +1718,141 @@ class TestRebuild(test.TestCase):
         self.client.login(username=self.user.username, password='AbCdEfGh')
         resp = self.client.post(reverse('patchset-rebuild',
                                         args=(999999, self.branch.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+@requests_mock.Mocker(real_http=True)
+class TestUser(test.TestCase):
+    """Test the user model permissions."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        # Primary contact
+        self.pc = User.objects.create_user(
+            'contact', 'admin@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.group2 = Group.objects.create(name='TestGroup2')
+        self.pc.groups.add(self.group)
+        self.pc.groups.add(self.group2)
+        self.pc.results_profile.save()
+        assign_perm('manage_group', self.pc, self.group.results_vendor)
+
+        # Employee
+        self.user_of_group = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.user_of_group.groups.add(self.group)
+
+        # Some other vendor
+        self.user_other = User.objects.create_user(
+            'othervendor', 'ov@example.com', 'AbCdEfGh')
+        self.user_other.groups.add(self.group2)
+
+        # Some random person
+        self.user_no_group = User.objects.create_user(
+            'novendor', 'no@example.com', 'AbCdEfGh')
+
+    def test_no_login(self, m):
+        """Sanity check that anonymous users can't list users."""
+        resp = self.client.get(reverse('user-list'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('user-list'), {'managed': True})
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('user-list'), {'managed': False})
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_anon_managed_filter(self, m):
+        """Test anonymous user does not show up to pc.
+
+        Test that they do not show up in both managed and unmanaged filter.
+        """
+        self.client.login(username=self.pc.username, password='AbCdEfGh')
+
+        resp = self.client.get(reverse('user-list'), {'managed': True}).json()
+        # Since pc is part of group1 and manages group1
+        self.assertEqual(resp['count'], 1)
+        for result in resp['results']:
+            self.assertTrue(result['username'] != 'AnonymousUser')
+
+        resp = self.client.get(reverse('user-list'), {'managed': False}).json()
+        # Since pc is part of group2 (but cant manage group2)
+        self.assertEqual(resp['count'], 1)
+        for result in resp['results']:
+            self.assertTrue(result['username'] != 'AnonymousUser')
+
+    def test_pc_proper_users(self, m):
+        """Test primary contact group.
+
+        Test that they can only see the literal group they are supposed to
+        manage when primary contact is part of many groups.
+        """
+        # Sanity check
+        self.assertTrue(len(self.pc.groups.all()) >= 2)
+        self.client.login(username=self.pc.username, password='AbCdEfGh')
+
+        resp = self.client.get(reverse('user-list'), {'managed': True}).json()
+        self.assertEqual(resp['count'], 1)
+        contains = False
+        for result in resp['results']:
+            self.assertTrue(result['username'] != self.user_other.username)
+            if result['username'] == self.user_of_group.username:
+                contains = True
+        self.assertTrue(contains)
+
+    def test_non_pc_ok(self, m):
+        """Test that a regular user can see user list properly."""
+        self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
+
+        resp = self.client.get(reverse('user-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.json()['count'], 2)
+        resp = self.client.get(reverse('user-list'), {'managed': True})
+        self.assertEqual(resp.json()['count'], 0)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(reverse('user-list'), {'managed': False})
+        self.assertEqual(resp.json()['count'], 2)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_pc_directly(self, m):
+        """Test pc can remove user part of their group."""
+        self.client.login(username=self.pc.username, password='AbCdEfGh')
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=(self.user_of_group.username, self.group.name)))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(reverse('user-list'))
+        for result in resp.json()['results']:
+            self.assertTrue(result['username'] != self.user_of_group.username)
+
+    def test_non_pc_no_perm(self, m):
+        """Test regular user can't remove a user. (non 500)"""
+        self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
+
+        # user in different group
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=(self.user_other.username, self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # non existent group
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=(self.user_other.username, 'no-exist')))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # non existent user
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=('no-exist', self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_pc_diff_group(self, m):
+        """Test pc can't remove user not part of their group. (non 500)"""
+        self.client.login(username=self.pc.username, password='AbCdEfGh')
+
+        # user in different group
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=(self.user_other.username, self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # non existent group
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=(self.user_other.username, 'no-exist')))
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # non existent user
+        resp = self.client.delete(
+            reverse('user-remove-from-group', args=('no-exist', self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
