@@ -722,6 +722,14 @@ class BasePreferencesView(LoginRequiredMixin, BaseDashboardView):
         # redirect to the login page
         context['next'] = reverse('dashboard')
         context['enable_rest_api'] = settings.ENABLE_REST_API
+
+        user = self.request.user
+        # check if the user is a primary contact for any of their groups
+        for group in user.groups.all():
+            if user.has_perm('manage_group', group.results_vendor):
+                context['primary_contact'] = True
+                break
+
         return context
 
 
@@ -1039,3 +1047,56 @@ class CIStatusView(BaseDashboardView):
             context['queue'] = queue
 
         return context
+
+
+class ManageUsers(BasePreferencesView):
+    """Manage users page."""
+
+    template_name = 'manage_users.html'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+        with api_session(self.request) as s:
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'users/'), params={
+                'managed': True
+            })
+            api_resp.raise_for_status()
+            managed_users = api_resp.json()
+
+            user = self.request.user
+            # get all groups the user is a primary contact
+            managed_groups = []
+            for group in self.request.user.groups.all():
+                if user.has_perm('manage_group', group.results_vendor):
+                    managed_groups.append(group.name)
+
+            # create a dictionary of managed_group[user]
+            # since the user could be a primary contact for multiple groups and
+            # users could also be in multiple groups
+            group_to_user = {}
+            for managed_group in managed_groups:
+                group_to_user[managed_group] = []
+                for managed_user in managed_users['results']:
+                    for user_group in managed_user['groups']:
+                        name = self.get_cache_request(user_group, s)['name']
+                        if name == managed_group:
+                            group_to_user[managed_group].append(managed_user)
+
+        context['group_users'] = group_to_user
+        context['title'] = 'Manage Users'
+        return context
+
+
+class ManageUsersRemove(LoginRequiredMixin, View):
+    """Proxy a delete to the results view."""
+
+    def post(self, request, user, group, *args, **kwargs):
+        with api_session(request) as s:
+            response = s.delete(
+                urljoin(settings.API_BASE_URL,
+                        f'users/{user}/group/{group}/'))
+            response.raise_for_status()
+        messages.success(
+            request, f'{user} has been removed from the group {group}.')
+        return HttpResponseRedirect(reverse('manage_users'))

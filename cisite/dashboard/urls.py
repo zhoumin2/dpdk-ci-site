@@ -96,4 +96,10 @@ urlpatterns = [
          views.CIDownloadView.as_view(), name='tarball-download'),
     path('status/',
          views.CIStatusView.as_view(), name='ci-status'),
+    path('preferences/manage_users/',
+         views.ManageUsers.as_view(),
+         name='manage_users'),
+    path('preferences/manage_users/<str:user>/remove_from_group/<str:group>/',
+         views.ManageUsersRemove.as_view(),
+         name='manage_users_remove'),
 ]
