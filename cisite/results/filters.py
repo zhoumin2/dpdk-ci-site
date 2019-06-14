@@ -23,6 +23,10 @@ class EnvironmentFilter(FilterSet):
         field_name='successor', label='active', lookup_expr='isnull',
         help_text='If present, limits to active (if true) or inactive (if false) environments.')
 
+    mine = BooleanFilter(
+        field_name='mine', label='mine', method='mine_filter',
+        help_text='If present, limits to only your environments.')
+
     class Meta:
         """Set up model association."""
 
@@ -36,6 +40,16 @@ class EnvironmentFilter(FilterSet):
             return queryset
         else:
             return queryset.filter(successor__isnull=value)
+
+    def mine_filter(self, queryset, name, value):
+        """Filter based on the value of the mine query field."""
+        assert name == 'mine', 'Unexpected query field name'
+        mine = get_objects_for_user(self.request.user, 'view_environment',
+                                    queryset, accept_global_perms=False)
+        if value:
+            return mine
+        else:
+            return queryset.exclude(id__in=mine)
 
 
 class PatchSetFilter(FilterSet):
