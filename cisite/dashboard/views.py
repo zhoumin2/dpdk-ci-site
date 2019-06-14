@@ -747,7 +747,7 @@ class Subscriptions(BasePreferencesView):
     DELETE, PATCH, and POST are proxy subscription calls to REST API.
     """
 
-    template_name = 'subscriptions.html'
+    template_name = 'preferences/subscriptions.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -876,7 +876,7 @@ class PasswordChangeDoneView(BasePreferencesView, auth_views.PasswordChangeDoneV
 class RESTAPIPreferences(BasePreferencesView):
     """Show REST API preferences."""
 
-    template_name = 'rest_api_preferences.html'
+    template_name = 'preferences/rest_api_preferences.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -1052,7 +1052,7 @@ class CIStatusView(BaseDashboardView):
 class ManageUsers(BasePreferencesView):
     """Manage users page."""
 
-    template_name = 'manage_users.html'
+    template_name = 'preferences/manage_users.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
