@@ -27,11 +27,13 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.views.generic import TemplateView, View
+from django.views.generic.edit import FormView
 from rest_framework.authtoken.models import Token
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
     ipa_session, ParseIPAChangePassword, pw_get
+from .forms import EnvironmentForm
 from shared.util import requests_to_response
 
 logger = getLogger('dashboard')
@@ -1100,3 +1102,68 @@ class ManageUsersRemove(LoginRequiredMixin, View):
         messages.success(
             request, f'{user} has been removed from the group {group}.')
         return HttpResponseRedirect(reverse('manage_users'))
+
+
+class ManageEnvironments(FormView, BasePreferencesView):
+    """Manage environments page."""
+
+    template_name = 'preferences/manage_environments.html'
+    form_class = EnvironmentForm
+    success_url = '.'
+
+    def get_context_data(self, **kwargs):
+        """Return contextual data about the available preferences."""
+        context = super().get_context_data(**kwargs)
+
+        with api_session(self.request) as s:
+            api_resp = s.get(
+                urljoin(settings.API_BASE_URL, 'environments/'),
+                params={'active': True, 'mine': True})
+
+        environments = api_resp.json()['results']
+
+        for env in environments:
+            if env['live_since']:
+                # only show date from the datetime, so it can be rendered in
+                # the html input properly
+                env['live_since'] = env['live_since'].split('T')[0]
+
+            if env['hardware_description']:
+                env['hardware_description'] = build_upload_url(
+                    self.request, env['hardware_description'])
+
+        context['environments'] = environments
+        context['title'] = 'Manage Environments'
+        return context
+
+    def form_valid(self, form):
+        nic_make = form.cleaned_data['nic_make']
+        nic_model = form.cleaned_data['nic_model']
+        live_since = form.cleaned_data['live_since']
+        env = form.cleaned_data['environment']
+        hw_description = form.cleaned_data['hardware_description']
+
+        if live_since:
+            live_since = live_since.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        send = {
+            'nic_make': nic_make,
+            'nic_model': nic_model,
+            'live_since': live_since,
+        }
+        files = {}
+
+        if hw_description:
+            files['hardware_description'] = hw_description
+
+        with api_session(self.request) as s:
+            api_resp = s.patch(
+                urljoin(settings.API_BASE_URL, f'environments/{env}/'),
+                json=send, files=files)
+
+        if api_resp.status_code != requests.codes.ok:
+            messages.error(self.request, api_resp.text)
+            return super().form_valid(form)
+
+        messages.success(self.request, 'Saved successfully!')
+        return super().form_valid(form)
