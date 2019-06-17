@@ -227,11 +227,17 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
 
         for k, v in data.items():
             if k in ['url', 'contact_policy', 'measurements',
-                     'hardware_description']:
+                     'hardware_description', 'live_since', 'nic_make',
+                     'nic_model']:
                 continue
             if v != getattr(self.instance, k):
                 raise serializers.ValidationError(self.READONLY_FMT.format(
                     verb="change", object=k))
+
+        # handle PATCH vs PUT requests
+        if self.partial and 'measurements' not in data:
+            return data
+
         for m_data in data['measurements']:
             if self.instance and 'id' not in m_data:
                 raise serializers.ValidationError('no id')
@@ -269,6 +275,16 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
         duplicate already exists in the database.
         """
         validated_data.pop('url', None)
+
+        # handle PATCH vs PUT requests
+        if (self.partial and
+                'contact_policy' not in validated_data and
+                'measurements' not in validated_data):
+            for field, v in validated_data.items():
+                setattr(instance, field, v)
+            instance.save()
+            return instance
+
         cpolicy_data = validated_data.pop('contact_policy')
         measurements_data = validated_data.pop('measurements')
         for field, v in validated_data.items():
@@ -294,7 +310,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                     p = Parameter.objects.create(measurement=m, **p_data)
                     p_data['id'] = p.pk
                 else:
-                    p = m.parameters.get(pk=m_data['id'])
+                    p = m.parameters.get(pk=p_data['id'])
                     for field, v in p_data.items():
                         setattr(p, field, v)
                     p.save()

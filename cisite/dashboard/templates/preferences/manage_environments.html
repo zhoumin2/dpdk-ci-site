@@ -1,0 +1,92 @@
+{% extends "preferences/base.html" %}
+{% load static %}
+
+{% block preference %}
+<p>
+  If you would like to change any hardware or software settings not listed on this page for an environment,
+  or create a new environment, please contact us about what you'd like to be changed.
+  It may require creating a new, successor environment, to keep old and new results reproducible.
+</p>
+{% for message in messages %}
+  <div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    {{ message  }}
+  </div>
+{% endfor %}
+{% for env in environments %}
+  <div class="card mb-3">
+    <h3 class="card-header">
+      {{ env.nic_make }} {{ env.nic_model }} {{ env.nic_speed }} Mbps
+    </h3>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {# Custom form to loop through the environments. #}
+        <input type="number" name="{{ form.environment.name }}" value="{{ env.id }}" autocomplete="no" hidden>
+
+        <div class="form-group row">
+          <label class="col-lg-4 col-form-label" for="{{ form.nic_make.id_for_label }}{{ env.id }}" title="{{ form.nic_make.help_text }}">
+            NIC Make
+          </label>
+          <div class="col-lg-8">
+            <input type="text" name="{{ form.nic_make.name }}" id="{{ form.nic_make.id_for_label }}{{ env.id }}" class="form-control" autocomplete="off" value="{{ env.nic_make }}">
+          </div>
+          {{ form.nic_make.errors }}
+        </div>
+
+        <div class="form-group row">
+          <label class="col-lg-4 col-form-label" for="{{ form.nic_model.id_for_label }}{{ env.id }}" title="{{ form.nic_model.help_text }}">
+            NIC Model
+          </label>
+          <div class="col-lg-8">
+            <input type="text" name="{{ form.nic_model.name }}" id="{{ form.nic_model.id_for_label }}{{ env.id }}" class="form-control" autocomplete="off" value="{{ env.nic_model }}">
+          </div>
+          {{ form.nic_model.errors }}
+        </div>
+
+        <div class="form-group row">
+          <label class="col-lg-4 col-form-label" for="{{ form.live_since.id_for_label }}{{ env.id }}" title="{{ form.live_since.help_text }}">
+            Live Since
+          </label>
+          <div class="col-lg-8">
+            <input type="date" name="{{ form.live_since.name }}" id="{{ form.live_since.id_for_label }}{{ env.id }}" class="form-control" autocomplete="off" value="{{ env.live_since }}">
+          </div>
+          {{ form.live_since.errors }}
+        </div>
+
+        <div class="form-group row">
+          <div class="col-lg-4 col-form-label" title="{{ form.hardware_description.help_text }}">
+            {% if env.hardware_description %}
+              <a href="{{ env.hardware_description }}">Hardware Description</a>
+            {% else %}
+              Hardware Description
+            {% endif %}
+          </div>
+          <div class="col-lg-8">
+            <div class="custom-file">
+              <input type="file" name="{{ form.hardware_description.name }}" id="{{ form.hardware_description.id_for_label }}{{ env.id }}" class="custom-file-input" autocomplete="off">
+              <label class="custom-file-label text-truncate" for="{{ form.hardware_description.id_for_label }}{{ env.id }}">
+                Choose file...
+              </label>
+            </div>
+          </div>
+          {{ form.hardware_description.errors }}
+        </div>
+
+        <input class="btn btn-secondary" type="submit" value="Save">
+      </form>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}
+
+{% block js %}
+<script>
+// replace the "Choose a file" label
+$('.custom-file-input').on('change', function() {
+  $(this).next('.custom-file-label').html($(this)[0].files[0].name);
+})
+</script>
+{% endblock %}
