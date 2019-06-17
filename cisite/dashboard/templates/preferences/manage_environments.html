@@ -7,14 +7,7 @@
   or create a new environment, please contact us about what you'd like to be changed.
   It may require creating a new, successor environment, to keep old and new results reproducible.
 </p>
-{% for message in messages %}
-  <div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-    {{ message  }}
-  </div>
-{% endfor %}
+{% include "messages.html" %}
 {% for env in environments %}
   <div class="card mb-3">
     <h3 class="card-header">
