@@ -29,16 +29,14 @@ from private_storage.views import PrivateStorageDetailView
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
 from rest_framework.filters import OrderingFilter
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.parsers import JSONParser, FormParser
-from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from . import permissions
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter, \
-    DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter
+    DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter, UserFilter
 from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
 from .parsers import JSONMultiPartParser
@@ -350,7 +348,7 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
-    """Provide administrators API access to the registered users.
+    """Allows users to view other users in their group.
 
     list:
     Lists all users that have been populated in this instance.
@@ -361,10 +359,22 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
     """
 
     lookup_field = 'username'
-    permission_classes = (IsAdminUser,)
-    queryset = UserSerializer.setup_eager_loading(
-        User.objects.exclude(username__in=('AnonymousUser',)))
+    permission_classes = (permissions.PrimaryContactObjectPermission,)
+    # this queryset is here to avoid the no "base_name" issue
+    queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = UserFilter
+
+    def get_queryset(self):
+        """Show users that are part of the user's group.
+
+        Or all if they are an admin.
+        """
+        user = self.request.user
+        if user.is_staff:
+            return User.objects.exclude(username='AnonymousUser')
+        return User.objects.filter(groups__in=user.groups.all()).distinct()
 
     def get_object(self):
         """Return the user object requested by the user.
@@ -373,9 +383,29 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
         """
         user = LDAPBackend().populate_user(self.kwargs['username'])
         if user is None:
-            raise NotFound(self.kwargs['username'])
+            user = super().get_object()
         self.check_object_permissions(self.request, user)
         return user
+
+    @action(methods=['delete'], detail=True, url_name='remove-from-group',
+            url_path='group/(?P<group>.*)')
+    def remove_from_group(self, request, username, group):
+        """Removes the user from a group
+
+        Allows the primary contact to remove users from their group. Deleting
+        users should be done through the admin interface, not the API.
+
+        The requesting user is the primary contact, while the user object is
+        the user to be removed from the primary contact's group.
+        """
+        user = self.get_object()
+        message = f'{request.user} removed {username} from {group}'
+        logger.info(message)
+        LogEntry.objects.log_action(
+            request.user.id, ContentType.objects.get_for_model(User).pk,
+            user.pk, repr(user), CHANGE, message)
+        Group.objects.filter(name=group).first().user_set.remove(user)
+        return Response({'status': 'ok'})
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):

@@ -12,7 +12,7 @@ from rest_framework import serializers
 from urllib.parse import urljoin
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Tarball, TestCase, TestResult, TestRun, \
-    Subscription
+    Subscription, UserProfile
 
 
 def qs_get_missing(queryset, data):
@@ -449,17 +449,30 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 
+class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
+    """Serialize user profile objects."""
+
+    class Meta:
+        """Specify metadata for user profile serializer."""
+
+        model = UserProfile
+        fields = ('display_name',)
+
+
 class UserSerializer(serializers.HyperlinkedModelSerializer,
                      EagerLoadingMixin):
     """Serialize user objects."""
 
     _PREFETCH_RELATED_FIELDS = ('groups',)
 
+    results_profile = UserProfileSerializer()
+
     class Meta:
         """Specify metadata for group serializer."""
 
         model = User
-        fields = ('url', 'username', 'groups')
+        fields = ('url', 'username', 'groups', 'first_name', 'last_name',
+                  'email', 'results_profile')
         read_only_fields = fields
         extra_kwargs = {
             'url': {'lookup_field': 'username'},

@@ -1,0 +1,61 @@
+{% extends "preferences_base.html" %}
+{% load static %}
+
+{% block preference %}
+<p>As a primary contact, you are able to manage users in your company to be able to view private results.</p>
+{% for message in messages %}
+  <div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    {{ message  }}
+  </div>
+{% endfor %}
+{% if group_users %}
+  {% for group, users in group_users.items %}
+    <div class="card mb-3">
+      <h3 class="card-header">{{ group }}</h3>
+      <ul class="list-group list-group-flush">
+        {% for user in users %}
+          <li class="list-group-item">
+            <div class="d-lg-flex justify-content-between">
+              <h4>{{ user.results_profile.display_name }} ({{ user.username }})</h4>
+              <div>
+                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#remove{{ user.username }}" title="Revoke access to private results from your company">
+                  Remove from group
+                </button>
+              </div>
+            </div>
+          </li>
+          <div class="modal" tabindex="-1" role="dialog" id="remove{{ user.username }}">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p>Are you sure that you want to remove <strong>{{ user.results_profile.display_name }}</strong> from the group <strong>{{ group }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <form method="post" action="{% url 'manage_users_remove' user.username group %}">
+                    {% csrf_token %}
+                    <input type="submit" value="Remove from group" class="btn btn-danger">
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <li class="list-group-item">There are no users that have access to your private results.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>There are no users that have access to your private results.</p>
+{% endif %}
+{% endblock %}

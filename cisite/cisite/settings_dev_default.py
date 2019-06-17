@@ -39,6 +39,9 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend'
 )
 
+# Required to be defined for get_object() on the UserViewSet
+AUTH_LDAP_USER_DN_TEMPLATE = ""
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',

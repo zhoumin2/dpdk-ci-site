@@ -6,7 +6,7 @@ Filter querysets for results database objects.
 
 This file contains custom filter sets for the results application.
 """
-
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django_filters.rest_framework import BooleanFilter, FilterSet
 from guardian.shortcuts import get_objects_for_user
@@ -165,3 +165,38 @@ class TarballFilter(FilterSet):
             return queryset.with_patchset()
         else:
             return queryset.without_patchset()
+
+
+class UserFilter(FilterSet):
+    """Supply a "managed" filter for users.
+
+    This filter create a "managed" parameter that only shows users
+    that the primary contact can manage.
+    """
+
+    managed = BooleanFilter(
+        field_name='managed', label='managed', method='managed_filter',
+        help_text='If present, limits to users you can manage.')
+
+    class Meta:
+        """Set up class fields automatically."""
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email')
+
+    def managed_filter(self, queryset, name, value):
+        """Filter based on the value of the managed query field."""
+        assert name == 'managed', 'Unexpected query field name'
+        user = self.request.user
+        groups = []
+        for group in user.groups.all():
+            if user.has_perm('manage_group', group.results_vendor):
+                groups.append(group)
+
+        if value:
+            # Exclude requesting user from the list. So there isn't a situation
+            # where they can remove themselves from their own group while still
+            # being a primary contact. That should be handled separately.
+            return queryset.filter(groups__in=groups).exclude(username=user) \
+                .distinct()
+        else:
+            return queryset.exclude(groups__in=groups)
