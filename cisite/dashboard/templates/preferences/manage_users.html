@@ -3,14 +3,7 @@
 
 {% block preference %}
 <p>As a primary contact, you are able to manage users in your company to be able to view private results.</p>
-{% for message in messages %}
-  <div class="alert alert-{{ message.tags  }} alert-dismissible" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-    {{ message  }}
-  </div>
-{% endfor %}
+{% include "messages.html" %}
 {% if group_users %}
   {% for group, users in group_users.items %}
     <div class="card mb-3">
