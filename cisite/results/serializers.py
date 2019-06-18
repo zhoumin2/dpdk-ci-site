@@ -4,15 +4,21 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define serializers for results models.
 """
+from logging import getLogger
+from urllib.parse import urljoin
 
 from django.conf import settings
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.auth.models import Group, User
+from django.contrib.contenttypes.models import ContentType
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
-from urllib.parse import urljoin
+
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Tarball, TestCase, TestResult, TestRun, \
     Subscription, UserProfile
+
+logger = getLogger('results')
 
 
 def qs_get_missing(queryset, data):
@@ -275,28 +281,58 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
         duplicate already exists in the database.
         """
         validated_data.pop('url', None)
+        # only log for http requests (not unit tests, etc)
+        request = self.context.get('request')
+        if request:
+            user = request.user
+            message = f'{user} changed environment {instance.pk} with: '
 
         # handle PATCH vs PUT requests
         if (self.partial and
                 'contact_policy' not in validated_data and
                 'measurements' not in validated_data):
             for field, v in validated_data.items():
+                if request and getattr(instance, field, None) != v:
+                    message += (f'[{field} from {getattr(instance, field, None)} '
+                                f'to {v}] ')
                 setattr(instance, field, v)
+
+            if request:
+                logger.info(message)
+                LogEntry.objects.log_action(
+                    user.id, ContentType.objects.get_for_model(Environment).pk,
+                    instance.pk, repr(instance), CHANGE, message)
+
             instance.save()
             return instance
 
         cpolicy_data = validated_data.pop('contact_policy')
         measurements_data = validated_data.pop('measurements')
+
         for field, v in validated_data.items():
+            if request and getattr(instance, field, None) != v:
+                message += (f'[{field} from {getattr(instance, field, None)} '
+                            f'to {v}] ')
             setattr(instance, field, v)
+
+        if request:
+            logger.info(message)
+            LogEntry.objects.log_action(
+                user.id, ContentType.objects.get_for_model(Environment).pk,
+                instance.pk, repr(instance), CHANGE, message)
+
         instance.save()
+
         for field, v in cpolicy_data.items():
             setattr(instance.contact_policy, field, v)
+
         instance.contact_policy.save()
+
         for m_data in measurements_data:
             m_data.pop('url', None)
             m_data.pop('environment', None)
             params_data = m_data.pop('parameters')
+
             if 'id' not in m_data:
                 m = Measurement.objects.create(environment=instance, **m_data)
                 m_data['id'] = m.pk
@@ -305,6 +341,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                 for field, v in m_data.items():
                     setattr(m, field, v)
                 m.save()
+
             for p_data in params_data:
                 if 'id' not in p_data:
                     p = Parameter.objects.create(measurement=m, **p_data)
@@ -314,7 +351,9 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                     for field, v in p_data.items():
                         setattr(p, field, v)
                     p.save()
+
             qs_get_missing(m.parameters.all(), params_data).delete()
+
         qs_get_missing(instance.measurements.all(),
                        measurements_data).delete()
         return instance
