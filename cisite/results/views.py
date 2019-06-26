@@ -369,10 +369,13 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         """Show users that are part of the user's group.
 
+        If a POST method is used, then return all users,
+        so that the custom viewset methods work.
+
         Or all if they are an admin.
         """
         user = self.request.user
-        if user.is_staff:
+        if user.is_staff or self.request.method == 'POST':
             return User.objects.exclude(username='AnonymousUser')
         return User.objects.filter(groups__in=user.groups.all()).distinct()
 
@@ -387,24 +390,41 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):
         self.check_object_permissions(self.request, user)
         return user
 
-    @action(methods=['delete'], detail=True, url_name='remove-from-group',
+    @action(methods=['delete', 'post'], detail=True, url_name='manage-group',
             url_path='group/(?P<group>.*)')
-    def remove_from_group(self, request, username, group):
-        """Removes the user from a group
+    def manage_group(self, request, username, group):
+        """Manage user in the primary contact's group
 
-        Allows the primary contact to remove users from their group. Deleting
+        Allows the primary contact to manage users of their group. Deleting
         users should be done through the admin interface, not the API.
 
         The requesting user is the primary contact, while the user object is
-        the user to be removed from the primary contact's group.
+        the user to be modified from the primary contact's group.
         """
         user = self.get_object()
-        message = f'{request.user} removed {username} from {group}'
+        group = Group.objects.filter(name=group).first()
+
+        # Double check that the user can manage the group (since POST requests
+        # get all users - which would normally get caught by get_object())
+        if not group:
+            raise Http404
+        if not request.user.has_perm('manage_group', group.results_vendor):
+            raise Http404
+
+        if request.method == 'DELETE':
+            message = f'{request.user} removed {username} from {group}'
+            group.user_set.remove(user)
+        elif request.method == 'POST':
+            message = f'{request.user} added {username} to {group}'
+            group.user_set.add(user)
+        else:
+            raise NotImplementedError
+
         logger.info(message)
         LogEntry.objects.log_action(
             request.user.id, ContentType.objects.get_for_model(User).pk,
             user.pk, repr(user), CHANGE, message)
-        Group.objects.filter(name=group).first().user_set.remove(user)
+
         return Response({'status': 'ok'})
 
 

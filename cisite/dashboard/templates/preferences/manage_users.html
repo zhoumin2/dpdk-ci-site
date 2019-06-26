@@ -7,7 +7,14 @@
 {% if group_users %}
   {% for group, users in group_users.items %}
     <div class="card mb-3">
-      <h3 class="card-header">{{ group }}</h3>
+      <div class="card-header d-flex flex-column flex-sm-row justify-content-between">
+        <h3>{{ group }}</h3>
+        <div>
+          <button class="btn btn-success" type="button" data-toggle="modal" data-target="#add{{ group }}" title="Add access to private results for the user">
+            Add user to group
+          </button>
+        </div>
+      </div>
       <ul class="list-group list-group-flush">
         {% for user in users %}
           <li class="list-group-item">
@@ -46,6 +53,33 @@
           <li class="list-group-item">There are no users that have access to your private results.</li>
         {% endfor %}
       </ul>
+      <div class="modal" tabindex="-1" role="dialog" id="add{{ group }}">
+        <form method="post" action="{% url 'manage_users_add' group %}">
+          {% csrf_token %}
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Confirm</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="name{{ group }}" class="col-form-label">Username</label>
+                  <input type="text" class="form-control" id="name{{ group }}" name="user">
+                  {# Try to avoid enumerating other company users by forcing the user to type an exact username, instead of autocompleting #}
+                  <small class="form-text text-muted">You must type in the exact username (such as <code>{{ user.username }}</code>) to add to the group.</small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <input type="submit" value="Add to group" class="btn btn-success">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   {% endfor %}
 {% else %}

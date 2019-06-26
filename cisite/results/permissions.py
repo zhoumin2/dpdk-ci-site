@@ -104,13 +104,24 @@ class PrimaryContactObjectPermission(IsAuthenticated):
 
     def has_object_permission(self, request, view, obj):
         """Return true if permission should be granted."""
-        # Let users of groups get detailed information, but make sure they
+        # Let users get detailed information, but make sure they
         # can't do anything unless they are a primary contact (admins should
         # do this from the admin interface if they need to)
         if request.method in SAFE_METHODS:
             return True
+
         user = request.user
+
+        # Let the pc remove the user from their own group (check if they
+        # are a pc in any of the user's groups)
         for group in obj.groups.all():
             if user.has_perm('manage_group', group.results_vendor):
                 return True
+
+        # Let the pc add a user to their group (check if they are a pc at all)
+        if request.method == 'POST':
+            for group in user.groups.all():
+                if user.has_perm('manage_group', group.results_vendor):
+                    return True
+
         return False
