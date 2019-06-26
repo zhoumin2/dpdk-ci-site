@@ -7,6 +7,8 @@ DO NOT USE THIS FILE IN PRODUCTION!!!!
 
 from .settings_base import *
 
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+
 DEBUG = True
 # !!!!Do NOT use this SECRET_KEY in production!!!!
 SECRET_KEY = r'UNSAFEwcHpD2C5vIkYP9Wx6mMkiUKjyHyR4Jwd3GbXFug3UNSAFE'
@@ -21,6 +23,19 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'public.sqlite3'),
     }
 }
+
+# Regular debug apps
+INSTALLED_APPS += [
+]
+
+# Apps needed before static files
+INSTALLED_APPS = [
+    'livereload',
+] + INSTALLED_APPS
+
+MIDDLEWARE += [
+    'livereload.middleware.LiveReloadScript',
+]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

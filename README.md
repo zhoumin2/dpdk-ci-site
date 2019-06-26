@@ -94,6 +94,7 @@ are to be displayed.
 $ cd cisite
 $ python manage.py migrate
 $ npm run build # used to transpile js for ie11 support
+$ python manage.py livereload --host 0 # optional: refresh pages on file changes
 $ python manage.py runserver 0:8000
 ```
 

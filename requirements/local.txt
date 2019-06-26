@@ -5,3 +5,4 @@ flake8
 flake8-docstrings
 requests-mock
 unittest-xml-reporting
+django-livereload-server
