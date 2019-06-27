@@ -67,11 +67,13 @@ services:
     image: cisite_dev
     command: >
       sh -c "npm --prefix .. run dev &
+             ./manage.py livereload --host 0 &
              ./manage.py runserver 0:8000"
     volumes:
       - .:/workspace
     ports:
       - "8000:8000"
+      - "35729:35729"
     depends_on:
       - cisite_dev
 
