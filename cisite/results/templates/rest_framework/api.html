@@ -4,3 +4,19 @@
   <a class="navbar-brand" rel="nofollow" href="http://www.django-rest-framework.org">Django REST framework</a>
   <a class="navbar-brand" href="{% url 'dashboard' %}">Dashboard</a>
 {% endblock %}
+
+{% block userlinks %}
+  {% if user.is_authenticated %}
+    <li class="dropdown">
+      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+        {{ request.user }}
+        <b class="caret"></b>
+      </a>
+      <ul class="dropdown-menu">
+        <li><a href="{% url 'logout' %}?next={{ next|default:request.path }}">Log out</a></li>
+      </ul>
+    </li>
+  {% else %}
+    <li><a href="{% url 'login' %}?next={{ next|default:request.path }}">Log in</a></li>
+  {% endif %}
+{% endblock %}
