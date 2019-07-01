@@ -1104,6 +1104,26 @@ class ManageUsersRemove(LoginRequiredMixin, View):
         return HttpResponseRedirect(reverse('manage_users'))
 
 
+class ManageUsersAdd(LoginRequiredMixin, View):
+    """Proxy a post to the results view."""
+
+    def post(self, request, group, *args, **kwargs):
+        user = request.POST.get('user')
+        with api_session(request) as s:
+            response = s.post(
+                urljoin(settings.API_BASE_URL,
+                        f'users/{user}/group/{group}/'))
+
+        if response.status_code == 404:
+            messages.error(request, f'{user} does not exist.')
+        else:
+            response.raise_for_status()
+            messages.success(
+                request, f'{user} has been added to the group {group}.')
+
+        return HttpResponseRedirect(reverse('manage_users'))
+
+
 class ManageEnvironments(FormView, BasePreferencesView):
     """Manage environments page."""
 

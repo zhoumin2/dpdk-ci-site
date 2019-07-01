@@ -1749,7 +1749,7 @@ class TestUser(test.TestCase):
         self.user_other.groups.add(self.group2)
 
         # Some random person
-        self.user_no_group = User.objects.create_user(
+        self.user_rand = User.objects.create_user(
             'novendor', 'no@example.com', 'AbCdEfGh')
 
     def test_no_login(self, m):
@@ -1814,45 +1814,93 @@ class TestUser(test.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_pc_directly(self, m):
-        """Test pc can remove user part of their group."""
+        """Test pc can manage users part of their group."""
         self.client.login(username=self.pc.username, password='AbCdEfGh')
+
+        # remove user in group
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=(self.user_of_group.username, self.group.name)))
+            reverse('user-manage-group', args=(self.user_of_group.username, self.group.name)))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = self.client.get(reverse('user-list'))
         for result in resp.json()['results']:
             self.assertTrue(result['username'] != self.user_of_group.username)
 
+        # add user to group
+        resp = self.client.post(
+            reverse('user-manage-group', args=(self.user_rand.username, self.group.name)))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(reverse('user-list'))
+        in_group = False
+        for result in resp.json()['results']:
+            if result['username'] == self.user_rand.username:
+                in_group = True
+                break
+        self.assertTrue(in_group)
+
     def test_non_pc_no_perm(self, m):
-        """Test regular user can't remove a user. (non 500)"""
+        """Test regular user can't manage users. (non 500)"""
         self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
 
         # user in different group
+        # remove
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=(self.user_other.username, self.group2.name)))
+            reverse('user-manage-group', args=(self.user_other.username, self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # add
+        resp = self.client.post(
+            reverse('user-manage-group', args=(self.user_other.username, self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
         # non existent group
+        # remove
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=(self.user_other.username, 'no-exist')))
+            reverse('user-manage-group', args=(self.user_other.username, 'no-exist')))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # add
+        resp = self.client.post(
+            reverse('user-manage-group', args=(self.user_other.username, 'no-exist')))
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
         # non existent user
+        # remove
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=('no-exist', self.group2.name)))
+            reverse('user-manage-group', args=('no-exist', self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # add
+        resp = self.client.post(
+            reverse('user-manage-group', args=('no-exist', self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_pc_diff_group(self, m):
-        """Test pc can't remove user not part of their group. (non 500)"""
+        """Test pc can't manage user not part of their group. (non 500)"""
         self.client.login(username=self.pc.username, password='AbCdEfGh')
 
         # user in different group
+        # remove user from non pc group, in same group as pc
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=(self.user_other.username, self.group2.name)))
+            reverse('user-manage-group', args=(self.user_other.username, self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # add user to non pc group
+        resp = self.client.post(
+            reverse('user-manage-group', args=(self.user_rand.username, self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
         # non existent group
+        # remove
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=(self.user_other.username, 'no-exist')))
+            reverse('user-manage-group', args=(self.user_other.username, 'no-exist')))
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # add
+        resp = self.client.post(
+            reverse('user-manage-group', args=(self.user_other.username, 'no-exist')))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
         # non existent user
+        # remove
         resp = self.client.delete(
-            reverse('user-remove-from-group', args=('no-exist', self.group2.name)))
+            reverse('user-manage-group', args=('no-exist', self.group2.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # add
+        resp = self.client.post(
+            reverse('user-manage-group', args=('no-exist', self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
