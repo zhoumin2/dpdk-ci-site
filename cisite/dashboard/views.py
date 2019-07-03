@@ -734,6 +734,15 @@ class BasePreferencesView(LoginRequiredMixin, BaseDashboardView):
 
         return context
 
+    def get_managed_groups(self):
+        """Return a list of all the group names the user is primary contact"""
+        user = self.request.user
+        managed_groups = []
+        for group in user.groups.all():
+            if user.has_perm('manage_group', group.results_vendor):
+                managed_groups.append(group.name)
+        return managed_groups
+
 
 class Preferences(BasePreferencesView):
     """Show user preferences."""
@@ -1065,13 +1074,7 @@ class ManageUsers(BasePreferencesView):
             })
             api_resp.raise_for_status()
             managed_users = api_resp.json()
-
-            user = self.request.user
-            # get all groups the user is a primary contact
-            managed_groups = []
-            for group in self.request.user.groups.all():
-                if user.has_perm('manage_group', group.results_vendor):
-                    managed_groups.append(group.name)
+            managed_groups = self.get_managed_groups()
 
             # create a dictionary of managed_group[user]
             # since the user could be a primary contact for multiple groups and
@@ -1140,7 +1143,17 @@ class ManageEnvironments(FormView, BasePreferencesView):
                 urljoin(settings.API_BASE_URL, 'environments/'),
                 params={'active': True, 'mine': True})
 
-        environments = api_resp.json()['results']
+            environments = api_resp.json()['results']
+
+            managed_groups = self.get_managed_groups()
+
+            # Add whether the user can manage the environment
+            for env in environments:
+                for managed_group in managed_groups:
+                    owner = self.get_cache_request(env['owner'], s)
+                    if owner['name'] == managed_group:
+                        env['can_manage'] = True
+                        break
 
         for env in environments:
             if env['live_since']:
@@ -1187,3 +1200,18 @@ class ManageEnvironments(FormView, BasePreferencesView):
 
         messages.success(self.request, 'Saved successfully!')
         return super().form_valid(form)
+
+
+class ManageEnvironmentVisibility(LoginRequiredMixin, View):
+    """Proxy a PATCH to the results view. Handles setting public and private."""
+
+    def post(self, request, env, *args, **kwargs):
+        to = request.POST.get('type')
+        with api_session(request) as s:
+            response = s.patch(
+                urljoin(settings.API_BASE_URL,
+                        f'environments/{env}/set-{to}/'))
+            response.raise_for_status()
+        messages.success(
+            request, f'Environment is being set to {to}.')
+        return HttpResponseRedirect(reverse('manage_environments'))

@@ -7,6 +7,9 @@
   or create a new environment, please contact us about what you'd like to be changed.
   It may require creating a new, successor environment, to keep old and new results reproducible.
 </p>
+{% if primary_contact %}
+  <p>As a primary contact, you can also set the environments public or private.</p>
+{% endif %}
 {% include "messages.html" %}
 {% for env in environments %}
   <div class="card mb-3">
@@ -14,6 +17,47 @@
       {{ env.nic_make }} {{ env.nic_model }} {{ env.nic_speed }} Mbps
     </h3>
     <div class="card-body">
+      <div class="d-md-flex justify-content-between align-items-center">
+        <p class="m-md-0">
+          The environment is <span class="text-{{ env.public|yesno:'success,danger' }}">{{ env.public|yesno:"public,private" }}</span>.
+        </p>
+        {% if env.can_manage %}
+          <button id="env-set-btn{{ env.id}}" type="button" class="btn btn-{{ env.public|yesno:'danger,success' }}" data-toggle="modal" data-target="#toggle{{ env.id }}" title="Set the environment to be {{ env.public|yesno:'private,public' }}">
+            Set {{ env.public|yesno:"private,public" }}
+          </button>
+          <div class="modal" tabindex="-1" role="dialog" id="toggle{{ env.id }}">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p>Are you sure that you want to make the environment <strong>{{ env.public|yesno:"private,public" }}</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <form method="post" action="{% url 'environment_set_visibility' env.id %}">
+                    {% csrf_token %}
+                    <input name="type" value="{{ env.public|yesno:'private,public' }}" hidden>
+                    <input type="submit" value="Set {{ env.public|yesno:'private,public' }}" class="btn btn-{{ env.public|yesno:'danger,success' }}">
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div id="env-progress-container{{ env.id }}" class="progress mt-1" hidden>
+        <div id="env-progress{{ env.id }}" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+      <p id="env-progress-message{{ env.id }}" class="text-info"></p>
+
+      <hr>
+
       <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {# Custom form to loop through the environments. #}
@@ -76,10 +120,6 @@
 {% endblock %}
 
 {% block js %}
-<script>
-// replace the "Choose a file" label
-$('.custom-file-input').on('change', function() {
-  $(this).next('.custom-file-label').html($(this)[0].files[0].name);
-})
-</script>
+<script src="{% url 'js-error-handler-js' %}"></script>
+<script src="{% static 'build/manage_environments.js' %}"></script>
 {% endblock %}

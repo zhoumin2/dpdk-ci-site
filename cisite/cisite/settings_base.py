@@ -48,6 +48,9 @@ INSTALLED_APPS = [
 
     # Sends js client errors to server log
     'django_js_error_hook',
+
+    # Allows asynchronous communication (such as websockets)
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +84,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'cisite.wsgi.application'
+ASGI_APPLICATION = 'cisite.routing.application'
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 

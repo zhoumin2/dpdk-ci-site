@@ -8,6 +8,7 @@ Define test cases for results app.
 from copy import deepcopy
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+from unittest.mock import MagicMock
 
 import requests_mock
 import rest_framework.exceptions
@@ -28,6 +29,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
+import results.util
 from .models import PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
     Subscription, UserProfile, Branch, \
@@ -137,6 +139,16 @@ class SerializerAssertionMixin(object):
                                           **kwargs)
 
 
+class BaseTestCase(APITestCase):
+    def setUp(self):
+        super().setUp()
+        # Make everything single threaded to avoid things running after the
+        # test has finished (avoids database lock errors)
+        results.util.singleThreadedExecutor.submit = MagicMock(side_effect=lambda fn: fn())
+        # Ignore testing channels for now
+        Environment._send_update = MagicMock()
+
+
 class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
     """Verify EnvironmentSerializer nested create/update works."""
 
@@ -183,6 +195,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             live_since=None,
             hardware_description=None,
             pipeline=None,
+            public=False,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
@@ -460,7 +473,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             measurements_nested_lists=['parameters'])
 
 
-class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
+class TestRunSerializerTestCase(BaseTestCase, SerializerAssertionMixin):
     """Test customized behavior of TestRunSerializer."""
 
     @classmethod
@@ -1145,7 +1158,7 @@ class TestResultTestCase(test.TestCase):
             res2.full_clean()
 
 
-class MeasurementTestCase(test.TestCase):
+class MeasurementTestCase(BaseTestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
@@ -1282,55 +1295,122 @@ class SubscriptionTestCase(test.TestCase):
         self.assertFalse(profile.subscriptions.exists())
 
 
-class EnvironmentViewSetTestCase(APITestCase):
+class EnvironmentViewSetTestCase(BaseTestCase):
     """Test the environment view set."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        # Primary contact
+        self.pc = User.objects.create_user(
+            'contact', 'admin@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.group2 = Group.objects.create(name='TestGroup2')
+        self.pc.groups.add(self.group)
+        self.pc.groups.add(self.group2)
+        self.pc.results_profile.save()
+        assign_perm('manage_group', self.pc, self.group.results_vendor)
+
+        # Employee
+        self.user_of_group = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.user_of_group.groups.add(self.group)
+
+        # Some other vendor
+        self.user_other = User.objects.create_user(
+            'othervendor', 'ov@example.com', 'AbCdEfGh')
+        self.user_other.groups.add(self.group2)
+
+        # Some random person
+        self.user_rand = User.objects.create_user(
+            'novendor', 'no@example.com', 'AbCdEfGh')
+        self.group3 = Group.objects.create(name='TestGroup3')
+        self.user_rand.groups.add(self.group3)
+
+        self.env = create_test_environment(owner=self.group)
+        self.env2 = create_test_environment(owner=self.group2)
+        self.env3 = create_test_environment(owner=self.group3)
 
     def test_public_permissions(self):
         """Test view permissions on public environment."""
-        user = User.objects.create_user('joevendor2', 'joe2@example.com',
-                                        'AbCdEfGh')
-        grp = Group.objects.create(name='Group2')
-        user.groups.add(grp)
-
-        env = create_test_environment()
-
         response = self.client.get(reverse('environment-list')).json()
         self.assertEqual(0, response['count'])
 
-        env.set_public()
+        self.env.set_public()
 
         # check anonymous
         response = self.client.get(reverse('environment-list')).json()
         self.assertEqual(1, response['count'])
 
         # check other logged in user of different group
-        self.client.login(username=user.username, password='AbCdEfGh')
+        self.client.login(username=self.user_rand.username, password='AbCdEfGh')
         response = self.client.get(reverse('environment-list')).json()
-        self.assertEqual(1, response['count'])
+        # 1 for their environment + 1 for the public environment
+        self.assertEqual(2, response['count'])
 
     def test_private_permissions(self):
         """Test view permissions on private environment AFTER set public."""
-        user = User.objects.create_user('joevendor2', 'joe2@example.com',
-                                        'AbCdEfGh')
-        grp = Group.objects.create(name='Group2')
-        user.groups.add(grp)
-
-        env = create_test_environment()
-
         response = self.client.get(reverse('environment-list')).json()
         self.assertEqual(0, response['count'])
 
-        env.set_public()
-        env.set_private()
+        self.env.set_public()
+        self.env.set_private()
 
         # check anonymous
         response = self.client.get(reverse('environment-list')).json()
         self.assertEqual(0, response['count'])
 
         # check other logged in user of different group
-        self.client.login(username=user.username, password='AbCdEfGh')
+        self.client.login(username=self.user_rand.username, password='AbCdEfGh')
         response = self.client.get(reverse('environment-list')).json()
-        self.assertEqual(0, response['count'])
+        # 1 for just their environment
+        self.assertEqual(1, response['count'])
+
+    def test_user_set_no_login(self):
+        """Sanity check that anonymous users can't set environments."""
+        resp = self.client.patch(reverse('environment-set-public', (self.env.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.patch(reverse('environment-set-private', (self.env.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_set_no_pc(self):
+        """Test non pc users can't set environments"""
+        self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
+
+        # same group with a pc
+        resp = self.client.patch(reverse('environment-set-public', (self.env.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.patch(reverse('environment-set-private', (self.env.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+        # different group
+        resp = self.client.patch(reverse('environment-set-public', (self.env2.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.patch(reverse('environment-set-private', (self.env2.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_user_set_pc(self):
+        """Test primary contact group can set environments."""
+        # Sanity check
+        self.assertTrue(len(self.pc.groups.all()) >= 2)
+        self.client.login(username=self.pc.username, password='AbCdEfGh')
+
+        resp = self.client.patch(reverse('environment-set-public', (self.env.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        anon = get_anonymous_user()
+        self.assertTrue(anon.has_perm('view_environment', self.env))
+
+        # test pc cant change group2's (pc part of the group) env
+        resp = self.client.patch(reverse('environment-set-public', (self.env2.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.patch(reverse('environment-set-private', (self.env2.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+        # test pc cant change group3's env
+        resp = self.client.patch(reverse('environment-set-public', (self.env3.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.patch(reverse('environment-set-private', (self.env3.id,)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class SubscriptionViewSet(APITestCase):
@@ -1489,7 +1569,7 @@ class TestDownloadURL(test.TestCase):
                                f'{year}/{month}/{filename}')
 
 
-class TestDownloadViewPermission(test.TestCase):
+class TestDownloadViewPermission(BaseTestCase):
     """Test the download view permissions."""
 
     def setUp(self):

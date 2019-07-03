@@ -38,6 +38,9 @@ services:
     depends_on:
       - cisite_prod
 
+  redis:
+    image: redis
+
 ##
 # Development
 ##
@@ -71,11 +74,14 @@ services:
              ./manage.py runserver 0:8000"
     volumes:
       - .:/workspace
+    environment:
+      - REDIS_HOST=redis
     ports:
       - "8000:8000"
       - "35729:35729"
     depends_on:
       - cisite_dev
+      - redis
 
 ##
 # Testing

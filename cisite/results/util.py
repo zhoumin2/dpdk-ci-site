@@ -3,9 +3,14 @@ SPDX-License-Identifier: BSD-3-Clause
 Developed by UNH-IOL dpdklab@iol.unh.edu.
 """
 import functools
+from concurrent.futures.thread import ThreadPoolExecutor
 from logging import getLogger
 
 logger = getLogger('results')
+
+# Used to share for set_public and set_private environments
+# 1 worker so that set_private and set_public can't be executed at the same time
+singleThreadedExecutor = ThreadPoolExecutor(max_workers=1)
 
 
 def log_exception(fn):

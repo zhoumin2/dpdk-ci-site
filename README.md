@@ -106,6 +106,12 @@ If doing Javascript development, it will be helpful to have the scripts auto tra
 $ npm run dev
 ```
 
+Note that `livereload` does not reload on python file changes due to the way
+`channels` replaces the `runserver` command.
+
+If dealing with WebSockets, you will also need redis to be running. A simple
+way to run redis would be with Docker: `docker run -p 6379:6379 -d redis`
+
 ## Testing
 
 ```sh

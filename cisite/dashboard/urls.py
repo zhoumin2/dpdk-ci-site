@@ -108,4 +108,7 @@ urlpatterns = [
     path('preferences/manage_environments/',
          views.ManageEnvironments.as_view(),
          name='manage_environments'),
+    path('preferences/manage_environments/<int:env>/set_visibility',
+         views.ManageEnvironmentVisibility.as_view(),
+         name='environment_set_visibility'),
 ]

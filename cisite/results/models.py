@@ -6,12 +6,15 @@ Model data for patchsets, environments, and test results.
 """
 
 import json
+import math
 import os
 import uuid
 from abc import abstractmethod
 from functools import partial
 from logging import getLogger
 
+import channels
+from asgiref.sync import async_to_sync
 from django.apps import apps
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
@@ -606,12 +609,16 @@ class Environment(models.Model):
             while p is not None:
                 generation += 1
                 p = p.predecessor
-        if get_anonymous_user().has_perm('view_environment', self):
+        if self.public:
             is_public = 'Public'
         else:
             is_public = 'Private'
         return f'{self._meta.object_name} {self.id}: {self.inventory_id} ' \
                f'(v{generation}) {is_public}'
+
+    @property
+    def public(self):
+        return get_anonymous_user().has_perm('view_environment', self)
 
     @property
     def all_ids(self):
@@ -662,48 +669,75 @@ class Environment(models.Model):
     @log_exception
     def set_public(self):
         """Set AnonymousUser view permission to environment and related."""
-        logger.info(f'Setting environment {self.id} public...')
-
+        total, send_update_at = self._get_total()
         anon = get_anonymous_user()
-        assign_perm('view_environment', anon, self)
-
-        for measurement in self.measurements.all():
-            assign_perm('view_measurement', anon, measurement)
-
-        for run in self.runs.all():
-            # Although TestResult is serialized in the API, this is required
-            # for syncing the public database.
-            for result in run.results.all():
-                assign_perm('view_testresult', anon, result)
-            assign_perm('view_testrun', anon, run)
-
-        logger.info(f'Done setting environment {self.id} public')
-
-        # Required when syncing the public database, or else it will throw an
-        # error that it can't find the foreign keys.
-        if self.predecessor:
-            self.predecessor.set_public()
+        self._set_visibility(
+            'public', lambda view, obj: assign_perm(view, anon, obj),
+            send_update_at, self.id, total, 0)
 
     @log_exception
     def set_private(self):
         """Set AnonymousUser view permission to environment and related."""
-        logger.info(f'Setting environment {self.id} private...')
-
+        total, send_update_at = self._get_total()
         anon = get_anonymous_user()
-        remove_perm('view_environment', anon, self)
+        self._set_visibility(
+            'private', lambda view, obj: remove_perm(view, anon, obj),
+            send_update_at, self.id, total, 0)
+
+    def _get_total(self):
+        # total to be changed
+        related = self.get_related()
+        total = 0
+        for x in related:
+            # +1 for the environment
+            total += x['measurements'] + x['runs'] + x['results'] + 1
+
+        # send a maximum of x updates
+        send_update_at = math.ceil(total / 100)
+
+        return total, send_update_at
+
+    def _send_update(self, id, total, current):
+        channel_layer = channels.layers.get_channel_layer()
+        async_to_sync(channel_layer.group_send)('manage-environment', {
+            'type': 'update_current',
+            'environment': id,
+            'message': {'current': current, 'total': total},
+        })
+
+    def _set_visibility(self, visibility, fn, send_update_at, id, total, current):
+        logger.info(f'Setting environment {self.id} {visibility}...')
+
+        cur_count = [current]
+
+        def inc():
+            cur_count[0] += 1
+            if cur_count[0] % send_update_at == 0:
+                self._send_update(id, total, cur_count[0])
+
+        fn('view_environment', self)
+        inc()
 
         for measurement in self.measurements.all():
-            remove_perm('view_measurement', anon, measurement)
+            fn('view_measurement', measurement)
+            inc()
 
         for run in self.runs.all():
             for result in run.results.all():
-                remove_perm('view_testresult', anon, result)
-            remove_perm('view_testrun', anon, run)
+                fn('view_testresult', result)
+                inc()
+            fn('view_testrun', run)
+            inc()
 
-        logger.info(f'Done setting environment {self.id} private')
+        logger.info(f'Done setting environment {self.id} {visibility}')
+
+        # Send a final update to set to 100%
+        self._send_update(id, total, cur_count[0])
 
         if self.predecessor:
-            self.predecessor.set_private()
+            self.predecessor._set_visibility(
+                visibility, fn,
+                send_update_at, id, total, cur_count[0])
 
 
 class TestCase(models.Model):

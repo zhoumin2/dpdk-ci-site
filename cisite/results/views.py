@@ -44,6 +44,8 @@ from .serializers import BranchSerializer, EnvironmentSerializer, \
     GroupSerializer, MeasurementSerializer, \
     PatchSetSerializer, SubscriptionSerializer, TarballSerializer, \
     TestCaseSerializer, TestRunSerializer, UserSerializer, TestRunSerializerGet
+
+import results.util
 from shared.util import requests_to_response
 
 logger = getLogger('results')
@@ -264,6 +266,35 @@ class EnvironmentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data,
                         status=status.HTTP_201_CREATED,
                         headers=headers)
+
+    @action(methods=['patch'], detail=True, url_name='set-public',
+            url_path='set-public')
+    def set_public(self, request, pk):
+        """Sets the environment public"""
+        env = self.get_object()
+        return self._set_visibility(request, pk, 'public', env, env.set_public)
+
+    @action(methods=['patch'], detail=True, url_name='set-private',
+            url_path='set-private')
+    def set_private(self, request, pk):
+        """Sets the environment private"""
+        env = self.get_object()
+        return self._set_visibility(request, pk, 'private', env, env.set_private)
+
+    def _set_visibility(self, request, pk, visibility, env, fn):
+        # check if user is a pc
+        if not request.user.has_perm('manage_group', env.owner.results_vendor):
+            raise Http404
+
+        message = f'{request.user} set the environment {visibility}'
+        logger.info(message)
+        LogEntry.objects.log_action(
+            request.user.id, ContentType.objects.get_for_model(Environment).pk,
+            pk, repr(env), CHANGE, message)
+
+        results.util.singleThreadedExecutor.submit(fn)
+
+        return Response({'status': 'ok'})
 
 
 class TestCaseViewSet(viewsets.ReadOnlyModelViewSet):

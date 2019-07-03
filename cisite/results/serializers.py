@@ -212,7 +212,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
                   'predecessor', 'successor', 'date', 'live_since',
-                  'hardware_description', 'pipeline')
+                  'hardware_description', 'pipeline', 'public')
         read_only_fields = ('contacts', 'predecessor', 'successor',
                             'date')
 
