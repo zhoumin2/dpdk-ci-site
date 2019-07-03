@@ -6,16 +6,16 @@ Define extra utility methods for the dashboard.
 """
 
 import json
-
 from contextlib import contextmanager
+from html.parser import HTMLParser
+from logging import getLogger
+from urllib.parse import urljoin, urlparse
+
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
-from html.parser import HTMLParser
-from logging import getLogger
 from requests import Session
 from requests.adapters import HTTPAdapter
-from urllib.parse import urljoin, urlparse
 
 # default logger
 logger = getLogger('dashboard')

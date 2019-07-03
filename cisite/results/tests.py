@@ -7,6 +7,11 @@ Define test cases for results app.
 
 from copy import deepcopy
 from datetime import datetime
+from tempfile import NamedTemporaryFile
+
+import requests_mock
+import rest_framework.exceptions
+from django import test
 from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -14,21 +19,18 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.http import Http404
 from django.http.request import HttpRequest
-from django import test
 from django.test.client import RequestFactory
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now, utc
 from guardian.shortcuts import assign_perm
 from guardian.utils import get_anonymous_user
-import rest_framework.exceptions
-import requests_mock
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
-from tempfile import NamedTemporaryFile
+
 from .models import PatchSet, ContactPolicy, Environment, \
     Measurement, TestCase, TestRun, TestResult, Tarball, Parameter, \
-    Subscription, UserProfile, Branch,\
+    Subscription, UserProfile, Branch, \
     upload_model_path, upload_model_path_test_run
 from .serializers import EnvironmentSerializer, \
     SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
@@ -1721,7 +1723,6 @@ class TestRebuild(test.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
 
-@requests_mock.Mocker(real_http=True)
 class TestUser(test.TestCase):
     """Test the user model permissions."""
 
@@ -1752,7 +1753,7 @@ class TestUser(test.TestCase):
         self.user_rand = User.objects.create_user(
             'novendor', 'no@example.com', 'AbCdEfGh')
 
-    def test_no_login(self, m):
+    def test_no_login(self):
         """Sanity check that anonymous users can't list users."""
         resp = self.client.get(reverse('user-list'))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -1761,7 +1762,7 @@ class TestUser(test.TestCase):
         resp = self.client.get(reverse('user-list'), {'managed': False})
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_anon_managed_filter(self, m):
+    def test_anon_managed_filter(self):
         """Test anonymous user does not show up to pc.
 
         Test that they do not show up in both managed and unmanaged filter.
@@ -1780,7 +1781,7 @@ class TestUser(test.TestCase):
         for result in resp['results']:
             self.assertTrue(result['username'] != 'AnonymousUser')
 
-    def test_pc_proper_users(self, m):
+    def test_pc_proper_users(self):
         """Test primary contact group.
 
         Test that they can only see the literal group they are supposed to
@@ -1799,7 +1800,7 @@ class TestUser(test.TestCase):
                 contains = True
         self.assertTrue(contains)
 
-    def test_non_pc_ok(self, m):
+    def test_non_pc_ok(self):
         """Test that a regular user can see user list properly."""
         self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
 
@@ -1813,7 +1814,7 @@ class TestUser(test.TestCase):
         self.assertEqual(resp.json()['count'], 2)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    def test_pc_directly(self, m):
+    def test_pc_directly(self):
         """Test pc can manage users part of their group."""
         self.client.login(username=self.pc.username, password='AbCdEfGh')
 
@@ -1837,7 +1838,7 @@ class TestUser(test.TestCase):
                 break
         self.assertTrue(in_group)
 
-    def test_non_pc_no_perm(self, m):
+    def test_non_pc_no_perm(self):
         """Test regular user can't manage users. (non 500)"""
         self.client.login(username=self.user_of_group.username, password='AbCdEfGh')
 
@@ -1871,7 +1872,7 @@ class TestUser(test.TestCase):
             reverse('user-manage-group', args=('no-exist', self.group2.name)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_pc_diff_group(self, m):
+    def test_pc_diff_group(self):
         """Test pc can't manage user not part of their group. (non 500)"""
         self.client.login(username=self.pc.username, password='AbCdEfGh')
 
