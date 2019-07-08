@@ -139,7 +139,28 @@ docker-compose up test
 
 ### Production with Docker
 
+`settings.py` will need to be deployed separately.
+In your `settings.py` use (with `os.environ`):
+- `REDIS_HOST` for channels
+- `MEMCACHED_HOST` for caching with memcached
+- `MYSQL_HOST` for the database with mysql
+- `MYSQL_CISITE_PASSWORD` for the database cisite user password
+- `MYSQL_CISITE_PUBLIC_PASSWORD` for the database cisite public user password
+
+Create a `.env` file with the following:
+
 ```sh
-docker-compose up build
-# WIP: Run with local Apache/SQL/Memcached
+MYSQL_ROOT_PASSWORD=changeme
+MYSQL_CISITE_PASSWORD=changeme
+MYSQL_CISITE_PUBLIC_PASSWORD=changeme
+DATABASE_DIRECTORY=./databases
+```
+
+Go to `config/nginx` to place an nginx config (such that it points to your certs).
+An example nginx config file is provided.
+
+Finally:
+
+```sh
+docker-compose up production
 ```

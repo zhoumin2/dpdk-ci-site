@@ -22,24 +22,77 @@ services:
 
 ##
 # Production
-# WIP - Prod is ran with local Apache WSGI
 ##
 
   # Build prod
   build:
     image: cisite_prod
     command: >
-      sh -c "./manage.py migrate --noinput &&
+      sh -c "./manage.py migrate --database default --noinput &&
+             ./manage.py migrate --database public --noinput &&
              ./manage.py collectstatic --noinput &&
              npm --prefix .. install &&
              npm --prefix .. run build"
     volumes:
+      # Generate static files and migrate
       - .:/workspace
+    environment:
+      - MYSQL_HOST=mariadb
+      - MYSQL_CISITE_PASSWORD
+      - MYSQL_CISITE_PUBLIC_PASSWORD
     depends_on:
       - cisite_prod
+      - mariadb
+
+  mariadb:
+    image: mariadb
+    restart: always
+    volumes:
+      # Initialization scripts
+      - ./config/db/init:/docker-entrypoint-initdb.d
+      # Persistent database location
+      - "${DATABASE_DIRECTORY}:/var/lib/mysql"
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_CISITE_PASSWORD
+      - MYSQL_CISITE_PUBLIC_PASSWORD
 
   redis:
     image: redis
+    restart: always
+
+  memcached:
+    image: memcached
+    restart: always
+
+  daphne:
+    image: cisite_prod
+    command: "daphne -b 0 cisite.asgi:application"
+    environment:
+      - REDIS_HOST=redis
+      - MEMCACHED_HOST=memcached
+      - MYSQL_HOST=mariadb
+      - MYSQL_CISITE_PASSWORD
+      - MYSQL_CISITE_PUBLIC_PASSWORD
+    volumes:
+      # Point to the root of the app for daphne
+      - .:/workspace
+    depends_on:
+      - build
+      - redis
+      - memcached
+
+  production:
+    image: nginx
+    volumes:
+      # Nginx static file serving
+      - ./cisite:/workspace
+      # Nginx config
+      - ./config/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - daphne
 
 ##
 # Development

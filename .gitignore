@@ -3,3 +3,5 @@ static
 venv
 uploads
 node_modules
+.env
+config/nginx/nginx.conf
