@@ -428,10 +428,13 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         exists in the database.
         """
         validated_data.pop('url', None)
-        results_data = validated_data.pop('results')
+        results_data = validated_data.pop('results', [])
+
         for field, v in validated_data.items():
             setattr(instance, field, v)
+
         instance.save()
+
         for r_data in results_data:
             r_data.pop('url', None)
             r_data.pop('run', None)
@@ -443,8 +446,10 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
                 for field, v in r_data.items():
                     setattr(r, field, v)
                 r.save()
-        qs_get_missing(instance.results.all(),
-                       results_data).delete()
+
+        if results_data:
+            qs_get_missing(instance.results.all(),
+                           results_data).delete()
         return instance
 
     def create(self, validated_data):

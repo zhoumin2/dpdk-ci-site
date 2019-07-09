@@ -290,7 +290,9 @@ class TestRunViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoObjectPermissionsFilterWithAnonPerms,)
     permission_classes = (permissions.TestRunPermission,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
-    parser_classes = (JSONMultiPartParser,)
+    # JSONMultiPartParser is used in add_results_to_db
+    # JSONParser is used in send_performance_report
+    parser_classes = (JSONMultiPartParser, JSONParser)
 
     def get_serializer_class(self):
         """
