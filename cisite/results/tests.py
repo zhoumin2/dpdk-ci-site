@@ -183,6 +183,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             live_since=None,
             hardware_description=None,
             pipeline=None,
+            name='Vendor Model S 10000 Mbps',
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,
@@ -680,7 +681,7 @@ class EnvironmentHyperlinkedFieldTestCase(test.TestCase):
         field = EnvironmentHyperlinkedField()
         field._context = dict(request=request)
         self.assertQuerysetEqual(field.get_queryset(),
-            ['<Environment: Environment 1: IOL-IOL-1 (v0) Private>'])
+            ['<Environment: Environment 1: IOL-IOL-1 [Intel XL710 10000 Mbps] (v0) Private>'])
 
     def test_get_environment_admin(self):
         """Test that both environments show up as an admin."""
@@ -690,8 +691,8 @@ class EnvironmentHyperlinkedFieldTestCase(test.TestCase):
         field = EnvironmentHyperlinkedField()
         field._context = dict(request=request)
         self.assertQuerysetEqual(field.get_queryset(),
-            ['<Environment: Environment 1: IOL-IOL-1 (v0) Private>',
-             '<Environment: Environment 2: IOL-IOL-1 (v0) Private>'],
+            ['<Environment: Environment 1: IOL-IOL-1 [Intel XL710 10000 Mbps] (v0) Private>',
+             '<Environment: Environment 2: IOL-IOL-1 [Intel XL710 10000 Mbps] (v0) Private>'],
             ordered=False)
 
 

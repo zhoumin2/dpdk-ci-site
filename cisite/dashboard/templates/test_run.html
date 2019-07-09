@@ -33,10 +33,12 @@
               ({{ parameter.unit }})
             </th>
           {% endfor %}
-          <th>
-            {{ r.results.0.measurement.name }} Difference
-            ({{ r.results.0.measurement.unit }})
-          </th>
+          {% if r.results.0.measurement %}
+            <th>
+              {{ r.results.0.measurement.name }} Difference
+              ({{ r.results.0.measurement.unit }})
+            </th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -51,7 +53,9 @@
             {% for parameter in item.measurement.parameters.values %}
               <td>{{ parameter.value }}</td>
             {% endfor %}
-            <td>{{ item.difference|floatformat:"-5" }}</td>
+            {% if item.difference %}
+              <td>{{ item.difference|floatformat:"-5" }}</td>
+            {% endif %}
           </tr>
         {% endfor %}
       </tbody>

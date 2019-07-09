@@ -562,6 +562,9 @@ class Tarball(BaseDashboardView):
         the measurements page or serializer should be updated to do this
         instead of the dashboard. However, that is difficult. See DPDKLAB-386.
         """
+        if not measurement:
+            return
+
         new_parameters = {}
         for parameter in measurement['parameters']:
             # can't use special characters in django templates...
