@@ -570,6 +570,9 @@ class Environment(models.Model):
         max_length=255, null=True, blank=True,
         help_text='The pipeline name used for running tests. This is combined'
                   'with the pipeline name of the test case.')
+    alternate_name = models.CharField(
+        max_length=255, blank=True,
+        help_text='Alternate name to display instead of the nic details')
 
     # These are ill-defined
     # bios_settings = models.CharField(max_length=4096)
@@ -611,7 +614,7 @@ class Environment(models.Model):
         else:
             is_public = 'Private'
         return f'{self._meta.object_name} {self.id}: {self.inventory_id} ' \
-               f'(v{generation}) {is_public}'
+               f'[{self.name}] (v{generation}) {is_public}'
 
     @property
     def all_ids(self):
@@ -629,6 +632,12 @@ class Environment(models.Model):
         TestRun = apps.get_model('results', 'TestRun')
         qs = TestRun.objects.filter(environment__id__in=self.all_ids)
         return qs
+
+    @cached_property
+    def name(self):
+        if self.alternate_name:
+            return self.alternate_name
+        return f'{self.nic_make} {self.nic_model} {self.nic_speed} Mbps'
 
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface."""
@@ -898,10 +907,12 @@ class TestResult(models.Model):
         help_text='Result for this test: ' +
             ', '.join([x[0] for x in RESULT_CHOICES]))
     difference = models.FloatField(
+        null=True, blank=True,
         help_text='Difference between actual and expected values')
     expected_value = models.FloatField(null=True, blank=True,
         help_text='Value of measurement expected by vendor')
-    measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE,
+    measurement = models.ForeignKey(
+        Measurement, on_delete=models.CASCADE, null=True,
         help_text='Vendor expected measurement that this result corresponds to')
     run = models.ForeignKey(TestRun, on_delete=models.CASCADE,
         help_text='Test run that this result is part of',
@@ -914,8 +925,11 @@ class TestResult(models.Model):
 
     @property
     def owner(self):
-        """Return the owner of the measurement."""
-        return self.measurement.owner
+        """Return the owner of the measurement (or test run)."""
+        if self.measurement:
+            return self.measurement.owner
+        else:
+            return self.run.owner
 
     class Meta:
         """Specify how to set up test results."""

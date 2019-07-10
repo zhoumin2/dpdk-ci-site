@@ -1,8 +1,6 @@
 {% for env_url, environment in environments.items %}
 <div class="card mb-4">
-  <h2 class="card-header" id="env-{{ environment.id }}">
-    {{ environment.nic_make }} {{ environment.nic_model }} {{ environment.nic_speed }} Mbps
-  </h2>
+  <h2 class="card-header" id="env-{{ environment.id }}">{{ environment.name }}</h2>
   <div class="card-body">
     {% if 'url' not in r %}
     <p>The tests were not run for this environment.</p>

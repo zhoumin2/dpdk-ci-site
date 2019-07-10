@@ -10,9 +10,7 @@
 {% include "messages.html" %}
 {% for env in environments %}
   <div class="card mb-3">
-    <h3 class="card-header">
-      {{ env.nic_make }} {{ env.nic_model }} {{ env.nic_speed }} Mbps
-    </h3>
+    <h3 class="card-header">{{ env.name }}</h3>
     <div class="card-body">
       <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
