@@ -421,7 +421,6 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
                 if testcase not in result_summary['testcases']:
                     result_summary['testcases'][testcase] = {
-                        'name': TestCase.objects.get(id=testcase).name,
                         'failed': 0,
                         'passed': 0,
                         'indeterminate': 0,
