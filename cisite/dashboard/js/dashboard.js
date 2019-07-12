@@ -1,6 +1,12 @@
-class Dashboard {
+export class Dashboard {
   constructor() {
     const table = document.getElementById('dashboard-table');
+
+    // check if we are on the dashboard page
+    if (!table) {
+      return
+    }
+
     const start = parseInt(table.dataset.start)
     const end = parseInt(table.dataset.end)
     const limit = parseInt(table.dataset.limit)
@@ -67,8 +73,4 @@ class Dashboard {
       }
     });
   }
-}
-
-window.onload = () => {
-  new Dashboard();
 }
