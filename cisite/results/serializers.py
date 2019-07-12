@@ -92,7 +92,7 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                   'status', 'status_class', 'status_tooltip',
                   'time_to_last_test', 'series_id', 'pw_series_url',
                   'completed_timestamp', 'pw_is_active', 'build_log',
-                  'passed', 'failed', 'incomplete', 'build_error', 'has_error',
+                  'result_summary', 'build_error', 'has_error',
                   'commit_id', 'commit_url', 'branch')
         read_only_fields = ('complete', 'tarballs',
                             'status', 'status_class', 'status_tooltip',
@@ -495,7 +495,7 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
         fields = ('id', 'url', 'patchset', 'branch', 'commit_id', 'job_name',
                   'build_id', 'tarball_url', 'runs', 'date', 'commit_url',
                   'status', 'status_class', 'status_tooltip',
-                  'passed', 'failed', 'incomplete')
+                  'result_summary',)
         read_only_fields = ('date', 'commit_url')
 
 

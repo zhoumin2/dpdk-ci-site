@@ -242,25 +242,11 @@ class PatchSet(models.Model, CommitURLMixin, StatusMixin):
         return self.tarballs.last()
 
     @property
-    def passed(self):
+    def result_summary(self):
         """Return the number of passed environments."""
         if self.has_error or not self.tarballs.exists():
-            return 0
-        return self.last_tarball.passed
-
-    @property
-    def failed(self):
-        """Return the number of failed environments."""
-        if self.has_error or not self.tarballs.exists():
-            return 0
-        return self.last_tarball.failed
-
-    @property
-    def incomplete(self):
-        """Return the number of incomplete environments."""
-        if self.has_error or not self.tarballs.exists():
-            return 0
-        return self.last_tarball.incomplete
+            return {'incomplete': 0, 'testcases': {}}
+        return self.last_tarball.result_summary
 
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface and rebuilds."""
@@ -337,14 +323,16 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         if not self.runs.exists():
             return "Waiting"
 
-        if self.incomplete > 0:
+        if self.result_summary['incomplete']:
             return "Incomplete"
 
-        if self.failed > 0:
-            return "Possible Regression"
+        for tc in self.result_summary['testcases']:
+            if self.result_summary['testcases'][tc]['failed']:
+                return "Possible Regression"
 
-        if self.indeterminate > 0:
-            return "Indeterminate"
+        for tc in self.result_summary['testcases']:
+            if self.result_summary['testcases'][tc]['indeterminate']:
+                return "Indeterminate"
 
         return "Pass"
 
@@ -353,8 +341,29 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         return reverse('tarball-detail', args=(self.id,))
 
     @cached_property
-    def get_pass_fail_incomplete(self):
+    def result_summary(self):
         """Return a dict of passed, failed, and incomplete test runs.
+
+        These are separated by test case. There is a key for each testcase and
+        an incomplete key for each environment that doesn't have a test run.
+
+        For example:
+        // 4 environments, 2 testcases
+        result_summary = {
+            incomplete: 2,
+            testcases: {
+                testcase1: {
+                    passed: 1,
+                    failed: 1,
+                    indeterminate: 0
+                },
+                testcase2: {
+                    passed: 1,
+                    failed: 1,
+                    indeterminate: 0
+                }
+            }
+        }
 
         For the Incomplete status, we consider only environments created since
         the tarball was created (falling back to the patchset submission date
@@ -369,10 +378,13 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         no test runs are also considered a failure, as something may have gone
         wrong.
         """
-        count = {'passed': 0, 'failed': 0, 'incomplete': 0, 'indeterminate': 0}
+        result_summary = {
+            'incomplete': 0,
+            'testcases': {}
+        }
 
         if not self.runs.exists():
-            return count
+            return result_summary
 
         date = getattr(self, 'date', None)
         if not date and self.patchset:
@@ -387,40 +399,42 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
             query, successor__isnull=True, live_since__isnull=False)
 
         for env in active_envs.iterator():
-            tr_qs = env.all_runs.filter(tarball__id=self.id)
+            tr_qs = env.all_runs\
+                .filter(tarball__id=self.id)\
+                .order_by('-timestamp')
             if not tr_qs.exists():
-                count['incomplete'] += 1
+                result_summary['incomplete'] += 1
                 continue
-            tr = tr_qs.last()
 
-            if env.live_since <= tr.timestamp:
+            # Only keep the first test run of each test case
+            test_case = set()
+
+            for tr in tr_qs:
+                if env.live_since >= tr.timestamp:
+                    continue
+
+                # Assume first testcase if None, for old database
+                testcase = tr.testcase.id if tr.testcase else 1
+
+                if testcase in test_case:
+                    continue
+
+                if testcase not in result_summary['testcases']:
+                    result_summary['testcases'][testcase] = {
+                        'failed': 0,
+                        'passed': 0,
+                        'indeterminate': 0,
+                    }
+
                 if tr.results.filter(result="FAIL").exists():
-                    count['failed'] += 1
+                    result_summary['testcases'][testcase]['failed'] += 1
                 elif tr.results.filter(result="PASS").exists():
-                    count['passed'] += 1
+                    result_summary['testcases'][testcase]['passed'] += 1
                 else:
-                    count['indeterminate'] += 1
-        return count
+                    result_summary['testcases'][testcase]['indeterminate'] += 1
 
-    @cached_property
-    def passed(self):
-        """Return the number of passed environments."""
-        return self.get_pass_fail_incomplete['passed']
-
-    @cached_property
-    def failed(self):
-        """Return the number of failed environments."""
-        return self.get_pass_fail_incomplete['failed']
-
-    @cached_property
-    def incomplete(self):
-        """Return the number of incomplete environments."""
-        return self.get_pass_fail_incomplete['incomplete']
-
-    @cached_property
-    def indeterminate(self):
-        """Return the number of indeterminate environments."""
-        return self.get_pass_fail_incomplete['indeterminate']
+                test_case.add(testcase)
+        return result_summary
 
 
 def validate_contact_list(value):

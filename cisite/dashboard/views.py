@@ -21,6 +21,7 @@ from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
@@ -189,9 +190,8 @@ class LoginView(auth_views.LoginView):
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
-    # Request only cache (in regards to a single dashboard page load).
-    # The cache gets reset per request instead of lasting through the session.
-    request_cache = {}
+    # Fake cache for development. This only lasts for a single dashboard request.
+    dev_cache = {}
 
     def add_static_context_data(self, context):
         """Add static context data included with every dashboard view.
@@ -212,9 +212,8 @@ class BaseDashboardView(TemplateView):
     def get(self, *args, **kwargs):
         """Handle GET requests to the dashboard."""
 
-        # Make sure the cache is reset, since it's used per request,
-        # not per session
-        self.request_cache = {}
+        # Make sure the cache is reset, since it's used per request
+        self.dev_cache = {}
 
         try:
             return super().get(*args, **kwargs)
@@ -229,36 +228,68 @@ class BaseDashboardView(TemplateView):
             return TemplateResponse(self.request, '503.html', context=context,
                                     status=HTTPStatus.SERVICE_UNAVAILABLE)
         finally:
-            for key in self.request_cache:
-                logger.debug(f'{key}: {self.request_cache[key]["hits"]} '
+            for key in self.dev_cache:
+                logger.debug(f'{key}: {self.dev_cache[key]["hits"]} '
                              'cache hit(s)')
             # Save some memory
-            self.request_cache = {}
+            self.dev_cache = {}
 
-    def add_status_ranges(self, patchset):
+    def add_status_ranges(self, patchset, session):
         """Pass in the patchset to apply a range."""
-        patchset['incomplete_range'] = range(patchset['incomplete'])
-        patchset['passed_range'] = range(patchset['passed'])
-        patchset['failed_range'] = range(patchset['failed'])
+        summary = patchset['result_summary']
+        summary['incomplete_range'] = range(summary['incomplete'])
+        for tc_id in summary['testcases']:
+            tc = summary['testcases'][tc_id]
+            tc['testcase'] = self.get_cache_request(
+                urljoin(settings.API_BASE_URL, f'testcases/{tc_id}/'), session)
+            tc['passed_range'] = range(tc['passed'])
+            tc['failed_range'] = range(tc['failed'])
 
-    def get_cache_request(self, key, session):
-        """Get and cache the the return the response json of a GET request."""
-        if key in self.request_cache:
-            cache = self.request_cache[key]
-            cache['hits'] += 1
-            val = cache['value']
+    def get_cache_request(self, key, session, timeout=2400):
+        """Get and cache the the return the response json of a GET request.
+
+        This is assumed to be an UNAUTHENTICATED url since it shared between
+        users.
+
+        Timeout is in seconds.
+
+        This cache method used to only be a "request cache", where for a single
+        dashboard request, it would cache API calls, then clear the cache.
+        Now this is only the case in a development environment.
+        This was fine for a while, but it was realized that all the requests
+        used thus far has been for unauthenticated urls and there were
+        essentially "cache misses" when we used javascript to load parts of the
+        page. Using a session cache was also not desirable, because the
+        information thus far could be shared with any users and session caches
+        last too long for this use case.
+        """
+        if settings.ENVIRONMENT == 'development':
+            if key in self.dev_cache:
+                cache_item = self.dev_cache[key]
+                cache_item['hits'] += 1
+                val = cache_item['value']
+            else:
+                resp = session.get(key)
+                resp.raise_for_status()
+                val = resp.json()
+                self.dev_cache[key] = {'hits': 0, 'value': val}
         else:
-            resp = session.get(key)
-            resp.raise_for_status()
-            val = resp.json()
-            self.request_cache[key] = {'hits': 1, 'value': val}
+            val = cache.get(key)
+            if val is None:
+                logger.debug(f'{key} not in cache, setting...')
+                resp = session.get(key)
+                resp.raise_for_status()
+                val = resp.json()
+                cache.set(key, val, timeout)
         return val
 
-    def set_cache_request(self, item, session, key):
+    def set_cache_request(self, item, session, key, timeout=2400):
         """Set and cache the the return of a GET request.
 
         This uses the value of the item[key] as the key for the cache and
         replaces the value with the result of the request.
+
+        Timeout is in seconds.
 
         For example:
         `item = {'branch': 'https://example.com/branch/1/'}`
@@ -268,7 +299,7 @@ class BaseDashboardView(TemplateView):
         """
         if not item[key]:
             return
-        item[key] = self.get_cache_request(item[key], session)
+        item[key] = self.get_cache_request(item[key], session, timeout)
 
 
 class PatchSet(BaseDashboardView):
@@ -310,7 +341,7 @@ class PatchSet(BaseDashboardView):
         context['shown']['active'] = True
         return True
 
-    def update_patchsets(self, context):
+    def update_patchsets(self, context, session):
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
                 series = pw_get(patchset['pw_series_url'], pw_session)
@@ -324,7 +355,7 @@ class PatchSet(BaseDashboardView):
                     patchset['time_to_last_test'] = format_timedelta(
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
-                self.add_status_ranges(patchset)
+                self.add_status_ranges(patchset, session)
 
 
 class PatchSetList(PatchSet):
@@ -360,7 +391,7 @@ class PatchSetList(PatchSet):
             context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
-        self.update_patchsets(context)
+        self.update_patchsets(context, s)
         return context
 
 
@@ -388,7 +419,7 @@ class PatchSetRow(PatchSet):
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
 
-        self.update_patchsets(context)
+            self.update_patchsets(context, s)
         return context
 
 
@@ -623,7 +654,7 @@ class PatchSetDetail(Tarball, PatchSet):
             context['patchset']['patches'] = series['patches']
             context['patchset']['patchwork_range_str'] = \
                 self.patchwork_range_str(series)
-            self.add_status_ranges(context['patchset'])
+            self.add_status_ranges(context['patchset'], s)
             # assume UTC
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
             context['patchset']['submitter'] = self.get_patchset_submitter(series)
@@ -677,7 +708,7 @@ class TarballList(Tarball):
             context['tarballs'] = resp_json['results']
             for tarball in context['tarballs']:
                 self.set_cache_request(tarball, s, 'branch')
-                self.add_status_ranges(tarball)
+                self.add_status_ranges(tarball, s)
 
                 if tarball['date']:
                     tarball['date'] = parse_datetime(tarball['date'])
@@ -706,7 +737,7 @@ class TarballDetail(Tarball):
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
                 raise Http404
             context['tarball'] = api_resp.json()
-            self.add_status_ranges(context['tarball'])
+            self.add_status_ranges(context['tarball'], s)
 
             self.populate_tarball_context(context, s)
 
