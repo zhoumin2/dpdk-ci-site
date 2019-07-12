@@ -166,9 +166,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
             'completed_timestamp': '2018-07-20T00:00:00Z',
-            'incomplete': 0,
-            'passed': 0,
-            'failed': 0,
+            'result_summary': {
+                'incomplete': 0,
+                'testcases': {}
+            },
             'build_error': False,
             'has_error': False,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
@@ -248,9 +249,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
             'completed_timestamp': '2018-07-20T00:00:00Z',
-            'incomplete': 0,
-            'passed': 0,
-            'failed': 0,
+            'result_summary': {
+                'incomplete': 0,
+                'testcases': {}
+            },
             'build_error': False,
             'has_error': False,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),

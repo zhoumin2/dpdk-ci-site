@@ -47,7 +47,7 @@
 </ul>
 {% include 'test_status.html' with obj=patchset %}
 {% if user.is_authenticated %}
-<form class="form-inline my-5" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
+<form class="form-inline mb-3" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
   <div class="form-group">
     <label class="mr-3" for="branch-select">Apply patch to</label>

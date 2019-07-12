@@ -237,9 +237,12 @@ class BaseDashboardView(TemplateView):
 
     def add_status_ranges(self, patchset):
         """Pass in the patchset to apply a range."""
-        patchset['incomplete_range'] = range(patchset['incomplete'])
-        patchset['passed_range'] = range(patchset['passed'])
-        patchset['failed_range'] = range(patchset['failed'])
+        summary = patchset['result_summary']
+        summary['incomplete_range'] = range(summary['incomplete'])
+        for tc in summary['testcases']:
+            tc = summary['testcases'][tc]
+            tc['passed_range'] = range(tc['passed'])
+            tc['failed_range'] = range(tc['failed'])
 
     def get_cache_request(self, key, session):
         """Get and cache the the return the response json of a GET request."""

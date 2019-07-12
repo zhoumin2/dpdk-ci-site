@@ -703,7 +703,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         """Reset model properties."""
         super().setUp()
         self.env_date = datetime(2017, 1, 1, tzinfo=utc)
-        TestCase.objects.create(
+        self.tc = TestCase.objects.create(
             name='nic_single_core_perf',
             description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
         self.test_ps = PatchSet.objects.create()
@@ -724,6 +724,9 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         """Clear cache to fix an IntegrityError bug."""
         ContentType.objects.clear_cache()
         super().tearDown()
+
+    def create_test_run(self, env, **kwargs):
+        return create_test_run(env, testcase=self.tc, **kwargs)
 
     def test_status_pending(self):
         """Verify that status with no tarball is Pending."""
@@ -748,7 +751,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_incomplete(self):
         """Verify that status is Incomplete where needed."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
@@ -760,7 +763,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         """Verify that status is Incomplete if environment date is null."""
         self.env2.date = None
         self.env2.save()
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
@@ -770,13 +773,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_ignore_incomplete(self):
         """Test that adding a new environment does not trigger Incomplete."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='PASS', difference=-0.021,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -790,13 +793,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_pass(self):
         """Verify that status is Pass where needed."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='PASS', difference=-0.021,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -804,13 +807,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_fail(self):
         """Verify that status is Possible Regression where needed."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='FAIL', difference=-1.576,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -820,13 +823,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         """Verify that status is Pass for null live_since."""
         self.env2.live_since = None
         self.env2.save()
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='FAIL', difference=-1.576,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -834,14 +837,14 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_ignore_fail(self):
         """Verify that status is Pass if failing result is old."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball,
-                              timestamp=datetime(2016, 1, 1, tzinfo=utc))
+        run = self.create_test_run(self.env2, tarball=run.tarball,
+                                   timestamp=datetime(2016, 1, 1, tzinfo=utc))
         TestResult.objects.create(result='FAIL', difference=-1.576,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -849,17 +852,17 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_use_latest(self):
         """Verify that only uses latest test run for each environment."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=self.env1.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='FAIL', difference=-1.576,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='PASS', difference=0.017,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -867,10 +870,10 @@ class PatchSetModelTestCase(test.TransactionTestCase):
 
     def test_status_none(self):
         """Verify that status is Indeterminate when no test results."""
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
-        create_test_run(self.env2, tarball=run.tarball)
+        self.create_test_run(self.env2, tarball=run.tarball)
         self.assertEqual(self.test_ps.status, 'Indeterminate')
 
     def test_status_fail_none(self):
@@ -878,11 +881,11 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         Verify that status is Possible Regression when one environment fails
         and one environment has no test results.
         """
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
-        create_test_run(self.env2, tarball=run.tarball)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        self.create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(result='FAIL', difference=-1.576,
                                   measurement=self.env2.measurements.first(),
                                   run=run)
@@ -893,13 +896,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         Verify that the status is Pass instead of Incomplete if live_since is
         None for an environment.
         """
-        run = create_test_run(self.env1)
+        run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
         TestResult.objects.create(
             result='PASS', difference=-0.002,
             measurement=self.env1.measurements.first(), run=run)
-        run = create_test_run(self.env2, tarball=run.tarball)
+        run = self.create_test_run(self.env2, tarball=run.tarball)
         TestResult.objects.create(
             result='PASS', difference=-0.021,
             measurement=self.env2.measurements.first(), run=run)

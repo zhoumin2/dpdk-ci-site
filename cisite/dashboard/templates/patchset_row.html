@@ -3,20 +3,10 @@
   <tr>
     <td>
       <span class="badge badge-{{ ps.status_class }}" title="{{ ps.status_tooltip }}">{{ ps.status }}</span>
-      {% if ps.incomplete > 0 or ps.passed > 0 or ps.failed > 0 %}
       {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
-      <div class="text-nowrap" title="Summary of tests on all active environments: {{ ps.incomplete }} incomplete, {{ ps.passed }} passed, and {{ ps.failed }} failed">
-        {% for i in ps.incomplete_range %}
-        <span class="bg-secondary px-2 mr-1"></span>
-        {% endfor %}
-        {% for i in ps.passed_range %}
-        <span class="bg-success px-2 mr-1"></span>
-        {% endfor %}
-        {% for i in ps.failed_range %}
-        <span class="bg-danger px-2 mr-1"></span>
-        {% endfor %}
+      <div class="text-nowrap">
+        {% include 'result_summary.html' with obj=ps %}
       </div>
-      {% endif %}
     </td>
     <td>
       <div class="d-flex justify-content-between flex-column flex-md-row">
