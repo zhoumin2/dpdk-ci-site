@@ -2,8 +2,8 @@
   "name": "cisite",
   "private": true,
   "scripts": {
-    "build": "babel cisite/dashboard/js -d cisite/dashboard/static/build",
-    "dev": "babel --watch cisite/dashboard/js -d cisite/dashboard/static/build"
+    "build": "webpack --config webpack/webpack.prod.js",
+    "dev": "webpack --config webpack/webpack.dev.js"
   },
   "repository": {
     "type": "git",
@@ -12,6 +12,10 @@
   "devDependencies": {
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.2.0"
+    "@babel/preset-env": "^7.2.0",
+    "babel-loader": "^8.0.6",
+    "webpack": "^4.35.3",
+    "webpack-cli": "^3.3.5",
+    "webpack-merge": "^4.2.1"
   }
 }
