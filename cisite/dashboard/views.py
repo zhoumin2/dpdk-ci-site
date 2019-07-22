@@ -452,7 +452,8 @@ class Tarball(BaseDashboardView):
             env = run['environment']
 
             # hide download artifact button to invalid users
-            if not self.show_elements(s, env['owner']):
+            if (not run['public_download'] and
+                    not self.show_elements(s, env['owner'])):
                 run['log_upload_file'] = None
 
             envs[env['url']] = env
@@ -503,7 +504,8 @@ class Tarball(BaseDashboardView):
 
             run['environment'] = s.get(run['environment']).json()
             # hide download artifact button to invalid users
-            if not self.show_elements(s, run['environment']['owner']):
+            if (not run['public_download'] and
+                    not self.show_elements(s, run['environment']['owner'])):
                 run['log_upload_file'] = None
 
             runs[run_url] = run

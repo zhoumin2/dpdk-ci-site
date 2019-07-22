@@ -11,7 +11,8 @@ from django.conf import settings
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, get_perms
+from guardian.utils import get_anonymous_user
 from rest_framework import serializers
 
 from .models import Branch, ContactPolicy, Environment, Measurement, \
@@ -409,6 +410,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
 
     results = TestResultSerializer(many=True, allow_empty=True)
     environment = EnvironmentHyperlinkedField()
+    public_download = serializers.SerializerMethodField()
 
     class Meta:
         """Specify how to serialize test runs."""
@@ -417,7 +419,7 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         fields = ('id', 'url', 'timestamp', 'log_output_file',
                   'tarball', 'results', 'environment',
                   'report_timestamp', 'log_upload_file', 'branch',
-                  'commit_id', 'commit_url', 'testcase')
+                  'commit_id', 'commit_url', 'testcase', 'public_download')
 
     def update(self, instance, validated_data):
         """Update a test run based on the validated POST data.
@@ -459,6 +461,9 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         for result in results:
             TestResult.objects.create(run=run, **result)
         return run
+
+    def get_public_download(self, obj):
+        return 'download_artifacts' in get_perms(get_anonymous_user(), obj)
 
 
 class TestRunSerializerGet(TestRunSerializer):

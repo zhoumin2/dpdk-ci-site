@@ -29,6 +29,8 @@ def set_anon_permissions(permission, environment, instance):
     anon = get_anonymous_user()
     if anon.has_perm('view_environment', environment):
         assign_perm(permission, anon, instance)
+        return True
+    return False
 
 
 @receiver(post_save, sender=Group)
@@ -144,5 +146,12 @@ def save_test_run(sender, instance, **kwargs):
     assign_perm('change_testrun', group, instance)
     assign_perm('delete_testrun', group, instance)
 
-    set_anon_permissions('view_testrun', instance.environment, instance)
+    was_set = set_anon_permissions('view_testrun', instance.environment, instance)
+
+    # allow test run download to anon users
+    if was_set and instance.testcase:
+        anon = get_anonymous_user()
+        if anon.has_perm('download_artifacts', instance.testcase):
+            assign_perm('download_artifacts', anon, instance)
+
     clear_environment_perms(instance.environment)

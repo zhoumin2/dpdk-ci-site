@@ -18,7 +18,7 @@ from .models import Branch, ContactPolicy, Environment, Measurement, \
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
 
-from .forms import SetPublicForm, SetPrivateForm
+from .forms import SetPublicForm, SetPrivateForm, SetPublicTestCaseForm, SetPrivateTestCaseForm
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -210,6 +210,78 @@ class EnvironmentAdmin(GuardedModelAdmin):
         )
 
 
+@admin.register(TestCase)
+class TestCaseAdmin(GuardedModelAdmin):
+    """Define test case module in admin interface."""
+
+    list_display = ('__str__', 'test_case_actions')
+    readonly_fields = ('test_case_actions',)
+
+    def get_urls(self):
+        """Add custom urls to the admin page."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<test_case_id>/set_public/',
+                self.admin_site.admin_view(self.process_set_public),
+                name='testcase-public',
+            ),
+            path(
+                '<test_case_id>/set_private/',
+                self.admin_site.admin_view(self.process_set_private),
+                name='testcase-private',
+            ),
+        ]
+        return custom_urls + urls
+
+    def test_case_actions(self, obj):
+        """Create custom test case actions."""
+        return format_html(
+            '<a class="button" href="{}">Set Public</a>&nbsp;'
+            '<a class="button" href="{}">Set Private</a>',
+            reverse('admin:testcase-public', args=(obj.pk,)),
+            reverse('admin:testcase-private', args=(obj.pk,)),
+        )
+
+    def process_set_public(self, request, test_case_id, *args, **kwargs):
+        """Set test case public action call."""
+        return self.process_action(
+            request, test_case_id, SetPublicTestCaseForm, 'Set Public')
+
+    def process_set_private(self, request, test_case_id, *args, **kwargs):
+        """Set test case private action call."""
+        return self.process_action(
+            request, test_case_id, SetPrivateTestCaseForm, 'Set Private')
+
+    def process_action(self, request, test_case_id, action_form, action_title):
+        """Mostly generic method for custom actions."""
+        test_case = self.get_object(request, test_case_id)
+
+        if request.method != 'POST':
+            form = action_form()
+        else:
+            form = action_form(request.POST)
+            if form.is_valid():
+                form.save(test_case, request.user)
+                self.message_user(request, 'Success')
+                url = reverse(
+                    'admin:results_testcase_change',
+                    args=(test_case.pk,),
+                )
+                return HttpResponseRedirect(url)
+
+        context = self.admin_site.each_context(request)
+        context['opts'] = self.model._meta
+        context['form'] = form
+        context['title'] = action_title
+
+        return TemplateResponse(
+            request,
+            'admin/test_run/test_run_action.html',
+            context,
+        )
+
+
 @admin.register(TestRun)
 class TestRunAdmin(GuardedModelAdmin):
     """Define TestRun module in admin interface."""
@@ -236,5 +308,4 @@ class LogEntryAdmin(admin.ModelAdmin):
 admin.site.register(Branch)
 admin.site.register(Measurement, GuardedModelAdmin, inlines=[ParameterInline])
 admin.site.register(PatchSet)
-admin.site.register(TestCase)
 admin.site.register(Vendor, GuardedModelAdmin)

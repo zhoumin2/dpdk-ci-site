@@ -105,7 +105,12 @@ class TestRunLogDownloadView(DownloadPermissionView):
 
         This is to avoid download of absolute values. Since anonymous user has
         permission for the object, make sure that the user is not anonymous.
+
+        Unless the download_artifacts permission is set for the anonymous user.
         """
+        if 'download_artifacts' in get_perms(get_anonymous_user(), self.object):
+            return True
+
         perm = 'view_' + self.object._meta.model_name
         return perm in get_perms(self.request.user, self.object) and \
             not self.request.user.is_anonymous

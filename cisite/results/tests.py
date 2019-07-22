@@ -506,6 +506,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             commit_url='',
             branch=None,
             testcase=None,
+            public_download=False,
             results=[dict(result='PASS',
                           difference=-0.85,
                           expected_value=None,
@@ -1501,14 +1502,45 @@ class TestDownloadViewPermission(test.TestCase):
         super().setUp()
         self.user = User.objects.create_user(
             'joevendor', 'joe@example.com', 'AbCdEfGh')
-        self.group = Group.objects.create(name='TestGroup')
-        self.user.groups.add(self.group)
+        group = Group.objects.create(name='TestGroup')
+        self.user.groups.add(group)
+
+        self.user_other = User.objects.create_user(
+            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
+        group2 = Group.objects.create(name='TestGroup2')
+        self.user_other.groups.add(group2)
+
         self.tmp_file = NamedTemporaryFile()
         self.django_file = File(self.tmp_file, name='test')
         self.env = create_test_environment(
-            owner=self.group, hardware_description=self.django_file)
+            owner=group, hardware_description=self.django_file)
+        self.tc = TestCase.objects.create(
+            name='nic_single_core_perf',
+            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
+            pipeline='pipeline-tc')
         self.run = create_test_run(
-            self.env, log_upload_file=self.django_file)
+            self.env, log_upload_file=self.django_file, testcase=self.tc)
+
+        self.checked = False
+
+    def check_access(self, run, code):
+        if self.checked:
+            raise RuntimeError('check_access can only be called once due to anonymous user checks')
+        self.checked = True
+
+        # check anonymous access
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, code)
+
+        # check that a different group logged in user access
+        self.client.login(username=self.user_other.username, password='AbCdEfGh')
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, code)
+
+        # check that the env group logged in user can access
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.get(run.log_upload_file.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_hardware_description_download_view(self):
         """Make sure a 404 does not get raised."""
@@ -1533,45 +1565,35 @@ class TestDownloadViewPermission(test.TestCase):
 
     def test_hardware_description_download_view_get_public(self):
         """Check user access if download is supposed to be public."""
-        user = User.objects.create_user(
-            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
-        group = Group.objects.create(name='TestGroup2')
-        user.groups.add(group)
-        # make environment with self group
-        env = create_test_environment(
-            owner=self.group, hardware_description=self.django_file)
-        env.set_public()
+        self.env.set_public()
 
-        # check anonymous is ok
-        resp = self.client.get(env.hardware_description.url)
+        # check anonymous
+        resp = self.client.get(self.env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-        # check that a different group logged in user is ok
-        self.client.login(username=user.username, password='AbCdEfGh')
-        resp = self.client.get(env.hardware_description.url)
+        # check that a different group logged in user
+        self.client.login(username=self.user_other.username, password='AbCdEfGh')
+        resp = self.client.get(self.env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_hardware_description_download_view_get_private(self):
         """Check user access if download is private AFTER set public."""
-        user = User.objects.create_user(
-            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
-        group = Group.objects.create(name='TestGroup2')
-        user.groups.add(group)
-        # make environment with self group
-        env = create_test_environment(
-            owner=self.group, hardware_description=self.django_file)
-
-        env.set_public()
-        env.set_private()
+        self.env.set_public()
+        self.env.set_private()
 
         # check anonymous
-        resp = self.client.get(env.hardware_description.url)
+        resp = self.client.get(self.env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
-        # check other logged in user of different group
-        self.client.login(username=user.username, password='AbCdEfGh')
-        resp = self.client.get(env.hardware_description.url)
+        # check that a different group logged in user
+        self.client.login(username=self.user_other.username, password='AbCdEfGh')
+        resp = self.client.get(self.env.hardware_description.url)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # check that the env group logged in user
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.get(self.env.hardware_description.url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_log_upload_file_download_view_get_public(self):
         """Check user access if download is supposed to be public.
@@ -1579,26 +1601,9 @@ class TestDownloadViewPermission(test.TestCase):
         Test runs are to remain private even if the environment is public to
         avoid download of absolute values.
         """
-        user = User.objects.create_user(
-            'joevendor2', 'joe2@example.com', 'AbCdEfGh')
-        group = Group.objects.create(name='TestGroup2')
-        user.groups.add(group)
-        # make environment with self group
-        env = create_test_environment(
-            owner=self.group, hardware_description=self.django_file)
-        run = create_test_run(
-            env, log_upload_file=self.django_file)
+        self.env.set_public()
 
-        env.set_public()
-
-        # check anonymous cant access
-        resp = self.client.get(run.log_upload_file.url)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
-
-        # check that a different group logged in user can't access
-        self.client.login(username=user.username, password='AbCdEfGh')
-        resp = self.client.get(run.log_upload_file.url)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.check_access(self.run, status.HTTP_403_FORBIDDEN)
 
     def test_test_run_download_view_get_anonymous(self):
         """Check anonymous access."""
@@ -1616,6 +1621,81 @@ class TestDownloadViewPermission(test.TestCase):
         dpv = HardwareDescriptionDownloadView()
         with self.assertRaises(Http404):
             dpv.get_object('abcdefg')
+
+    def test_log_upload_file_download_view_override(self):
+        """Check user access if download is supposed to be public."""
+        assign_perm('download_artifacts', get_anonymous_user(), self.run)
+
+        self.check_access(self.run, status.HTTP_200_OK)
+
+    def test_log_upload_file_download_not_pulic(self):
+        """Check user access if env is still private."""
+        self.tc.set_public(True)
+
+        self.check_access(self.run, status.HTTP_403_FORBIDDEN)
+
+    def test_log_upload_file_download_public_after(self):
+        """Check user access after both public."""
+        self.tc.set_public(True)
+        self.env.set_public(True)
+
+        self.check_access(self.run, status.HTTP_200_OK)
+
+    def test_log_upload_file_download_private_after_public(self):
+        """Check user access after public then private."""
+        self.tc.set_public()
+        self.env.set_public(True)
+        self.env.set_private(True)
+
+        self.check_access(self.run, status.HTTP_403_FORBIDDEN)
+
+    def test_log_upload_file_download_private_new(self):
+        """Check user access if new downloads is supposed to be public."""
+        self.tc.set_public()
+
+        run = create_test_run(
+            self.env, log_upload_file=self.django_file, testcase=self.tc)
+
+        # env not public
+        self.check_access(run, status.HTTP_403_FORBIDDEN)
+
+    def test_log_upload_file_download_public_new(self):
+        """Check user access if new downloads is supposed to be public."""
+        self.tc.set_public()
+        self.env.set_public()
+
+        run = create_test_run(
+            self.env, log_upload_file=self.django_file, testcase=self.tc)
+
+        self.check_access(run, status.HTTP_200_OK)
+
+    def test_log_upload_file_download_private_before(self):
+        """Check user access if old downloads is supposed to be public."""
+        self.tc.set_public()
+        self.env.set_public()
+
+        run = create_test_run(
+            self.env, log_upload_file=self.django_file, testcase=self.tc)
+
+        # now lets just check that old runs get set to private for the test case
+        self.tc.set_private(True)
+
+        # check can't access now
+        self.check_access(run, status.HTTP_403_FORBIDDEN)
+
+    def test_log_upload_file_download_private_after(self):
+        """Check user access for new run after public then private."""
+        self.tc.set_public()
+        self.env.set_public()
+
+        self.tc.set_private(True)
+
+        # and that new runs are private
+
+        run = create_test_run(
+            self.env, log_upload_file=self.django_file, testcase=self.tc)
+
+        self.check_access(run, status.HTTP_403_FORBIDDEN)
 
 
 @requests_mock.Mocker(real_http=True)

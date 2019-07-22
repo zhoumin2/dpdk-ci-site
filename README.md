@@ -88,6 +88,43 @@ The CI job status API expects a Jenkins view called "Dashboard" to exist.
 The CI nodes API expects each Jenkins computer to have the label "public" if they
 are to be displayed.
 
+## Admin page changes
+
+Several actions have been added to the admin page to manage permissions.
+
+### Environment
+
+* **Set public**: Set the environment permissions allowable by the public.
+This makes it so users can view the environment in the detailed pages.
+This also applies the same permissions to predecessors, measurements,
+test runs, and results.
+If the test case used in the test runs of the environment has public download
+permissions, all future artifacts will be public. There is also an option to
+make the existing artifacts downloadable by the public.
+
+* **Set private**: Set the environment permissions private.
+This makes it so that the environment no longer shows up in the detailed pages.
+This also applies the same permissions to predecessors, measurements,
+test runs, and results.
+This will make it so that future artifacts are also private. There is also an
+option to make the existing artifacts private.
+
+Environments are private by default.
+
+### Test cases
+
+* **Set public**: Set the test case artifact download permissions allowable by
+the public.
+If the future test runs are publicly viewable, the artifacts will be public.
+There is also an option to make the existing artifacts downloadable by the
+public.
+
+* **Set private**: Set the test case artifact download permissions private.
+This will make it so that future artifacts are also private. There is also an
+option to make the existing artifacts private.
+
+Test case artifact downloads are private by default.
+
 ## Running the server
 
 ```
