@@ -229,6 +229,7 @@ class BaseTestCase(StaticLiveServerTestCase):
             'log_upload_file': None,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
             'testcase': None,
+            'public_download': False,
         }
         tr.update(**kwargs)
         m.register_uri(

@@ -22,7 +22,7 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from guardian.models import UserObjectPermissionBase, GroupObjectPermissionBase
-from guardian.shortcuts import assign_perm, remove_perm
+from guardian.shortcuts import assign_perm, remove_perm, get_perms
 from guardian.utils import get_anonymous_user
 from private_storage.fields import PrivateFileField
 
@@ -683,7 +683,7 @@ class Environment(models.Model):
         return ret
 
     @log_exception
-    def set_public(self):
+    def set_public(self, set_artifacts_public=False):
         """Set AnonymousUser view permission to environment and related."""
         logger.info(f'Setting environment {self.id} public...')
 
@@ -700,6 +700,11 @@ class Environment(models.Model):
                 assign_perm('view_testresult', anon, result)
             assign_perm('view_testrun', anon, run)
 
+            # Set artifacts public only if the testcase is also public
+            if (set_artifacts_public and
+                    'download_artifacts' in get_perms(anon, run.testcase)):
+                assign_perm('download_artifacts', anon, run)
+
         logger.info(f'Done setting environment {self.id} public')
 
         # Required when syncing the public database, or else it will throw an
@@ -708,7 +713,7 @@ class Environment(models.Model):
             self.predecessor.set_public()
 
     @log_exception
-    def set_private(self):
+    def set_private(self, set_artifacts_private=False):
         """Set AnonymousUser view permission to environment and related."""
         logger.info(f'Setting environment {self.id} private...')
 
@@ -722,6 +727,9 @@ class Environment(models.Model):
             for result in run.results.all():
                 remove_perm('view_testresult', anon, result)
             remove_perm('view_testrun', anon, run)
+
+            if set_artifacts_private:
+                remove_perm('download_artifacts', anon, run)
 
         logger.info(f'Done setting environment {self.id} private')
 
@@ -741,9 +749,49 @@ class TestCase(models.Model):
         help_text='The pipeline name used for running tests. This is combined'
                   'with the pipeline name of the environment.')
 
+    class Meta:
+        permissions = [
+            # Allow non-vendor users to download artifacts if the environment
+            # is also public
+            ('download_artifacts', 'Can download artifacts'),
+        ]
+
     def __str__(self):
         """Return the name of the test case."""
-        return self.name
+        if get_anonymous_user().has_perm('download_artifacts', self):
+            download_artifacts = 'public'
+        else:
+            download_artifacts = 'private'
+        return f'{self.name} [Artifacts are {download_artifacts}]'
+
+    @log_exception
+    def set_public(self, set_artifacts_public=False):
+        """Set AnonymousUser view permission to environment and related."""
+        logger.info(f'Setting test case {self.id} public...')
+
+        anon = get_anonymous_user()
+        assign_perm('download_artifacts', anon, self)
+
+        if set_artifacts_public:
+            for run in self.runs.all():
+                if 'view_testrun' in get_perms(anon, run):
+                    assign_perm('download_artifacts', anon, run)
+
+        logger.info(f'Done setting test case {self.id} public')
+
+    @log_exception
+    def set_private(self, set_artifacts_private=False):
+        """Set AnonymousUser view permission to environment and related."""
+        logger.info(f'Setting test case {self.id} private...')
+
+        anon = get_anonymous_user()
+        remove_perm('download_artifacts', anon, self)
+
+        if set_artifacts_private:
+            for run in self.runs.all():
+                remove_perm('download_artifacts', anon, run)
+
+        logger.info(f'Done setting test case {self.id} private')
 
 
 class Measurement(models.Model):
@@ -853,7 +901,13 @@ class TestRun(models.Model, CommitURLMixin):
                                  help_text='The commit id of the baseline used')
     testcase = models.ForeignKey(
         TestCase, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='runs',
         help_text='Test case that this test run applies to')
+
+    class Meta:
+        permissions = [
+            ('download_artifacts', 'Can download artifacts'),
+        ]
 
     def clean(self):
         """Check that all expected measurements' environment matches."""
@@ -863,7 +917,7 @@ class TestRun(models.Model, CommitURLMixin):
         env = self.environment
         values = self.results.all()
         for result in values:
-            if result.measurement.environment != env:
+            if result.measurement and result.measurement.environment != env:
                 raise ValidationError('All results for a test run must be on the same environment.')
 
     @property
@@ -871,17 +925,21 @@ class TestRun(models.Model, CommitURLMixin):
         """Return the owner of the test results."""
         return self.environment.owner
 
-    class Meta:
-        """Specify how to set up test runs."""
-
     def __str__(self):
         """Return the patchset and timestamp as a string."""
         if get_anonymous_user().has_perm('view_testrun', self):
             is_public = 'Public'
         else:
             is_public = 'Private'
-        return f'{self._meta.object_name} {self.id}: ' \
-               f'{self.tarball.tarball_url} {self.timestamp} {is_public}'
+
+        if get_anonymous_user().has_perm('download_artifacts', self):
+            download_artifacts = 'public'
+        else:
+            download_artifacts = 'private'
+
+        return (f'{self._meta.object_name} {self.id}: '
+                f'{self.timestamp} {is_public} '
+                f'[Artifacts are {download_artifacts}]')
 
     @property
     def failures(self):
@@ -926,7 +984,7 @@ class TestResult(models.Model):
     expected_value = models.FloatField(null=True, blank=True,
         help_text='Value of measurement expected by vendor')
     measurement = models.ForeignKey(
-        Measurement, on_delete=models.CASCADE, null=True,
+        Measurement, on_delete=models.CASCADE, null=True, blank=True,
         help_text='Vendor expected measurement that this result corresponds to')
     run = models.ForeignKey(TestRun, on_delete=models.CASCADE,
         help_text='Test run that this result is part of',
@@ -959,9 +1017,15 @@ class TestResult(models.Model):
             is_public = 'Public'
         else:
             is_public = 'Private'
-        return f'{self._meta.object_name} {self.id}: ' \
-               f'{self.measurement.name} {self.result} {self.difference} ' \
-               f'{self.measurement.unit} {is_public}'
+
+        ret = f'{self._meta.object_name} {self.id}: '
+
+        if self.measurement:
+            ret += (f'{self.measurement.name} ({self.measurement.unit}) '
+                    '{self.difference} ')
+
+        ret += f'{self.result} {is_public}'
+        return ret
 
     @property
     def result_class(self):
