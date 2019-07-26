@@ -1,19 +1,17 @@
 {% if obj.result_summary.incomplete > 0 %}
-  <span title="{{ obj.result_summary.incomplete }} incomplete environments">
+  <div title="{{ obj.result_summary.incomplete }} incomplete environments">
     {% for i in obj.result_summary.incomplete_range %}
-      <span class="bg-secondary px-2 mr-1"></span>
+      <span class="text-secondary fas fa-circle"></span>
     {% endfor %}
-  </span>
-  <br>
+  </div>
 {% endif %}
 {% for tc in obj.result_summary.testcases.values %}
-  <span title="{{ tc.testcase.name }}: {{ tc.passed }} passed, {{ tc.failed }} failed">
+  <div title="{{ tc.testcase.name }}: {{ tc.passed }} passed, {{ tc.failed }} failed">
     {% for i in tc.passed_range %}
-      <span class="bg-success px-2 mr-1"></span>
+      <span class="text-success fas fa-check-circle"></span>
     {% endfor %}
     {% for i in tc.failed_range %}
-      <span class="bg-danger px-2 mr-1"></span>
+      <span class="text-danger fas fa-times-circle"></span>
     {% endfor %}
-  </span>
-  <br>
+  </div>
 {% endfor %}
