@@ -701,7 +701,7 @@ class Environment(models.Model):
             assign_perm('view_testrun', anon, run)
 
             # Set artifacts public only if the testcase is also public
-            if (set_artifacts_public and
+            if (set_artifacts_public and run.testcase and
                     'download_artifacts' in get_perms(anon, run.testcase)):
                 assign_perm('download_artifacts', anon, run)
 

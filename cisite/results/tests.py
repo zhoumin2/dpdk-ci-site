@@ -1698,6 +1698,53 @@ class TestDownloadViewPermission(test.TestCase):
         self.check_access(run, status.HTTP_403_FORBIDDEN)
 
 
+class TestTogglePublicDownload(test.TestCase):
+    def setUp(self):
+        """ Set up the artifact and environment. """
+        super().setUp()
+        self.user = User.objects.create_user(
+            'username', 'username@email.com', 'password')
+        # This user will NOT be the owner
+        User.objects.create_user(
+            'username2', 'username2@email.com', 'password')
+        self.grp = Group.objects.create(name='Group')
+        self.user.groups.add(self.grp)
+        self.environment = create_test_environment(owner=self.grp)
+        self.testrun = create_test_run(self.environment)
+        self.url = reverse("testrun-toggle-public", args=(self.testrun.id,))
+
+    def test_anonymous(self):
+        """ Test anonymous users cannot modify artifact download. """
+        response = self.client.post(self.url, follow=True)
+        self.assertEqual(response.status_code, 401)
+        self.assertFalse(get_anonymous_user().has_perm("download_artifacts",
+                         self.testrun))
+
+    def test_not_owner(self):
+        """ Test non-owner user cannot modify artifact download. """
+        logged_in = self.client.login(username="username2", password="password")
+        self.assertTrue(logged_in)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(get_anonymous_user().has_perm("download_artifacts",
+                         self.testrun))
+
+    def test_owner(self):
+        """ Test that owner can toggle artifact download publicity. """
+        logged_in = self.client.login(username="username", password="password")
+        self.assertTrue(logged_in)
+        # This first one makes it public
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(get_anonymous_user().has_perm("download_artifacts",
+                        self.testrun))
+        # This makes it private
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(get_anonymous_user().has_perm("download_artifacts",
+                         self.testrun))
+
+
 @requests_mock.Mocker(real_http=True)
 class TestRerun(test.TestCase):
     """Test the rerun permissions."""

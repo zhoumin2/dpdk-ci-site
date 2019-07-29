@@ -61,7 +61,7 @@ class TestRunPermission(DjangoObjectPermissionsOrAnonReadOnly):
 
     def has_object_permission(self, request, view, obj):
         """Return true if permission should be granted."""
-        if view.action == 'rerun':
+        if view.action == 'rerun' or view.action == 'toggle_public':
             user = request.user
             env = obj.environment
             if user.groups.all().filter(name=env.owner).exists() or \
