@@ -348,16 +348,14 @@ class TestRunViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def toggle_public(self, request, pk):
         run = self.get_object()
-        public = False
         anon = get_anonymous_user()
         if 'download_artifacts' in get_perms(anon, run):
             remove_perm('download_artifacts', anon, run)
+            public = False
         else:
             assign_perm('download_artifacts', anon, run)
             public = True
-        return Response({
-            'public_download': public
-        }, 200)
+        return Response({'public_download': public})
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):

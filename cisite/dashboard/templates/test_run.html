@@ -68,9 +68,9 @@
     <form class="d-inline" action="{% url 'testrun_togglepublic' r.id %}?next={{ request.path }}" method="POST">
       {% csrf_token %}
       {% if r.public_download %}
-        <input type="submit" class="btn btn-secondary" value="Make Download Private">
+        <input type="submit" class="btn btn-secondary" value="Set download private">
       {% else %}
-        <input type="submit" class="btn btn-secondary" value="Make Download Public">
+        <input type="submit" class="btn btn-secondary" value="Set download public">
       {% endif %}
     </form>
   {% endif %}
