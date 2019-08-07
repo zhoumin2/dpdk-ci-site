@@ -456,6 +456,10 @@ class Tarball(BaseDashboardView):
                     not self.show_elements(s, env['owner'])):
                 run['log_upload_file'] = None
 
+            # check if user has owner group to show visibility button
+            if (self.show_elements(s, env['owner'])):
+                run['is_owner'] = True
+
             envs[env['url']] = env
 
         # Update environment data
@@ -1223,3 +1227,21 @@ class ManageEnvironments(FormView, BasePreferencesView):
 
         messages.success(self.request, 'Saved successfully!')
         return super().form_valid(form)
+
+
+class TogglePublic(LoginRequiredMixin, View):
+    """Toggle a given testrun's download link publicity."""
+
+    def post(self, request, tr_id, *args, **kwargs):
+        with api_session(self.request) as s:
+            api_resp = s.post(urljoin(settings.API_BASE_URL,
+                                      f'testruns/{tr_id}/toggle_public/'))
+            api_resp.raise_for_status()
+            # since true gives 1 when indexing, can use this
+            status = ['private', 'public'][api_resp.json()['public_download']]
+            messages.success(request, f'Download is now {status}')
+        next_url = request.GET.get('next')
+        if next_url:
+            return HttpResponseRedirect(next_url)
+        else:
+            return HttpResponseRedirect(reverse('dashboard'))

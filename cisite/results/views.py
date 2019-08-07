@@ -23,7 +23,7 @@ from django.http import Http404
 from django.shortcuts import get_list_or_404
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
-from guardian.shortcuts import get_perms
+from guardian.shortcuts import get_perms, assign_perm, remove_perm
 from guardian.utils import get_anonymous_user
 from private_storage.views import PrivateStorageDetailView
 from rest_framework import status
@@ -344,6 +344,18 @@ class TestRunViewSet(viewsets.ModelViewSet):
                              params=params)
         resp.raise_for_status()
         return Response({'status': 'pending'})
+
+    @action(methods=['post'], detail=True)
+    def toggle_public(self, request, pk):
+        run = self.get_object()
+        anon = get_anonymous_user()
+        if 'download_artifacts' in get_perms(anon, run):
+            remove_perm('download_artifacts', anon, run)
+            public = False
+        else:
+            assign_perm('download_artifacts', anon, run)
+            public = True
+        return Response({'public_download': public})
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
