@@ -22,10 +22,6 @@
         <dt class="col">Compiler</dt>
         <dd class="col-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
       </div>
-      <div class="row">
-        <dt class="col">Target</dt>
-        <dd class="col-10">x86_64-native-linuxapp-gcc</dd>
-      </div>
     </dl>
     {% for tc_url, tc in environment.testcases.items %}
       {% if tc.runs|length > 1 %}
