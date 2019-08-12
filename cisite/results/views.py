@@ -8,7 +8,6 @@ import abc
 import uuid
 from collections import OrderedDict
 from functools import partial
-from http import HTTPStatus
 from logging import getLogger
 from urllib.parse import urljoin
 
@@ -520,8 +519,8 @@ class CIJobsViewSet(NonModelViewSet):
         resp = s.get(job_list_url, params={
             'tree': 'jobs[url,name,color]'
         })
-        # in case the view does not exist
-        if resp.status_code == HTTPStatus.NOT_FOUND:
+        if resp.status_code >= 400:
+            logger.warning(f'CI returned: {resp.status_code}: {resp.text}')
             return []
         jobs = resp.json()['jobs']
 
@@ -562,7 +561,9 @@ class CINodesViewSet(NonModelViewSet):
         resp = s.get(host_list_url, params={
             'tree': 'computer[assignedLabels[name],idle,displayName,description]'
         })
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            logger.warning(f'CI returned: {resp.status_code}: {resp.text}')
+            return []
         nodes = resp.json()['computer']
 
         return_nodes = []
@@ -596,7 +597,9 @@ class CIBuildQueueViewSet(NonModelViewSet):
         resp = s.get(queue_list_url, params={
             'tree': 'items[task[name],why]'
         })
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            logger.warning(f'CI returned: {resp.status_code}: {resp.text}')
+            return []
         queue = resp.json()['items']
 
         return_queue = []

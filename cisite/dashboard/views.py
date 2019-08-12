@@ -672,8 +672,13 @@ class PatchSetDetail(Tarball, PatchSet):
 
             elif context['patchset']['build_log']:
                 api_resp = s.get(context['patchset']['build_log'])
-                api_resp.raise_for_status()
-                context['patchset']['build_log'] = api_resp.text
+                if api_resp.status_code == 404:
+                    log = ('A "404 Not Found" was returned from the CI. The CI '
+                           'may be down or the build was deleted.')
+                else:
+                    api_resp.raise_for_status()
+                    log = api_resp.text
+                context['patchset']['build_log'] = log
                 # normally gathered from tarball, but since there is none,
                 # grab branch from patchset
                 self.set_cache_request(context['patchset'], s, 'branch')
