@@ -131,7 +131,7 @@ export class Subscriptions extends Component {
       <ul className="list-group list-group-flush">
         {this.state.env_sub_pairs.map((envSub, index) =>
           <li className="list-group-item" key={envSub.environment.id}>
-            <h5 className="card-title">{envSub.environment.name} Mbps</h5>
+            <h5 className="card-title">{envSub.environment.name}</h5>
 
             <form autoComplete="off">
               <div className="form-row">
