@@ -3,40 +3,7 @@
 
 {% block preference %}
   <div class="card">
-    <ul class="list-group list-group-flush">
-      {% for env_sub in env_sub_pairs %}
-      <li class="list-group-item">
-        <h5 class="card-title">{{ env_sub.environment.nic_make }} {{ env_sub.environment.nic_model }} {{ env_sub.environment.nic_speed }} Mbps</h5>
-        <form autocomplete="off" data-environment="{{ env_sub.environment.id }}" data-url="{{ env_sub.environment.url }}" {% if env_sub.subscription %}data-subscription="{{ env_sub.subscription.id }}"{% endif %}>
-        {% csrf_token %}
-          <div class="form-row">
-            <div class="col-sm-4">
-              <div class="form-check col-form-label">
-                <input type="checkbox" class="form-check-input subscribe" id="env-sub-{{ env_sub.environment.id }}" {{ env_sub.subscription|yesno:"checked," }}>
-                <label class="form-check-label" for="env-sub-{{ env_sub.environment.id }}">Subscribe</label>
-              </div>
-            </div>
-            <div class="col-sm-4 text-sm-right">
-              <label class="col-form-label">Send method</label>
-            </div>
-            <div class="col-sm-4">
-              <select class="form-control send-method" name="send" id="send-{{ env_sub.environment.id }}" {{ env_sub.subscription|yesno:",disabled" }}>
-                {% if env_sub.subscription %}
-                <option value="unknown" {{ env_sub.subscription.email_success|yesno:",,selected" }}>Inherit (On failure)</option> {# TODO auto set the on failure text? #}
-                <option value="false" {{ env_sub.subscription.email_success|yesno:",selected," }}>On failure</option>
-                <option value="true" {{ env_sub.subscription.email_success|yesno:"selected,," }}>Always</option>
-                {% else %}
-                <option value="unknown">Inherit (On failure)</option>
-                <option value="false">On failure</option>
-                <option value="true">Always</option>
-                {% endif %}
-              </select>
-            </div>
-          </div>
-        </form>
-      </li>
-      {% endfor %}
-    </ul>
+    <div id="subscription-manager"></div>
   </div>
 {% endblock %}
 
@@ -44,9 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha256-R91pD48xW+oHbpJYGn5xR0Q7tMhH4xOrWn1QqMRINtA=" crossorigin="anonymous">
   <script src="{% url 'js-error-handler-js' %}"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha256-yNbKY1y6h2rbVcQtf0b8lq4a+xpktyFc3pSYoGAY1qQ=" crossorigin="anonymous"></script>
-  {# Required polyfills to use the fetch (and promise) api #}
-  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4.2.5/dist/es6-promise.auto.min.js" integrity="sha256-8qFPvAMQLj9hOXkNoEO0iOXQx2tHyA8XWkym5O3dxqM=" crossorigin="anonymous"></script>
+  {# Required polyfills to use the fetch api #}
   <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
-  <script src="{% static 'polyfill/arrayfrom.js' %}"></script>
   <script src="{% static 'build/app.bundle.js' %}"></script>
 {% endblock %}

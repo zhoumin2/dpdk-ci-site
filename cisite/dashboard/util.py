@@ -4,7 +4,7 @@ Developed by UNH-IOL dpdklab@iol.unh.edu.
 
 Define extra utility methods for the dashboard.
 """
-
+import copy
 import json
 from contextlib import contextmanager
 from html.parser import HTMLParser
@@ -149,4 +149,4 @@ def _pw_get_devel(url):
     if not request_mapping:
         with open('cisite/request_mapping.json', 'r') as f:
             request_mapping = json.load(f)
-    return request_mapping[url]
+    return copy.deepcopy(request_mapping[url])

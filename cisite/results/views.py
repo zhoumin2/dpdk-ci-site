@@ -220,7 +220,7 @@ class BranchViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'last_commit_id', 'repository_url')
 
 
-class TarballViewSet(viewsets.ModelViewSet):
+class TarballViewSet(CacheListModelMixin, viewsets.ModelViewSet):
     """Provide a read-write view of tarballs for testing."""
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)

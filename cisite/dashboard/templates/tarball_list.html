@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load templatehelpers %}
 
 {% block title %}Tarballs{% endblock %}
@@ -28,58 +29,22 @@
   </div>
 </div>
 <div class="table-responsive-sm">
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th title="Tarball result. More information can be found by hovering over a status or by seeing the about page.">Status</th>
-        {% if request.GET.tarballs == 'all' or request.GET.tarballs == 'with' %}
-        <th class="text-nowrap" title="Associated patch set">Patch set</th>
-        {% endif %}
-        <th title="Tarball created from commit">Tarball</th>
-        <th title="Tarball created date">Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for t in tarballs %}
-      <tr>
-        <td>
-          <span class="badge badge-{{ t.status_class }}" title="{{ t.status_tooltip }}">{{ t.status }}</span>
-          {# May remove nowrap in the future, but since we have a small number of nodes, this should be fine. #}
-          <div class="text-nowrap">
-            {% include 'result_summary.html' with obj=t %}
-          </div>
-        </td>
-        {% if request.GET.tarballs == 'all' or request.GET.tarballs == 'with' %}
-        <td>
-          {% if t.patchset %}
-          <a href="{% url 'patchset_detail' t.patchset.id %}">{{ t.patchset.id }}</a>
-          {% endif %}
-        </td>
-        {% endif %}
-        <td class="text-truncate">
-          <div class="d-flex justify-content-between">
-            <a href="{% url 'tarball_detail' t.id %}">{{ t.id }}</a>
-            <small><span class="text-muted" title="Repo/Branch tarball was created from">{{ t.branch.name }}</span></small>
-          </div>
-          <div>
-            <small><code>{{ t.commit_id }}</code></small>
-          </div>
-        </td>
-        <td class="text-nowrap">
-          {{ t.date|default_if_none:"" }}
-        </td>
-        {% if request.user.is_superuser %}
-        <td class="text-nowrap">{{ t.time_to_last_test }}</td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-responsive-sm" id="tarball-table"
+       data-start="{{ start }}"
+       data-end="{{ end }}"
+       data-limit="{{ limit }}"
+       data-shown="{{ request.GET.tarballs }}"
+       data-admin="{{ request.user.is_superuser }}"
+  ></div>
 </div>
 {% include 'pagination.html' %}
 {% endblock %}
 
 {% block js %}
+<script src="{% url 'js-error-handler-js' %}"></script>
+{# Required polyfills to use the fetch api #}
+<script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
+<script src="{% static 'build/app.bundle.js' %}"></script>
 <script>
 $(function () {
   $('[data-toggle="popover"]').popover()

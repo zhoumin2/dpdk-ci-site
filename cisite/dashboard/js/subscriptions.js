@@ -1,131 +1,187 @@
+import { Component, h, render } from 'preact'
 import { handleResponse, errorPopup } from './utils'
 
-/**
- * Subscription manager for environments.
- */
-export class SubscriptionManager {
-  constructor() {
-    const subscribeCheckboxes = document.getElementsByClassName('subscribe');
+export class Subscriptions extends Component {
+  constructor (props) {
+    super(props)
 
-    // check if we are on the subscriptions page
-    if (!subscribeCheckboxes) {
-      return;
+    this.state = {
+      env_sub_pairs: []
     }
-
-    Array.from(subscribeCheckboxes).forEach(element => {
-      // set 'this' to the subscriptionmanager instead of the element
-      element.addEventListener('click', this.handleSubscriptionCheckbox.bind(this));
-    });
-
-    const sendMethods = document.getElementsByClassName('send-method');
-
-    Array.from(sendMethods).forEach(element => {
-      // set 'this' to the subscriptionmanager instead of the element
-      element.addEventListener('change', this.handleSendChange.bind(this));
-    });
   }
 
-  /**
-   * Handle the subscription checkbox clicked event.
-   * @param {!Event} e
-   */
-  handleSubscriptionCheckbox(e) {
+  componentDidMount () {
+    fetch('?json').then(res => {
+      if (res.ok) {
+        return res.json()
+      }
+    }).then(json => {
+      this.setState(state => {
+        // json also contains csrf token, etc
+        state = json
+        state.env_sub_pairs = json.env_sub_pairs.map(envSub => {
+          if (envSub.subscription) {
+            // convert to string for use in form
+            envSub.subscription.email_success = String(envSub.subscription.email_success)
+          }
+          // used to disable the checkbox while updating the subscription
+          envSub.updating = false
+          return envSub
+        })
+        return state
+      })
+    })
+  }
+
+  handleSubscriptionCheckbox (e, index) {
     // disable button until the request goes through
-    e.target.disabled = true;
+    this.setState(state => {
+      state.env_sub_pairs[index].updating = true
+      return state
+    })
 
-    const subscription = e.target.form.dataset.subscription;
-    const environment = e.target.form.dataset.environment;
-    const csrftoken = e.target.form.elements.csrfmiddlewaretoken.value;
+    const envSub = this.state.env_sub_pairs[index]
+    const subscription = envSub.subscription
 
-    if (subscription === undefined) {
-      this.add(csrftoken, e.target.form, e.target, environment);
+    if (subscription === null) {
+      this.add(index, e.target.form, envSub.environment.url)
     } else {
-      this.remove(csrftoken, e.target.form, e.target, environment, subscription);
+      this.remove(index, subscription.id)
     }
   }
 
-  /**
-   * Add a subscription.
-   * @param {!string} csrftoken
-   * @param {!HTMLFormsControlCollection} form
-   * @param {!HTMLInputElement} target
-   * @param {!number} environment
-   */
-  add(csrftoken, form, target, environment) {
+  getSendValue (value) {
+    if (value === 'true') {
+      return true
+    } else if (value === 'false') {
+      return false
+    }
+    return null
+  }
+
+  add (index, form, url) {
     const request = new Request('./', {
       credentials: 'same-origin',
-      headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
+      headers: { 'X-CSRFToken': this.state.csrftoken, 'Content-Type': 'application/json; charset=utf-8' },
       method: 'POST',
-      body: JSON.stringify({'environment': form.dataset.url, 'email_success': this.getSendValue(form), 'how': 'to'})
-    });
+      body: JSON.stringify({
+        environment: url,
+        email_success: this.getSendValue(form.elements.send.value),
+        how: 'to'
+      })
+    })
 
     fetch(request).then(response => {
       if (handleResponse(response)) {
         response.json().then(json => {
-          form.dataset.subscription = json.id;
-          document.getElementById('send-' + environment).disabled = false;
-          target.disabled = false;
-        });
+          this.setState(state => {
+            state.env_sub_pairs[index].subscription = {
+              id: json.id, email_success: 'null'
+            }
+            state.env_sub_pairs[index].updating = false
+            return state
+          })
+        })
       }
-    }).catch(errorPopup);
+    }).catch(errorPopup)
   }
 
-  /**
-   * Remove a subscription.
-   * @param {!string} csrftoken
-   * @param {!HTMLFormsControlCollection} form
-   * @param {!HTMLInputElement} target
-   * @param {!number} environment
-   * @param {!number} subscription
-   */
-  remove(csrftoken, form, target, environment, subscription) {
+  remove (index, subscription) {
     const request = new Request('./' + subscription + '/', {
       credentials: 'same-origin',
-      headers: {'X-CSRFToken': csrftoken},
+      headers: { 'X-CSRFToken': this.state.csrftoken },
       method: 'DELETE'
-    });
+    })
 
     fetch(request).then(response => {
       if (handleResponse(response)) {
-        delete form.dataset.subscription;
-        document.getElementById('send-' + environment).disabled = true;
-        target.disabled = false;
+        this.setState(state => {
+          state.env_sub_pairs[index].subscription = null
+          state.env_sub_pairs[index].updating = false
+          return state
+        })
       }
-    }).catch(errorPopup);
+    }).catch(errorPopup)
   }
 
-  /**
-   * Parse the value from a string to boolean/null.
-   * @param {!HTMLFormsControlCollection} form
-   * @return {?boolean}
-   */
-  getSendValue(form) {
-    const value = form.elements.send.value;
-    if (value === 'true') {
-      return true;
-    } else if (value === 'false') {
-      return false;
-    }
-    return null;
-  }
+  handleSendChange (e, index) {
+    const envSub = this.state.env_sub_pairs[index]
+    const subscription = envSub.subscription
+    const value = e.target.form.elements.send.value
 
-  /**
-   * Handle the select method box changed event.
-   * @param {!Event} e
-   */
-  handleSendChange(e) {
-    const subscription = e.target.form.dataset.subscription;
-    const csrftoken = e.target.form.elements.csrfmiddlewaretoken.value;
-
-    if (subscription !== undefined) {
-      const request = new Request('./' + subscription + '/', {
+    if (subscription !== null) {
+      const request = new Request('./' + subscription.id + '/', {
         credentials: 'same-origin',
-        headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json; charset=utf-8'},
+        headers: { 'X-CSRFToken': this.state.csrftoken, 'Content-Type': 'application/json; charset=utf-8' },
         method: 'PATCH',
-        body: JSON.stringify({'email_success': this.getSendValue(e.target.form)})
-      });
+        body: JSON.stringify({ email_success: this.getSendValue(value) })
+      })
 
-      fetch(request).then(handleResponse).catch(errorPopup);
+      this.setState(state => {
+        state.env_sub_pairs[index].subscription.email_success = value
+        return state
+      })
+
+      fetch(request).then(handleResponse).catch(errorPopup)
     }
   }
+
+  render () {
+    return (
+      <ul className="list-group list-group-flush">
+        {this.state.env_sub_pairs.map((envSub, index) =>
+          <li className="list-group-item" key={envSub.environment.id}>
+            <h5 className="card-title">{envSub.environment.name} Mbps</h5>
+
+            <form autoComplete="off">
+              <div className="form-row">
+                <div className="col-sm-4">
+                  <div className="form-check col-form-label">
+                    <input
+                      type="checkbox"
+                      className="form-check-input subscribe"
+                      id={`env-sub-${envSub.environment.id}`}
+                      checked={envSub.subscription !== null}
+                      disabled={envSub.updating}
+                      onChange={e => this.handleSubscriptionCheckbox(e, index)}
+                    />
+                    <label className="form-check-label" htmlFor={`env-sub-${envSub.environment.id}`}>Subscribe</label>
+                  </div>
+                </div>
+
+                <div className="col-sm-4 text-sm-right">
+                  <label className="col-form-label">Send method</label>
+                </div>
+
+                <div className="col-sm-4">
+                  <select
+                    className="form-control send-method"
+                    name="send"
+                    value={envSub.subscription === null ? 'null' : envSub.subscription.email_success}
+                    disabled={!envSub.subscription}
+                    onChange={e => this.handleSendChange(e, index)}
+                  >
+                    <option value="null">Inherit (On failure)</option>
+                    <option value="false">On failure</option>
+                    <option value="true">Always</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </li>
+        )}
+      </ul>
+    )
+  }
+}
+
+export function initSubscriptionManager () {
+  const domContainer = document.getElementById('subscription-manager')
+
+  // check if we are on the right page
+  if (!domContainer) {
+    return
+  }
+
+  render(<Subscriptions />, domContainer)
 }

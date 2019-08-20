@@ -93,7 +93,10 @@ services:
   # Test the style (for dev and CI)
   test_style:
     image: cisite_dev
-    command: pre-commit run --all-files
+    command: >
+      sh -c "pre-commit run --all-files &&
+             npm --prefix .. install &&
+             npm --prefix .. run lint"
     volumes:
       - .:/workspace
     depends_on:

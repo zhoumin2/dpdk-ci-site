@@ -24,8 +24,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.http import Http404, HttpResponseRedirect, \
     HttpResponseServerError, HttpResponse, JsonResponse
+from django.middleware import csrf
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils import dateformat
 from django.utils.dateparse import parse_datetime
 from django.views.generic import TemplateView, View
 from django.views.generic.edit import FormView
@@ -234,16 +236,18 @@ class BaseDashboardView(TemplateView):
             # Save some memory
             self.dev_cache = {}
 
-    def add_status_ranges(self, patchset, session):
+    def add_status(self, patchset, session, add_range=True, **kwargs):
         """Pass in the patchset to apply a range."""
         summary = patchset['result_summary']
-        summary['incomplete_range'] = range(summary['incomplete'])
+        if add_range:
+            summary['incomplete_range'] = range(summary['incomplete'])
         for tc_id in summary['testcases']:
             tc = summary['testcases'][tc_id]
             tc['testcase'] = self.get_cache_request(
                 urljoin(settings.API_BASE_URL, f'testcases/{tc_id}/'), session)
-            tc['passed_range'] = range(tc['passed'])
-            tc['failed_range'] = range(tc['failed'])
+            if add_range:
+                tc['passed_range'] = range(tc['passed'])
+                tc['failed_range'] = range(tc['failed'])
 
     def get_cache_request(self, key, session, timeout=2400):
         """Get and cache the the return the response json of a GET request.
@@ -303,7 +307,7 @@ class BaseDashboardView(TemplateView):
 
 
 class PatchSet(BaseDashboardView):
-    def get_patchset_submitter(self, series):
+    def set_patchset_submitter(self, series):
         """Returns the patchset submitter as it should be output.
 
         The output will be just the name for an anonymous user or the name
@@ -315,13 +319,13 @@ class PatchSet(BaseDashboardView):
         request = self.request
         if request.user.is_authenticated and submitter.get('email'):
             ret += ' <' + submitter['email'] + '>'
-        return ret
+        series['submitter'] = ret
 
     def patchwork_range_str(self, series):
         """Return the range of patchwork IDs as an HTML string."""
         res = str(series['patches'][0]['id'])
         if len(series['patches']) > 1:
-            res += f'&ndash;{series["patches"][-1]["id"]}'
+            res += f'–{series["patches"][-1]["id"]}'
         return res
 
     def set_shown_patchset(self, context):
@@ -341,7 +345,7 @@ class PatchSet(BaseDashboardView):
         context['shown']['active'] = True
         return True
 
-    def update_patchsets(self, context, session):
+    def update_patchsets(self, context, session, **kwargs):
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
                 series = pw_get(patchset['pw_series_url'], pw_session)
@@ -350,12 +354,14 @@ class PatchSet(BaseDashboardView):
                 patchset['series'] = series
                 patchset['patchwork_range_str'] = \
                     self.patchwork_range_str(series)
-                patchset['submitter'] = self.get_patchset_submitter(series)
+                self.set_patchset_submitter(series)
                 if 'time_to_last_test' in patchset:
                     patchset['time_to_last_test'] = format_timedelta(
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
-                self.add_status_ranges(patchset, session)
+                self.add_status(patchset, session, **kwargs)
+                patchset['detail_url'] = reverse(
+                    'patchset_detail', args=(patchset['id'],))
 
 
 class PatchSetList(PatchSet):
@@ -398,8 +404,6 @@ class PatchSetList(PatchSet):
 class PatchSetRow(PatchSet):
     """Display the list of patches on the dashboard."""
 
-    template_name = 'patchset_row.html'
-
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
@@ -419,8 +423,26 @@ class PatchSetRow(PatchSet):
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
 
-            self.update_patchsets(context, s)
+            self.update_patchsets(context, s, **kwargs)
         return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(add_range=False, **kwargs)
+
+        # Remove not needed things from patchset -- saves some bandwidth
+        for ps in context['patchsets']:
+            ps['series'].pop('project', None)
+            ps['series'].pop('patches', None)
+            ps['series'].pop('cover_letter', None)
+
+        return JsonResponse({
+            'patchsets': context['patchsets'],
+            'request': {
+                'user': {
+                    'is_superuser': request.user.is_superuser
+                }
+            }
+        })
 
 
 class Tarball(BaseDashboardView):
@@ -636,6 +658,26 @@ class Tarball(BaseDashboardView):
         context['shown']['without'] = True
         return False
 
+    def update_tarballs(self, context, s, **kwargs):
+        for tarball in context['tarballs']:
+            self.set_cache_request(tarball, s, 'branch')
+            self.add_status(tarball, s, **kwargs)
+
+            if tarball['date']:
+                tarball['date'] = dateformat.format(
+                    parse_datetime(tarball['date']),
+                    settings.DATETIME_FORMAT)
+
+            if tarball['patchset']:
+                resp = s.get(tarball['patchset'])
+                resp.raise_for_status()
+                tarball['patchset'] = resp.json()
+                tarball['patchset']['detail_url'] = reverse(
+                    'patchset_detail', args=(tarball['patchset']['id'],))
+
+            tarball['detail_url'] = reverse(
+                'tarball_detail', args=(tarball['id'],))
+
 
 class PatchSetDetail(Tarball, PatchSet):
     """Display the details for a particular patchset on the dashboard."""
@@ -657,13 +699,13 @@ class PatchSetDetail(Tarball, PatchSet):
                 raise Http404
 
             series = pw_get(context['patchset']['pw_series_url'])
-            context['patchset']['patches'] = series['patches']
+            context['patchset']['series'] = series
             context['patchset']['patchwork_range_str'] = \
                 self.patchwork_range_str(series)
-            self.add_status_ranges(context['patchset'], s)
+            self.add_status(context['patchset'], s)
             # assume UTC
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
-            context['patchset']['submitter'] = self.get_patchset_submitter(series)
+            self.set_patchset_submitter(series)
 
             context['environments'] = dict()
             if context['patchset'].get('tarballs', []):
@@ -711,27 +753,64 @@ class TarballList(Tarball):
                 'has_patchset': without,
                 'ordering': '-date',
                 'offset': offset,
+                'limit': 1,
+                'cache': True,
             })
 
             resp.raise_for_status()
             resp_json = resp.json()
 
+            end = min(offset + settings.REST_FRAMEWORK['PAGE_SIZE'], resp_json['count'])
             context['tarballs'] = resp_json['results']
-            for tarball in context['tarballs']:
-                self.set_cache_request(tarball, s, 'branch')
-                self.add_status_ranges(tarball, s)
-
-                if tarball['date']:
-                    tarball['date'] = parse_datetime(tarball['date'])
-
-                if tarball['patchset']:
-                    resp = s.get(tarball['patchset'])
-                    resp.raise_for_status()
-                    tarball['patchset'] = resp.json()
-
+            context['start'] = offset
+            context['end'] = end
+            # Limit chosen based on speed when cached (overall page load) and
+            # speed when uncached (overall page load AND first row response)
+            context['limit'] = 4
+            context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
+        self.update_tarballs(context, s)
         return context
+
+
+class TarballRow(Tarball):
+    """Display the list of patches on the dashboard."""
+
+    def get_context_data(self, **kwargs):
+        """Return extra data for the dashboard template."""
+        context = super().get_context_data(**kwargs)
+
+        with api_session(self.request) as s:
+            page = parse_page(self.request.GET.get('page'))
+            without = self.set_shown_tarball(context)
+
+            resp = s.get(urljoin(settings.API_BASE_URL, 'tarballs/'), params={
+                'has_patchset': without,
+                'without_series': False,
+                'ordering': '-date',
+                'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
+                'limit': self.request.GET.get('limit') or 1,
+                'cache': True,
+            })
+            resp.raise_for_status()
+            resp_json = resp.json()
+            context['tarballs'] = resp_json['results']
+
+            self.update_tarballs(context, s, **kwargs)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(add_range=False, **kwargs)
+
+        return JsonResponse({
+            'tarballs': context['tarballs'],
+            'request': {
+                'user': {
+                    'is_superuser': request.user.is_superuser
+                }
+            }
+        })
 
 
 class TarballDetail(Tarball):
@@ -748,7 +827,7 @@ class TarballDetail(Tarball):
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
                 raise Http404
             context['tarball'] = api_resp.json()
-            self.add_status_ranges(context['tarball'], s)
+            self.add_status(context['tarball'], s)
 
             self.populate_tarball_context(context, s)
 
@@ -799,6 +878,14 @@ class Subscriptions(BasePreferencesView):
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Subscriptions'
+        return context
+
+    def get(self, request, *args, **kwargs):
+        # can be an empty string
+        if request.GET.get('json', None) is None:
+            return super().get(request, *args, **kwargs)
+
         with api_session(self.request) as s:
             api_resp = s.get(urljoin(settings.API_BASE_URL,
                                      'subscriptions/?mine=true'))
@@ -813,6 +900,9 @@ class Subscriptions(BasePreferencesView):
         env_sub_pairs = []
 
         for env in environments['results']:
+            # Remove not needed things -- saves some bandwidth
+            env.pop('measurements', None)
+
             # grab first subscription that contains the current environment
             sub = next(filter(lambda sub: sub['environment'] == env['url'],
                               subscriptions['results']), None)
@@ -820,9 +910,10 @@ class Subscriptions(BasePreferencesView):
             # not exist
             env_sub_pairs.append({'environment': env, 'subscription': sub})
 
-        context['env_sub_pairs'] = env_sub_pairs
-        context['title'] = 'Subscriptions'
-        return context
+        return JsonResponse({
+            'env_sub_pairs': env_sub_pairs,
+            'csrftoken': csrf.get_token(request)
+        })
 
     def post(self, request, *args, **kwargs):
         """Pass post request to REST API."""

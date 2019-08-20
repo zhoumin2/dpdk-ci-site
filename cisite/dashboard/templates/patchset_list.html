@@ -27,45 +27,19 @@
       <a class="dropdown-item {{ shown.inactive|yesno:'active,,' }}" href="{% query_transform patchsets='inactive' %}">Inactive</a>
     </div>
   </div>
-  <div class="table-responsive-sm">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th title="Patch status. More information can be found by hovering over a status or by seeing the about page.">Status</th>
-          <th title="Patch information">Patch</th>
-          {% if request.user.is_superuser %}
-          <th title="The time it took from when the patchset was submitted to when the last test run completed.">Time</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody id="dashboard-table" data-start="{{ start }}" data-end="{{ end }}" data-limit="{{ limit }}" data-shown="{{ shown.text }}">
-        {# Initially show placeholder rows until items are loaded #}
-        {% for i in range %}
-        <tr id="row-{{ i }}">
-          <td title="Fetching patch information...">
-            <div class="spinner-border spinner-border-sm text-secondary" role="status">
-              <span class="sr-only">Fetching patch information...</span>
-            </div>
-          </td>
-          <td>
-            <div>&nbsp;</div>
-            <div>&nbsp;</div>
-          </td>
-          {% if request.user.is_superuser %}
-          <td></td>
-          {% endif %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <div class="table-responsive-sm" id="dashboard-table"
+       data-start="{{ start }}"
+       data-end="{{ end }}"
+       data-limit="{{ limit }}"
+       data-shown="{{ request.GET.patchsets }}"
+       data-admin="{{ request.user.is_superuser }}"
+  ></div>
   {% include 'pagination.html' %}
 {% endblock %}
 
 {% block js %}
   <script src="{% url 'js-error-handler-js' %}"></script>
-  {# Required polyfills to use the fetch (and promise) api #}
-  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4.2.5/dist/es6-promise.auto.min.js" integrity="sha256-8qFPvAMQLj9hOXkNoEO0iOXQx2tHyA8XWkym5O3dxqM=" crossorigin="anonymous"></script>
+  {# Required polyfills to use the fetch api #}
   <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
   <script src="{% static 'build/app.bundle.js' %}"></script>
   <script>

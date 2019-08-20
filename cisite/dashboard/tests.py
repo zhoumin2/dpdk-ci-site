@@ -441,7 +441,7 @@ class PatchListViewTests(BaseTestCase):
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(ps['submitter'], 'Thomas Monjalon')
+        self.assertEqual(ps['series']['submitter'], 'Thomas Monjalon')
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(ps['status_class'], 'success')
         self.assertEqual(ps['status_tooltip'], 'Pass')
@@ -463,7 +463,7 @@ class PatchListViewTests(BaseTestCase):
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(ps['submitter'],
+        self.assertEqual(ps['series']['submitter'],
                          'Thomas Monjalon <thomas@monjalon.net>')
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(ps['status_class'], 'success')
@@ -492,7 +492,7 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(len(ps['series']['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(len(response.context['environments'].items()), 0)
 
@@ -509,7 +509,7 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(len(ps['series']['patches']), 1)
         self.assertEqual(ps['status'], 'Possible Regression')
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
@@ -539,7 +539,7 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(len(ps['series']['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
@@ -572,7 +572,7 @@ class DetailViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
-        self.assertEqual(len(ps['patches']), 1)
+        self.assertEqual(len(ps['series']['patches']), 1)
         self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(len(response.context['environments']), 2)
         cloned_env = response.context['environments'][
@@ -714,10 +714,10 @@ class SubscriptionsViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(response.context['env_sub_pairs'], [])
+        self.assertQuerysetEqual(response.json()['env_sub_pairs'], [])
 
     def test_with_env(self):
         """Test the template and return a list."""
@@ -728,11 +728,11 @@ class SubscriptionsViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
-        self.assertEqual(response.context['env_sub_pairs'][0]['subscription'], None)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['environment']['id'], env.id)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['subscription'], None)
 
     def test_no_env_available(self):
         """Test the template and returns an empty list.
@@ -748,19 +748,19 @@ class SubscriptionsViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['env_sub_pairs'], [])
+        self.assertEqual(response.json()['env_sub_pairs'], [])
 
         # check if it shows up when the environment is public
         env.set_public()
 
         with self.settings(API_BASE_URL=self.live_server_url):
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['env_sub_pairs'], [])
+        self.assertEqual(response.json()['env_sub_pairs'], [])
 
     def test_env_with_subscription(self):
         """Test the template and return an env:sub pair."""
@@ -774,11 +774,11 @@ class SubscriptionsViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
-        self.assertEqual(response.context['env_sub_pairs'][0]['subscription']['id'], sub.id)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['environment']['id'], env.id)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['subscription']['id'], sub.id)
 
     def test_env_with_no_subscription(self):
         """Test the template and permissions between subscriptions."""
@@ -798,11 +798,11 @@ class SubscriptionsViewTests(BaseTestCase):
                 dict(username=self.user1.username, password='AbCdEfGh'), follow=True)
             self.assertTrue(response.context['user'].is_active)
 
-            response = self.client.get(reverse('subscriptions'))
+            response = self.client.get(reverse('subscriptions'), {'json': True})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['env_sub_pairs'][0]['environment']['id'], env.id)
-        self.assertEqual(response.context['env_sub_pairs'][0]['subscription'], None)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['environment']['id'], env.id)
+        self.assertEqual(response.json()['env_sub_pairs'][0]['subscription'], None)
 
 
 class RESTAPIPreferencesTests(BaseTestCase):

@@ -3,10 +3,10 @@
  * @param {Object} e Any object related to the error.
  */
 export const errorPopup = e => {
-  const message = "An error occurred. Please refresh the page and try again. If this persists, please email dpdklab@iol.unh.edu.";
-  toastr.error(message);
-  console.error(e);
-  logError(e);
+  const message = 'An error occurred. Please refresh the page and try again. If this persists, please email dpdklab@iol.unh.edu.'
+  toastr.error(message)
+  console.error(e)
+  logError(e)
 }
 
 /**
@@ -16,7 +16,7 @@ export const errorPopup = e => {
  */
 export const handleResponse = response => {
   if (!response.ok) {
-    errorPopup(response);
+    errorPopup(response)
   }
-  return response.ok;
+  return response.ok
 }

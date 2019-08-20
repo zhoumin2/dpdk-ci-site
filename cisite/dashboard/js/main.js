@@ -1,7 +1,9 @@
-import { Dashboard } from "./dashboard";
-import { SubscriptionManager } from "./subscriptions";
+import { initDashboard } from './dashboard'
+import { initTarballs } from './tarballs'
+import { initSubscriptionManager } from './subscriptions'
 
 window.onload = () => {
-  new Dashboard();
-  new SubscriptionManager();
+  initDashboard()
+  initTarballs()
+  initSubscriptionManager()
 }

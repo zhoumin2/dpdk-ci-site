@@ -1,19 +1,32 @@
 {
   "name": "cisite",
   "private": true,
+  "license": "BSD-3-Clause",
   "scripts": {
     "build": "webpack --config webpack/webpack.prod.js",
-    "dev": "webpack --config webpack/webpack.dev.js"
+    "dev": "webpack --config webpack/webpack.dev.js",
+    "lint": "git ls-files | grep '^cisite/dashboard/js/.*\\.js$' | xargs eslint"
   },
   "repository": {
     "type": "git",
     "url": "ssh://git@bitbucket.iol.unh.edu:7999/dpdklab/cisite.git"
   },
   "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-standard": "^4.0.0"
+  },
+  "dependencies": {
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.2.0",
     "babel-loader": "^8.0.6",
+    "core-js": "^3.2.1",
+    "preact": "^8.5.2",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.3.5",
     "webpack-merge": "^4.2.1"

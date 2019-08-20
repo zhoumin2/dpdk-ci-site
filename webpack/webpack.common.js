@@ -12,11 +12,24 @@ module.exports = {
       {
         test: /\.js$/,
         loader: 'babel-loader',
+        exclude: /node_modules/,
         query: {
           presets: [
             [
-              "@babel/preset-env",
-            ],
+              '@babel/preset-env', {
+                useBuiltIns: 'usage',
+                corejs: '^3.2.1',
+                targets: {
+                  browsers: ['last 2 versions']
+                }
+              }
+            ]
+          ],
+          plugins: [
+            [
+              '@babel/transform-react-jsx',
+              { pragma: 'h' }
+            ]
           ]
         }
       }
