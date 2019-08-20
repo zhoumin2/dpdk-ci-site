@@ -9,31 +9,9 @@
 {% endblock %}
 
 {% block content %}
-{% if jobs %}
-  <h1>Job Status</h1>
-  <div class="table-responsive">
-    <table class="table table-sm">
-      <thead>
-        <tr>
-          <th scope="col">Status</th>
-          <th scope="col">Name</th>
-          <th scope="col">Description</th>
-          <th scope="col">Typical Run Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for job in jobs %}
-          <tr>
-            <td>{{ job.status }}</td>
-            <td>{{ job.name }}</td>
-            <td>{{ job.description }}</td>
-            <td>{{ job.estimatedDuration }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+<h1>Job Status</h1>
+{# The job status is the slow part of the API, so only use js for the jobs API #}
+<div id="ci-status" data-jobsurl="{{ jobs_url }}"></div>
 {% if nodes %}
   <h1>CI Nodes</h1>
   <div class="table-responsive">
@@ -80,4 +58,11 @@
 {% else %}
   <p>Empty</p>
 {% endif %}
+{% endblock %}
+
+{% block js %}
+<script src="{% url 'js-error-handler-js' %}"></script>
+{# Required polyfills to use the fetch api #}
+<script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
+<script src="{% static 'build/app.bundle.js' %}"></script>
 {% endblock %}

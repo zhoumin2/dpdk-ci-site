@@ -114,4 +114,8 @@ urlpatterns = [
     path('preferences/manage_environments/',
          views.ManageEnvironments.as_view(),
          name='manage_environments'),
+    path('ci-jobs/',
+         views.CIJobs.as_view(), name='ci_jobs'),
+    path('ci-jobs/<int:id>/',
+         views.CIJobs.as_view(), name='ci_jobs'),
 ]

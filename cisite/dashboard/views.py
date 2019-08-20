@@ -1154,25 +1154,7 @@ class CIStatusView(BaseDashboardView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         with api_session(self.request) as s:
-            # ci jobs
-            api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-jobs/'))
-            jobs = api_resp.json()['results']
-
-            for job in jobs:
-                ms = job['estimatedDuration']
-                sec = (ms / 1000) % 60
-                sec = int(sec)
-                min = (ms / (1000 * 60)) % 60
-                min = int(min)
-                hour = int(ms / (1000 * 60 * 60))
-
-                ftime = ''
-                if hour > 1:
-                    ftime = f'{hour} hour, '
-                ftime += f'{min} min {sec} sec'
-                job['estimatedDuration'] = ftime
-
-            context['jobs'] = jobs
+            context['jobs_url'] = reverse('ci_jobs')
 
             # ci nodes
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-nodes/'))
@@ -1341,3 +1323,60 @@ class TogglePublic(LoginRequiredMixin, View):
             return HttpResponseRedirect(next_url)
         else:
             return HttpResponseRedirect(reverse('dashboard'))
+
+
+class CIJobs(BaseDashboardView):
+    """Proxy CI Jobs page"""
+
+    def get(self, request, id=None, **kwargs):
+        url = urljoin(settings.API_BASE_URL, f'ci-jobs/')
+        # in case of id 0
+        if id is not None:
+            url += f'{id}/'
+
+        resp = cache.get(url)
+
+        if resp is None:
+            with api_session(request) as s:
+                resp = s.get(url)
+
+            resp_json = resp.json()
+            status_code = resp.status_code
+
+            # Arbitrarily cache the job(s) for 10 minutes
+            cache.set(url, {
+                'json': resp_json,
+                'status_code': status_code
+            }, 10 * 60)
+        else:
+            resp_json = resp['json']
+            status_code = resp['status_code']
+
+        # handle list of jobs vs single jobs
+        if id is None:
+            jobs = resp_json['results']
+            for job in jobs:
+                self.set_job(job)
+            return JsonResponse(jobs, status=status_code, safe=False)
+
+        self.set_job(resp_json)
+
+        # update time (only in detail view)
+        ms = resp_json['estimatedDuration']
+        sec = (ms / 1000) % 60
+        sec = int(sec)
+        min = (ms / (1000 * 60)) % 60
+        min = int(min)
+        hour = int(ms / (1000 * 60 * 60))
+
+        ftime = ''
+        if hour > 1:
+            ftime = f'{hour} hr '
+        ftime += f'{min} min {sec} sec'
+        resp_json['estimatedDuration'] = ftime
+
+        return JsonResponse(resp_json, status=status_code)
+
+    def set_job(self, job):
+        # update url to dashboard url
+        job['url'] = reverse('ci_jobs', args=(job['id'],))

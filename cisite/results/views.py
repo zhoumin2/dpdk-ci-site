@@ -471,12 +471,18 @@ class NonModelViewSet(viewsets.ViewSet):
     """
 
     @abc.abstractmethod
-    def get_data(self, request):
-        """Return the list representation of the model."""
+    def get_data(self, request, pk, detail):
+        """Return the list representation of the model.
+
+        PK is 0-indexed, but the api representation is 1-indexed.
+        If detail is set, then use the 0-indexed pk to return the item from
+        the list. If not using a list, make sure to increment pk when
+        returning the representation (pk and url).
+        """
         pass
 
     def list(self, request):
-        data = self.get_data(request)
+        data = self.get_data(request, None, False)
         return Response(OrderedDict([
             ('count', len(data)),
             ('next', None),
@@ -486,26 +492,49 @@ class NonModelViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         try:
-            id = int(pk) - 1
-            return Response(self.get_data(request)[id])
+            pk = int(pk) - 1
+            return Response(self.get_data(request, pk, True))
         except IndexError:
             raise Http404
 
 
 class StatusViewSet(NonModelViewSet):
 
-    def get_data(self, request):
+    def get_data(self, request, pk, detail):
         data = [dict({'name': x}, **y) for x, y
                 in sorted(PatchSet.statuses.items())]
-        for pk, elem in enumerate(data):
-            elem['url'] = self.reverse_action('detail', args=[pk + 1])
+        for new_pk, elem in enumerate(data):
+            elem['url'] = self.reverse_action('detail', args=[new_pk + 1])
+        if detail:
+            return data[pk]
         return data
 
 
 class CIJobsViewSet(NonModelViewSet):
-    """Return the CI jobs from the Dashboard view."""
+    """Return the CI jobs from the Dashboard view.
 
-    def get_data(self, request):
+    In order to get extra information, the detail view must be used.
+    """
+
+    def set_job(self, job, pk, detail, s):
+        if detail:
+            build = s.get(f'{job["url"]}lastBuild/api/json', params={
+                'tree': 'estimatedDuration'
+            }).json()
+            job_detail = s.get(f'{job["url"]}api/json', params={
+                'tree': 'description'
+            }).json()
+
+            # milliseconds
+            job['estimatedDuration'] = build['estimatedDuration']
+            job['description'] = job_detail['description']
+            pk += 1
+
+        job['id'] = pk
+        job['url'] = self.reverse_action('detail', args=[pk])
+        job['status'] = 'running' if '_anime' in job['color'] else 'idle'
+
+    def get_data(self, request, pk, detail):
         if not settings.JENKINS_URL:
             return []
 
@@ -524,21 +553,13 @@ class CIJobsViewSet(NonModelViewSet):
             return []
         jobs = resp.json()['jobs']
 
+        if detail:
+            self.set_job(jobs[pk], pk, detail, s)
+            return jobs[pk]
+
         pk = 1
         for job in jobs:
-            build = s.get(f'{job["url"]}lastBuild/api/json', params={
-                'tree': 'estimatedDuration'
-            }).json()
-            job_detail = s.get(f'{job["url"]}api/json', params={
-                'tree': 'description'
-            }).json()
-
-            # milliseconds
-            job['estimatedDuration'] = build['estimatedDuration']
-            job['description'] = job_detail['description']
-            job['url'] = self.reverse_action('detail', args=[pk])
-            job['status'] = 'running' if '_anime' in job['color'] else 'idle'
-
+            self.set_job(job, pk, detail, s)
             pk += 1
 
         return jobs
@@ -547,7 +568,7 @@ class CIJobsViewSet(NonModelViewSet):
 class CINodesViewSet(NonModelViewSet):
     """Return the CI compute nodes."""
 
-    def get_data(self, request):
+    def get_data(self, request, pk, detail):
         if not settings.JENKINS_URL:
             return []
 
@@ -567,15 +588,18 @@ class CINodesViewSet(NonModelViewSet):
         nodes = resp.json()['computer']
 
         return_nodes = []
-        pk = 1
+        new_pk = 1
         for node in nodes:
             if 'public' not in [x['name'] for x in node['assignedLabels']]:
                 continue
 
-            node['url'] = self.reverse_action('detail', args=[pk])
+            node['url'] = self.reverse_action('detail', args=[new_pk])
             node['status'] = 'idle' if node['idle'] else 'running'
             return_nodes.append(node)
-            pk += 1
+            new_pk += 1
+
+        if detail:
+            return return_nodes[pk]
 
         return return_nodes
 
@@ -583,7 +607,7 @@ class CINodesViewSet(NonModelViewSet):
 class CIBuildQueueViewSet(NonModelViewSet):
     """Return the CI build queue."""
 
-    def get_data(self, request):
+    def get_data(self, request, pk, detail):
         if not settings.JENKINS_URL:
             return []
 
@@ -603,13 +627,16 @@ class CIBuildQueueViewSet(NonModelViewSet):
         queue = resp.json()['items']
 
         return_queue = []
-        pk = 1
+        new_pk = 1
         for queue_item in queue:
             if 'name' not in queue_item['task']:
                 continue
 
-            queue_item['url'] = self.reverse_action('detail', args=[pk])
+            queue_item['url'] = self.reverse_action('detail', args=[new_pk])
             return_queue.append(queue_item)
-            pk += 1
+            new_pk += 1
+
+        if detail:
+            return return_queue[pk]
 
         return return_queue
