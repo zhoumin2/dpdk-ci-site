@@ -31,6 +31,8 @@ router.register(r'ci-nodes', views.CINodesViewSet,
                 base_name='ci-node')
 router.register(r'ci-queue', views.CIBuildQueueViewSet,
                 base_name='ci-queue')
+router.register(r'ci-status', views.CIStatusViewSet,
+                base_name='ci-status')
 
 
 def upload_model_path(model, field):
