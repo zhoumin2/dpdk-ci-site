@@ -55,7 +55,15 @@ export class CIStatus extends Component {
           <tbody>
             {this.state.jobs.map(job =>
               <tr key={job.name}>
-                <td>{job.status}</td>
+                <td>
+                  {(job.status === 'running' &&
+                    <span className="fas fa-circle-notch fa-spin text-primary" title="Running"></span>
+                  ) || (job.status === 'idle' &&
+                    <span className="fas fa-circle-notch text-secondary" title="Idle"></span>
+                  ) || (
+                    <span>{job.status}</span>
+                  )}
+                </td>
                 <td>
                   <div class="text-nowrap">{job.name}</div>
                   <div className="text-muted">{job.description}</div>

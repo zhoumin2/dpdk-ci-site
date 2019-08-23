@@ -9,7 +9,18 @@
 {% endblock %}
 
 {% block content %}
-<h1>Job Status</h1>
+<h1>
+  Job Status
+  <small>
+    {% if status and status.quietingDown %}
+      <span class="text-warning fas fa-times-circle" title="The CI is in maintenance mode"></span>
+    {% elif status %}
+      <span class="text-success fas fa-check-circle" title="The CI is online"></span>
+    {% else %}
+      <span class="text-danger fas fa-times-circle" title="The CI is offline"></span>
+    {% endif %}
+  </small>
+</h1>
 {# The job status is the slow part of the API, so only use js for the jobs API #}
 <div id="ci-status" data-jobsurl="{{ jobs_url }}"></div>
 {% if nodes %}
@@ -26,7 +37,15 @@
       <tbody>
         {% for node in nodes %}
           <tr>
-            <td>{{ node.status }}</td>
+            <td>
+              {% if node.status == 'running' %}
+                <span class="fas fa-circle-notch fa-spin text-primary" title="Running"></span>
+              {% elif node.status == 'idle' %}
+                <span class="fas fa-circle-notch text-secondary" title="Idle"></span>
+              {% else %}
+                {{ node.status }}
+              {% endif %}
+            </td>
             <td>{{ node.displayName }}</td>
             <td>{{ node.description }}</td>
           </tr>

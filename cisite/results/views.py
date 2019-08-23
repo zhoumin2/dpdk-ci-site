@@ -510,7 +510,17 @@ class StatusViewSet(NonModelViewSet):
         return data
 
 
-class CIJobsViewSet(NonModelViewSet):
+class CIMixin:
+    def get_session(self):
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        s = requests.Session()
+        s.verify = settings.CA_CERT_BUNDLE
+        s.auth = auth
+        return s
+
+
+class CIJobsViewSet(CIMixin, NonModelViewSet):
     """Return the CI jobs from the Dashboard view.
 
     In order to get extra information, the detail view must be used.
@@ -538,13 +548,8 @@ class CIJobsViewSet(NonModelViewSet):
         if not settings.JENKINS_URL:
             return []
 
+        s = self.get_session()
         job_list_url = f'{settings.JENKINS_URL}view/Dashboard/api/json'
-        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
-                                           settings.JENKINS_API_TOKEN)
-        s = requests.Session()
-        s.verify = settings.CA_CERT_BUNDLE
-        s.auth = auth
-
         resp = s.get(job_list_url, params={
             'tree': 'jobs[url,name,color]'
         })
@@ -565,20 +570,15 @@ class CIJobsViewSet(NonModelViewSet):
         return jobs
 
 
-class CINodesViewSet(NonModelViewSet):
+class CINodesViewSet(CIMixin, NonModelViewSet):
     """Return the CI compute nodes."""
 
     def get_data(self, request, pk, detail):
         if not settings.JENKINS_URL:
             return []
 
+        s = self.get_session()
         host_list_url = f'{settings.JENKINS_URL}computer/api/json'
-        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
-                                           settings.JENKINS_API_TOKEN)
-        s = requests.Session()
-        s.verify = settings.CA_CERT_BUNDLE
-        s.auth = auth
-
         resp = s.get(host_list_url, params={
             'tree': 'computer[assignedLabels[name],idle,displayName,description]'
         })
@@ -604,20 +604,15 @@ class CINodesViewSet(NonModelViewSet):
         return return_nodes
 
 
-class CIBuildQueueViewSet(NonModelViewSet):
+class CIBuildQueueViewSet(CIMixin, NonModelViewSet):
     """Return the CI build queue."""
 
     def get_data(self, request, pk, detail):
         if not settings.JENKINS_URL:
             return []
 
+        s = self.get_session()
         queue_list_url = f'{settings.JENKINS_URL}queue/api/json'
-        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
-                                           settings.JENKINS_API_TOKEN)
-        s = requests.Session()
-        s.verify = settings.CA_CERT_BUNDLE
-        s.auth = auth
-
         resp = s.get(queue_list_url, params={
             'tree': 'items[task[name],why]'
         })
@@ -640,3 +635,21 @@ class CIBuildQueueViewSet(NonModelViewSet):
             return return_queue[pk]
 
         return return_queue
+
+
+class CIStatusViewSet(CIMixin, NonModelViewSet):
+    """Return the CI status."""
+
+    def get_data(self, request, pk, detail):
+        if not settings.JENKINS_URL:
+            return {}
+
+        s = self.get_session()
+        queue_list_url = f'{settings.JENKINS_URL}api/json'
+        resp = s.get(queue_list_url, params={
+            'tree': 'quietingDown'
+        })
+        if resp.status_code >= 400:
+            logger.warning(f'CI returned: {resp.status_code}: {resp.text}')
+            return {}
+        return resp.json()

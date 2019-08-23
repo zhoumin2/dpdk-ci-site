@@ -1156,6 +1156,11 @@ class CIStatusView(BaseDashboardView):
         with api_session(self.request) as s:
             context['jobs_url'] = reverse('ci_jobs')
 
+            # ci status
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-status/'))
+            status = api_resp.json()['results']
+            context['status'] = status
+
             # ci nodes
             api_resp = s.get(urljoin(settings.API_BASE_URL, 'ci-nodes/'))
             nodes = api_resp.json()['results']
