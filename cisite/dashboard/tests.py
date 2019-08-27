@@ -81,6 +81,22 @@ class BaseTestCase(StaticLiveServerTestCase):
                 ]
             })
         m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'testcases/'),
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [
+                    {
+                        'url': urljoin(settings.API_BASE_URL, 'testcases/1/'),
+                        'name': 'nic_single_core_perf',
+                        'description_url':
+                            'http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
+                        'pipeline': None
+                    },
+                ]
+            })
+        m.register_uri(
             'GET', urljoin(settings.API_BASE_URL, 'branches/1/'),
             json={
                 'id': 1,

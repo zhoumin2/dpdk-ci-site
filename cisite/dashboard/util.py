@@ -150,3 +150,22 @@ def _pw_get_devel(url):
         with open('cisite/request_mapping.json', 'r') as f:
             request_mapping = json.load(f)
     return copy.deepcopy(request_mapping[url])
+
+
+def get_all_pages(url, session):
+    """
+    Returns an aggregated list of results going through each page in the API.
+    """
+    ret = []
+
+    resp = session.get(url)
+    resp.raise_for_status()
+    resp_json = resp.json()
+    ret += resp_json['results']
+
+    while resp_json['next']:
+        resp = session.get(resp_json['next'])
+        resp_json = resp.json()
+        ret += resp_json['results']
+
+    return ret

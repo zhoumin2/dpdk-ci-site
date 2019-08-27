@@ -35,7 +35,7 @@ from rest_framework.authtoken.models import Token
 
 from .pagination import _get_displayed_page_numbers, _get_page_links
 from .util import api_session, build_upload_url, format_timedelta, \
-    ipa_session, ParseIPAChangePassword, pw_get
+    ipa_session, ParseIPAChangePassword, pw_get, get_all_pages
 from .forms import EnvironmentForm
 from shared.util import requests_to_response
 
@@ -1059,6 +1059,9 @@ class AboutView(BaseDashboardView):
             resp = s.get(urljoin(settings.API_BASE_URL, 'statuses/'))
             resp.raise_for_status()
             context['statuses'] = resp.json()['results']
+
+            url = urljoin(settings.API_BASE_URL, 'testcases/')
+            context['testcases'] = get_all_pages(url, s)
 
         return context
 
