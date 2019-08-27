@@ -4,36 +4,40 @@
 FROM python:3.6 as base
 
 ENV PYTHONUNBUFFERED 1
+ENV PIPENV_VENV_IN_PROJECT 1
+
+RUN pip install pipenv
 
 RUN apt-get -y update
-RUN apt-get -y install libldap2-dev libsasl2-dev curl gnupg
+RUN apt-get -y install libldap2-dev libsasl2-dev curl gnupg apache2-dev
 
 RUN curl -sL https://deb.nodesource.com/setup_11.x | bash -
 RUN apt-get -y install nodejs
 
-COPY requirements ./
-RUN pip install -r /base.txt
-
 RUN mkdir /workspace
 
-# Set workdir for compose file's manage.py
-WORKDIR /workspace/cisite
+COPY . /workspace
+
+WORKDIR /workspace
 
 ##
 # Create dev image
 ##
 FROM base as dev
 
-RUN apt-get -y install python3-coverage
-RUN pip install pre-commit
+RUN pipenv install --dev
+RUN npm install
 
-RUN pip install -r /local.txt
+WORKDIR /workspace/cisite
 
 ##
 # Create prod image
+# WIP
 ##
 FROM base as prod
 
-RUN apt-get -y install apache2-dev
+RUN pipenv install
+RUN npm install --production
+RUN npm run build
 
-RUN pip install -r /production.txt
+WORKDIR /workspace/cisite

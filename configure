@@ -104,17 +104,8 @@ def main():
     else:
         log_result('not found')
 
-    log_checking('Creating virtual environment in env')
-    if os.path.isdir('venv'):
-        log_result('already exists')
-    else:
-        run(sys.executable, '-m', 'venv', 'venv')
-
-    curdir = os.path.realpath(os.curdir)
-    py_exe = os.path.join(curdir, 'venv/bin/python3')
-
-    log_checking('Installing project requirements')
-    run(py_exe, '-m', 'pip', 'install', '--upgrade', '-r', REQUIREMENTS)
+    log_checking('Creating virtual environment')
+    run('pipenv', 'install', '--dev')
 
     log_checking('Installing settings.py')
     if os.path.isfile('cisite/cisite/settings.py'):
@@ -130,11 +121,11 @@ def main():
     log_result('yes' if have_db else 'no')
 
     log_checking('Create database if needed and apply migrations')
-    run(py_exe, 'manage.py', 'migrate')
+    run('pipenv', 'run', './manage.py', 'migrate')
 
     if not have_db:
         log_checking('Load sample data into database')
-        run(py_exe, 'manage.py', 'loaddata', 'demo')
+        run('pipenv', 'run', './manage.py', 'loaddata', 'demo')
 
     npm_exe = which('npm')
     if not npm_exe:
@@ -147,7 +138,7 @@ def main():
     run(npm_exe, 'run', 'build')
 
     print('\nDone! To run the server, run the following commands:\n\n'
-          'source venv/bin/activate\n'
+          'pipenv shell\n'
           'cd cisite\n'
           './manage.py createsuperuser # do this once\n'
           './manage.py runserver 0:8000')

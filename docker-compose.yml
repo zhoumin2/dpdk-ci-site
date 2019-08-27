@@ -21,59 +21,36 @@ services:
     image: cisite_prod
 
 ##
-# Production
-# WIP - Prod is ran with local Apache WSGI
-##
-
-  # Build prod
-  build:
-    image: cisite_prod
-    command: >
-      sh -c "./manage.py migrate --noinput &&
-             ./manage.py collectstatic --noinput &&
-             npm --prefix .. install &&
-             npm --prefix .. run build"
-    volumes:
-      - .:/workspace
-    depends_on:
-      - cisite_prod
-
-##
 # Development
 ##
 
   # Migrate dev
   dev_migrate:
     image: cisite_dev
-    command: ./manage.py migrate --noinput
+    entrypoint: pipenv run ./manage.py migrate --noinput
     volumes:
-      - .:/workspace
-    depends_on:
-      - cisite_dev
-
-  # Build dev
-  dev_build:
-    image: cisite_dev
-    command: >
-      sh -c "npm --prefix .. install &&
-             npm --prefix .. run build"
-    volumes:
-      - .:/workspace
+      - ./cisite/cisite:/workspace/cisite/cisite
+      - ./cisite/dashboard:/workspace/cisite/dashboard
+      - ./cisite/results:/workspace/cisite/results
+      - ./cisite/shared:/workspace/cisite/shared
     depends_on:
       - cisite_dev
 
   # Run dev server
   dev:
     image: cisite_dev
-    command: >
+    entrypoint: >
       sh -c "npm --prefix .. run dev &
-             ./manage.py livereload --host 0 &
-             ./manage.py runserver 0:8000"
-    volumes:
-      - .:/workspace
+             pipenv run ./manage.py livereload --host 0 &
+             pipenv run ./manage.py runserver 0:8000"
     ports:
       - "8000:8000"
       - "35729:35729"
+    volumes:
+      - ./cisite/cisite:/workspace/cisite/cisite
+      - ./cisite/dashboard:/workspace/cisite/dashboard
+      - ./cisite/results:/workspace/cisite/results
+      - ./cisite/shared:/workspace/cisite/shared
     depends_on:
       - cisite_dev
 
@@ -84,41 +61,35 @@ services:
   # Migrate test (for dev and CI)
   test_migrate:
     image: cisite_dev
-    command: ./manage.py migrate --noinput --settings cisite.settings_test
-    volumes:
-      - .:/workspace
+    entrypoint: pipenv run ./manage.py migrate --noinput --settings cisite.settings_test
     depends_on:
       - cisite_dev
 
   # Test the style (for dev and CI)
   test_style:
     image: cisite_dev
-    command: >
-      sh -c "pre-commit run --all-files &&
-             npm --prefix .. install &&
+    entrypoint: >
+      sh -c "pipenv run pre-commit run --all-files &&
              npm --prefix .. run lint"
-    volumes:
-      - .:/workspace
     depends_on:
       - cisite_dev
 
   # Run tests (for dev and CI)
   test:
     image: cisite_dev
-    command:
-      ./manage.py test --noinput --settings cisite.settings_test
-    volumes:
-      - .:/workspace
+    entrypoint:
+      pipenv run ./manage.py test --noinput --settings cisite.settings_test
     depends_on:
       - cisite_dev
 
   # Run tests with coverage (for dev and CI, but mostly for CI)
   test_coverage:
     image: cisite_dev
-    command: >
-      sh -c "coverage run ./manage.py test --noinput --settings cisite.settings_test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner &&
-             coverage html --include=results/\*.py --omit=results/migrations/\*.py"
+    entrypoint: >
+      sh -c "pipenv run coverage run ./manage.py test --noinput --settings cisite.settings_test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner &&
+             pipenv run coverage html --include=results/\*.py --omit=results/migrations/\*.py -d coverage &&
+             pipenv run coverage xml --include=results/\*.py --omit=results/migrations/\*.py -o coverage/coverage.xml"
     volumes:
-      - .:/workspace
+      - ./cisite/coverage:/workspace/cisite/coverage
     depends_on:
       - cisite_dev

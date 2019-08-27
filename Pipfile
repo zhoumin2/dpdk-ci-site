@@ -1,0 +1,27 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+coverage = "*"
+requests-mock = "*"
+unittest-xml-reporting = "*"
+django-livereload-server = "*"
+pre-commit = "*"
+
+[packages]
+django = "*"
+djangorestframework = "*"
+django-auth-ldap = "*"
+django-filter = "*"
+django-guardian = "*"
+django-private-storage = "*"
+pyyaml = "*"
+mod-wsgi = "*"
+mysqlclient = "*"
+python-memcached = "*"
+djangorestframework-guardian = "*"
+
+[requires]
+python_version = "3.6"

@@ -217,7 +217,7 @@ class BranchViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    filter_fields = ('name', 'last_commit_id', 'repository_url')
+    filterset_fields = ('name', 'last_commit_id', 'repository_url')
 
 
 class TarballViewSet(CacheListModelMixin, viewsets.ModelViewSet):
@@ -275,7 +275,7 @@ class TestCaseViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = TestCase.objects.all()
     serializer_class = TestCaseSerializer
-    filter_fields = ('name',)
+    filterset_fields = ('name',)
 
 
 class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):

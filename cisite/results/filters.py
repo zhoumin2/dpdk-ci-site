@@ -11,7 +11,7 @@ from django.db.models import Q
 from django_filters.rest_framework import BooleanFilter, FilterSet
 from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_anonymous_user
-from rest_framework.filters import DjangoObjectPermissionsFilter
+from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
 from .models import Environment, PatchSet, Subscription, Tarball
 

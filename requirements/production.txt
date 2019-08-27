@@ -1,5 +1,0 @@
--r base.txt
-
-mod_wsgi
-mysqlclient
-python-memcached
