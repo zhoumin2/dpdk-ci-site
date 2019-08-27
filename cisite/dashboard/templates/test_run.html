@@ -53,7 +53,7 @@
             {% for parameter in item.measurement.parameters.values %}
               <td>{{ parameter.value }}</td>
             {% endfor %}
-            {% if item.difference %}
+            {% if item.difference is not None %}
               <td>{{ item.difference|floatformat:"-5" }}</td>
             {% endif %}
           </tr>

@@ -52,7 +52,7 @@ class DashboardTable extends Row {
                       <div>
                         <a href={ps.detail_url}>{ps.patchwork_range_str}</a>
                         {(ps.series.version > 1 &&
-                          <span className="badge badge-pill badge-secondary" title="Patch version">v{ps.series.version}</span>
+                          <span className="badge badge-pill badge-secondary ml-1" title="Patch version">v{ps.series.version}</span>
                         )}
                       </div>
 
