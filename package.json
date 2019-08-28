@@ -12,6 +12,7 @@
     "url": "ssh://git@bitbucket.iol.unh.edu:7999/dpdklab/cisite.git"
   },
   "devDependencies": {
+    "babel-eslint": "^10.0.3",
     "eslint": "^6.1.0",
     "eslint-config-standard": "^13.0.1",
     "eslint-plugin-import": "^2.18.2",

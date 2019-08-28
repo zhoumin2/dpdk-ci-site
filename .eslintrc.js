@@ -12,6 +12,7 @@ module.exports = {
     logError: 'readonly',
     toastr: 'readonly'
   },
+  parser: 'babel-eslint',
   parserOptions: {
     ecmaFeatures: {
       jsx: true
