@@ -2,13 +2,6 @@
 {% load static %}
 {% load templatehelpers %}
 
-{% block title %}Patch sets{% endblock %}
-
-{% block breadcrumb_items %}
-<li class="breadcrumb-item" aria-current="page"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item active" aria-current="page">Patch sets</li>
-{% endblock %}
-
 {% block content %}
   <p>Below is the current CI performance testing status for the patch sets
   currently active in the DPDK Patchwork instance. Possible statuses are

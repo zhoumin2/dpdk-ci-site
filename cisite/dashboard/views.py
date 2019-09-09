@@ -140,55 +140,6 @@ class AuthenticationForm(auth_forms.AuthenticationForm):
         self.fields['password'].widget.attrs.update({'class': 'form-control'})
 
 
-class LoginView(auth_views.LoginView):
-    """Custom login view which logs the user into the REST API."""
-
-    form_class = AuthenticationForm
-
-    def form_valid(self, form):
-        """Handle POST requests to the login view."""
-        endresp = super().form_valid(form)
-
-        with api_session(self.request) as s:
-            login_url = urljoin(settings.API_BASE_URL, 'api-auth/login/')
-            try:
-                r = s.get(login_url)
-                r.raise_for_status()
-                r = s.post(login_url,
-                           data={'username': form.cleaned_data['username'],
-                                 'password': form.cleaned_data['password'],
-                                 'csrfmiddlewaretoken': r.cookies['csrftoken'],
-                                 'next': '/'},
-                           allow_redirects=False)
-                r.raise_for_status()
-                self.request.session['api_sessionid'] = r.cookies['sessionid']
-            except requests.exceptions.ConnectionError:
-                logger.exception(
-                    f'Connection closed into backend API: {login_url}')
-                auth_logout(self.request)
-                return HttpResponseRedirect(self.request.get_full_path())
-            except requests.exceptions.HTTPError as e:
-                logger.exception(
-                    f'Unable to log into backend API: {e.response.text}')
-                auth_logout(self.request)
-                return HttpResponseServerError(
-                    content='<p>Unable to login to backend API</p>')
-
-        # Check to see if they can directly use IPA. If not, redirect
-        # them to change their password.
-        if 'django_auth_ldap.backend.LDAPBackend' in\
-                settings.AUTHENTICATION_BACKENDS:
-            with ipa_session(form.cleaned_data['username'],
-                             form.cleaned_data['password']) as\
-                    (session, resp, ipa_url):
-                if not resp.ok:
-                    messages.warning(self.request,
-                                     "Your password has expired, "
-                                     "please change your password.")
-                    return HttpResponseRedirect(reverse('password_change'))
-        return endresp
-
-
 class BaseDashboardView(TemplateView):
     """Define a base view for all non-login dashboard template views."""
 
@@ -306,6 +257,60 @@ class BaseDashboardView(TemplateView):
         item[key] = self.get_cache_request(item[key], session, timeout)
 
 
+class LoginView(BaseDashboardView, auth_views.LoginView):
+    """Custom login view which logs the user into the REST API."""
+
+    form_class = AuthenticationForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['title'] = 'Log in'
+        return context
+
+    def form_valid(self, form):
+        """Handle POST requests to the login view."""
+        endresp = super().form_valid(form)
+
+        with api_session(self.request) as s:
+            login_url = urljoin(settings.API_BASE_URL, 'api-auth/login/')
+            try:
+                r = s.get(login_url)
+                r.raise_for_status()
+                r = s.post(login_url,
+                           data={'username': form.cleaned_data['username'],
+                                 'password': form.cleaned_data['password'],
+                                 'csrfmiddlewaretoken': r.cookies['csrftoken'],
+                                 'next': '/'},
+                           allow_redirects=False)
+                r.raise_for_status()
+                self.request.session['api_sessionid'] = r.cookies['sessionid']
+            except requests.exceptions.ConnectionError:
+                logger.exception(
+                    f'Connection closed into backend API: {login_url}')
+                auth_logout(self.request)
+                return HttpResponseRedirect(self.request.get_full_path())
+            except requests.exceptions.HTTPError as e:
+                logger.exception(
+                    f'Unable to log into backend API: {e.response.text}')
+                auth_logout(self.request)
+                return HttpResponseServerError(
+                    content='<p>Unable to login to backend API</p>')
+
+        # Check to see if they can directly use IPA. If not, redirect
+        # them to change their password.
+        if 'django_auth_ldap.backend.LDAPBackend' in \
+                settings.AUTHENTICATION_BACKENDS:
+            with ipa_session(form.cleaned_data['username'],
+                             form.cleaned_data['password']) as \
+                    (session, resp, ipa_url):
+                if not resp.ok:
+                    messages.warning(self.request,
+                                     "Your password has expired, "
+                                     "please change your password.")
+                    return HttpResponseRedirect(reverse('password_change'))
+        return endresp
+
+
 class PatchSet(BaseDashboardView):
     def set_patchset_submitter(self, series):
         """Returns the patchset submitter as it should be output.
@@ -372,6 +377,7 @@ class PatchSetList(PatchSet):
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Patch sets'
         active = self.set_shown_patchset(context)
 
         with api_session(self.request) as s:
@@ -731,8 +737,9 @@ class PatchSetDetail(Tarball, PatchSet):
                 api_resp.raise_for_status()
                 context['branches'] = api_resp.json()['results']
 
-            context['status_classes'] = text_color_classes(context['patchset']['status_class'])
-            return context
+        context['title'] = f'Patch set {context["patchset"]["id"]}'
+        context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+        return context
 
 
 class TarballList(Tarball):
@@ -743,6 +750,7 @@ class TarballList(Tarball):
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Tarballs'
 
         with api_session(self.request) as s:
             page = parse_page(self.request.GET.get('page'))
@@ -836,8 +844,9 @@ class TarballDetail(Tarball):
                 resp.raise_for_status()
                 context['tarball']['patchset'] = resp.json()
 
-            context['status_classes'] = text_color_classes(context['tarball']['status_class'])
-            return context
+        context['title'] = f'Tarball {context["tarball"]["id"]}'
+        context['status_classes'] = text_color_classes(context['tarball']['status_class'])
+        return context
 
 
 class BasePreferencesView(LoginRequiredMixin, BaseDashboardView):
@@ -1054,6 +1063,7 @@ class AboutView(BaseDashboardView):
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
         context = super().get_context_data(**kwargs)
+        context['title'] = 'About'
 
         with api_session(self.request) as s:
             resp = s.get(urljoin(settings.API_BASE_URL, 'statuses/'))
@@ -1124,6 +1134,7 @@ class StatsView(BaseDashboardView):
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Stats'
         context['grafana_url'] = settings.GRAFANA_URL
         context['grafana_graphs'] = settings.GRAFANA_GRAPHS
         return context
@@ -1156,6 +1167,8 @@ class CIStatusView(BaseDashboardView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Status'
+
         with api_session(self.request) as s:
             context['jobs_url'] = reverse('ci_jobs')
 
