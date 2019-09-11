@@ -1,12 +1,5 @@
 {% extends 'base.html' %}
 
-{% block title %}Login{% endblock %}
-
-{% block breadcrumb_items %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item active" aria-current="page">Login</li>
-{% endblock %}
-
 {% block content %}
 
 <div class="row justify-content-center">
@@ -34,7 +27,7 @@
         {{ form.password }}
       </div>
 
-      <input type="submit" class="btn btn-primary btn-block" value="Login">
+      <input type="submit" class="btn btn-primary btn-block" value="Log in">
       <input type="hidden" name="next" value="{{ next }}">
     </form>
     <br>

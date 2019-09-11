@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/fontawesome.min.css" integrity="sha256-AaQqnjfGDRZd/lUp0Dvy7URGOyRsh8g9JdWUkyYxNfI=" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/solid.min.css" integrity="sha256-3FfMfpeajSEpxWZTFowWZPTv7k3GEu7w4rQv49EWsEY=" crossorigin="anonymous">
-    <title>{% block title %}Dashboard{% endblock %} - DPDK Performance Test Lab</title>
+    <title>{{ title|default:"Dashboard" }} - DPDK Performance Test Lab</title>
 </head>
 <body>
   <nav class="navbar navbar-expand-md navbar-light bg-light">
@@ -25,19 +25,19 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav flex-wrap">
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'patchset_list' %}">Patch sets</a>
+            <a class="nav-link{% if title == 'Patch sets' %} active{% endif %}" href="{% url 'patchset_list' %}">Patch sets</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'tarball_list' %}">Tarballs</a>
+            <a class="nav-link{% if title == 'Tarballs' %} active{% endif %}" href="{% url 'tarball_list' %}">Tarballs</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'stats' %}">Stats</a>
+            <a class="nav-link{% if title == 'Stats' %} active{% endif %}" href="{% url 'stats' %}">Stats</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'ci-status-page' %}">CI Status</a>
+            <a class="nav-link{% if title == 'Status' %} active{% endif %}" href="{% url 'ci-status-page' %}">CI Status</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'about' %}">About</a>
+            <a class="nav-link{% if title == 'About' %} active{% endif %}" href="{% url 'about' %}">About</a>
           </li>
         </ul>
         <ul class="navbar-nav ml-auto">
@@ -46,12 +46,12 @@
           <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ request.user }}</a>
           <div class="dropdown-menu dropdown-menu-right">
             <a class="dropdown-item" href="{% url 'preferences' %}">Preferences</a>
-            <a class="dropdown-item" href="{% url 'logout' %}?next={{ next|default:request.path }}">Logout</a>
+            <a class="dropdown-item" href="{% url 'logout' %}?next={{ next|default:request.path }}">Log out</a>
           </div>
           </li>
           {% else %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}?next={{ next|default:request.path }}">Login</a>
+            <a class="nav-link{% if title == 'Log in' %} active{% endif %}" href="{% url 'login' %}?next={{ next|default:request.path }}">Log in</a>
           </li>
           {% endif %}
         </ul>
@@ -64,7 +64,10 @@
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         {% block breadcrumb_items %}
-        <li class="breadcrumb-item active" aria-current="page">Home</li>
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          {% if title %}
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+          {% endif %}
         {% endblock %}
       </ol>
     </nav>

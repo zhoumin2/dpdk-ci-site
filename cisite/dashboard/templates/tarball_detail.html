@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Tarball {{ tarball.id }}{% endblock %}
-
 {% block breadcrumb_items %}
 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item" aria-current="page"><a href="{% url 'tarball_list' %}">Tarballs</a></li>
+<li class="breadcrumb-item"><a href="{% url 'tarball_list' %}">Tarballs</a></li>
 <li class="breadcrumb-item active" aria-current="page">Tarball</li>
 {% endblock %}
 
 {% block content %}
 {% include "messages.html" %}
-<h1>Tarball {{ tarball.id }}</h1>
+<h1>{{ title }}</h1>
 <dl>
   <div class="row">
     <dt class="col">Tarball Info</dt>

@@ -1,13 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Stats{% endblock %}
-
-{% block breadcrumb_items %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item active" aria-current="page">Stats</li>
-{% endblock %}
-
 {% block content %}
 {% if grafana_url %}
 <p><a href="{{ grafana_url }}">Grafana</a></p>

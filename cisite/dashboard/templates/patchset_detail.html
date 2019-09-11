@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Patch set {{ patchset.id }}{% endblock %}
-
 {% block breadcrumb_items %}
 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item" aria-current="page"><a href="{% url 'patchset_list' %}">Patch sets</a></li>
+<li class="breadcrumb-item"><a href="{% url 'patchset_list' %}">Patch sets</a></li>
 <li class="breadcrumb-item active" aria-current="page">Patch set</li>
 {% endblock %}
 
 {% block content %}
 {% include "messages.html" %}
-<h1>Patch Set {{ patchset.patchwork_range_str|safe }}</h1>
+<h1>Patch set {{ patchset.patchwork_range_str|safe }}</h1>
 {% if patchset.series.name %}
   <h3 class="text-muted">{{ patchset.series.name }}</h3>
 {% endif %}
