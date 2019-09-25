@@ -1811,6 +1811,7 @@ class TestRebuild(test.TestCase):
             'joevendor', 'joe@example.com', 'AbCdEfGh')
         self.group = Group.objects.create(name='TestGroup')
         self.user.groups.add(self.group)
+
         self.ps = PatchSet.objects.create()
         self.branch = create_branch()
         ps_url = 'http://testserver' + self.ps.get_absolute_url()
@@ -1831,6 +1832,8 @@ class TestRebuild(test.TestCase):
 
     def test_anonymous(self, m):
         """Make sure anonymous users can't rebuild the patchset."""
+        m.register_uri('POST', self.pipeline_url)
+
         resp = self.client.post(reverse('patchset-rebuild',
                                         args=(self.ps.id, self.branch.name)))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -1851,6 +1854,72 @@ class TestRebuild(test.TestCase):
         self.client.login(username=self.user.username, password='AbCdEfGh')
         resp = self.client.post(reverse('patchset-rebuild',
                                         args=(999999, self.branch.name)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+@requests_mock.Mocker(real_http=True)
+class TestBuild(test.TestCase):
+    """Test the build permissions."""
+
+    def setUp(self):
+        """Set up dummy test data."""
+        super().setUp()
+        self.user = User.objects.create_user(
+            'joevendor', 'joe@example.com', 'AbCdEfGh')
+        self.group = Group.objects.create(name='TestGroup')
+        self.user.groups.add(self.group)
+
+        self.admin = User.objects.create_superuser(
+            'admin', 'admin@example.com', 'AbCdEfGh')
+
+        self.tb = Tarball.objects.create()
+        self.branch = create_branch()
+        tb_url = 'http://testserver' + self.tb.get_absolute_url()
+        self.pipeline = 'Compile-DPDK-Ubuntu18.04'
+        self.pipeline_url = f'{settings.JENKINS_URL}job/' \
+                            f'{self.pipeline}/buildWithParameters/?' \
+                            f'TARBALL_META_URL={tb_url}'
+
+    def test_admin(self, m):
+        """Make sure admin users can build the tarball."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.admin.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('tarball-build',
+                                        args=(self.tb.id, self.pipeline)))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_user(self, m):
+        """Make sure authenticated users can't build tarball (admin only)."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('tarball-build',
+                                        args=(self.tb.id, self.pipeline)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_anonymous(self, m):
+        """Make sure anonymous users can't build the tarball."""
+        m.register_uri('POST', self.pipeline_url)
+
+        resp = self.client.post(reverse('tarball-build',
+                                        args=(self.tb.id, self.pipeline)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_no_pipeline_exists(self, m):
+        """Make sure a 404 gets returned for a pipeline that does not exist."""
+        self.client.login(username=self.admin.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('tarball-build',
+                                        args=(self.tb.id, self.pipeline)))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_no_tb_exists(self, m):
+        """Make sure a 404 gets returned for a tarball that does not exist."""
+        m.register_uri('POST', self.pipeline_url)
+
+        self.client.login(username=self.admin.username, password='AbCdEfGh')
+        resp = self.client.post(reverse('tarball-build',
+                                        args=(999999, self.pipeline)))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
 

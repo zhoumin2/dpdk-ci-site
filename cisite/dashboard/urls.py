@@ -116,4 +116,7 @@ urlpatterns = [
          name='manage_environments'),
     path('ci-jobs/', views.CIJobs.as_view(), name='ci_jobs'),
     path('ci-jobs/<int:id>/', views.CIJobs.as_view(), name='ci_jobs'),
+    path('tarballs/<int:tb_id>/build/',
+         views.Build.as_view(),
+         name='dashboard_build'),
 ]

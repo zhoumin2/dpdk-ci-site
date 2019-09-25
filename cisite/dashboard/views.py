@@ -256,6 +256,11 @@ class BaseDashboardView(TemplateView):
             return
         item[key] = self.get_cache_request(item[key], session, timeout)
 
+    def add_testcases(self, context, s):
+        """Add testcases to the context"""
+        url = urljoin(settings.API_BASE_URL, 'testcases/')
+        context['testcases'] = get_all_pages(url, s)
+
 
 class LoginView(BaseDashboardView, auth_views.LoginView):
     """Custom login view which logs the user into the REST API."""
@@ -704,6 +709,8 @@ class PatchSetDetail(Tarball, PatchSet):
             if not context['patchset']['series_id']:
                 raise Http404
 
+            self.add_testcases(context, s)
+
             series = pw_get(context['patchset']['pw_series_url'])
             context['patchset']['series'] = series
             context['patchset']['patchwork_range_str'] = \
@@ -836,6 +843,8 @@ class TarballDetail(Tarball):
                 raise Http404
             context['tarball'] = api_resp.json()
             self.add_status(context['tarball'], s)
+
+            self.add_testcases(context, s)
 
             self.populate_tarball_context(context, s)
 
@@ -1070,8 +1079,7 @@ class AboutView(BaseDashboardView):
             resp.raise_for_status()
             context['statuses'] = resp.json()['results']
 
-            url = urljoin(settings.API_BASE_URL, 'testcases/')
-            context['testcases'] = get_all_pages(url, s)
+            self.add_testcases(context, s)
 
         return context
 
@@ -1153,6 +1161,29 @@ class Rebuild(LoginRequiredMixin, View):
                              f'The patchset is now rebuilding on {branch}. '
                              'Please check back in at least 10 minutes for an '
                              'updated result.')
+        next_url = request.GET.get('next')
+        if next_url:
+            return HttpResponseRedirect(next_url)
+        else:
+            return HttpResponseRedirect(reverse('dashboard'))
+
+
+class Build(LoginRequiredMixin, View):
+    """Proxy a build to the results view."""
+
+    def post(self, request, tb_id, *args, **kwargs):
+        with api_session(self.request) as s:
+            pipeline = request.POST.get('pipeline')
+            api_resp = s.post(urljoin(settings.API_BASE_URL,
+                                      f'tarballs/{tb_id}/build/{pipeline}/'))
+        if api_resp.status_code == 404:
+            messages.error(request, f'{pipeline} does not exist.')
+        else:
+            api_resp.raise_for_status()
+            messages.success(request,
+                             f'The tarball is now building on {pipeline}. '
+                             'Please check back in at least 10 minutes '
+                             'for an updated result.')
         next_url = request.GET.get('next')
         if next_url:
             return HttpResponseRedirect(next_url)

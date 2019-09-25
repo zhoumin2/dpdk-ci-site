@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
-from django.contrib.admin.models import LogEntry, CHANGE
+from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -241,6 +241,41 @@ class TarballViewSet(CacheListModelMixin, viewsets.ModelViewSet):
                          auth=auth)
 
         return requests_to_response(r)
+
+    @action(methods=['post'], detail=True, url_name='build',
+            url_path='build/(?P<pipeline>.*)')
+    def build(self, request, pk, pipeline):
+        """build a tarball with a specific pipeline."""
+        # Currently only accessible to admins due to the free-form nature
+        # of submitting a pipeline to build.
+        if not request.user.is_superuser:
+            raise Http404
+
+        tb = self.get_object()
+        pipeline_url = f'{settings.JENKINS_URL}job/{pipeline}/' \
+                       'buildWithParameters/'
+        message = f'{request.user} built {pipeline_url} for tarball {pk}.'
+        logger.info(message)
+        LogEntry.objects.log_action(
+            request.user.id, ContentType.objects.get_for_model(Tarball).pk, pk,
+            repr(tb), ADDITION, message)
+
+        auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
+                                           settings.JENKINS_API_TOKEN)
+        tb_url = request.build_absolute_uri(tb.get_absolute_url())
+        params = {'TARBALL_META_URL': tb_url}
+        resp = requests.post(pipeline_url,
+                             verify=settings.CA_CERT_BUNDLE,
+                             auth=auth,
+                             params=params)
+
+        if resp.status_code == status.HTTP_404_NOT_FOUND:
+            return Response({'error': f'Pipeline {pipeline} not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        resp.raise_for_status()
+
+        return Response({'status': 'pending'})
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):

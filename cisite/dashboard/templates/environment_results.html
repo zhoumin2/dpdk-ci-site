@@ -23,6 +23,26 @@
         <dd class="col-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
       </div>
     </dl>
+
+    {% if request.user.is_superuser and environment.pipeline and tarball %}
+      <form class="form-inline mb-3" action="{% url 'dashboard_build' tarball.id %}?next={{ request.get_full_path }}" method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="mr-3" for="pipeline-select" title="Used for initially running a test in case it could not be ran automatically">
+            Run pipeline
+          </label>
+          <select id="pipeline-select" class="form-control mr-3" name="pipeline">
+            {% for testcase in testcases %}
+              {% if testcase.pipeline %}
+                <option value="{{ testcase.pipeline }}-{{ environment.pipeline }}">{{ testcase.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <input type="submit" class="btn btn-warning" value="Build">
+      </form>
+    {% endif %}
+
     {% for tc_url, tc in environment.testcases.items %}
       {% if tc.runs|length > 1 %}
         <div class="card mb-4">
