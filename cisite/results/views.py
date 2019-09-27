@@ -202,7 +202,7 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
         auth = requests.auth.HTTPBasicAuth(settings.JENKINS_USER,
                                            settings.JENKINS_API_TOKEN)
         ps_url = request.build_absolute_uri(ps.get_absolute_url())
-        params = dict(PATCHSET_META_URL=ps_url, BRANCH=branch_url)
+        params = dict(PATCHSET_META_URL=ps_url, BRANCH_URL=branch_url)
         resp = requests.post(pipeline_url,
                              verify=settings.CA_CERT_BUNDLE,
                              auth=auth,
