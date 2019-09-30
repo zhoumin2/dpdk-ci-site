@@ -1819,7 +1819,7 @@ class TestRebuild(test.TestCase):
         self.pipeline_url = f'{settings.JENKINS_URL}job/'\
             'Apply-Custom-Patch-Set/buildWithParameters/?' \
             f'PATCHSET_META_URL={ps_url}&' \
-            f'BRANCH={branch_url}'
+            f'BRANCH_URL={branch_url}'
 
     def test_valid_user(self, m):
         """Make sure authenticated users can rebuild the patchset."""
