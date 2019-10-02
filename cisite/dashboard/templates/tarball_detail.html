@@ -8,34 +8,32 @@
 
 {% block content %}
 {% include "messages.html" %}
+
 <h1>{{ title }}</h1>
-<dl>
-  <div class="row">
-    <dt class="col">Tarball Info</dt>
-    <dd class="col-10">
-      {% include "commit.html" with obj=tarball %}
-    </dd>
-  </div>
+
+<dl class="row">
+  <dt class="col-sm-3">Tarball Info</dt>
+  <dd class="col-sm-9">
+    {% include "commit.html" with obj=tarball %}
+  </dd>
+
   {% if tarball.date %}
-  <div class="row">
-    <dt class="col">Date created</dt>
-    <dd class="col-10">{{ tarball.date }}</dd>
-  </div>
+    <dt class="col-sm-3">Date created</dt>
+    <dd class="col-sm-9">{{ tarball.date }}</dd>
   {% endif %}
+
   {% if tarball.tarball_url %}
-  <div class="row">
-    <dt class="col">Tarball</dt>
-    <dd class="col-10"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
-  </div>
+    <dt class="col-sm-3">Tarball</dt>
+    <dd class="col-sm-9"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
   {% endif %}
+
   {% if tarball.patchset %}
-  <div class="row">
-    <dt class="col">Associated patch set</dt>
-    <dd class="col-10"><a href="{% url 'patchset_detail' tarball.patchset.id %}">{{ tarball.patchset.id }}</a></dd>
-  </div>
+    <dt class="col-sm-3">Associated patch set</dt>
+    <dd class="col-sm-9"><a href="{% url 'patchset_detail' tarball.patchset.id %}">{{ tarball.patchset.id }}</a></dd>
   {% endif %}
 </dl>
-{% include 'test_status.html' with obj=tarball %}
+
+{% include 'result_summary.html' with obj=tarball %}
 {% include 'environment_results.html' %}
 {% include 'disclaimers.html' %}
 {% endblock %}

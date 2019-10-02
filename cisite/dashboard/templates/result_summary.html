@@ -1,17 +1,39 @@
-{% if obj.result_summary.incomplete > 0 %}
-  <div title="{{ obj.result_summary.incomplete }} incomplete environments">
-    {% for i in obj.result_summary.incomplete_range %}
-      <span class="text-secondary fas fa-circle"></span>
-    {% endfor %}
+<h1>
+  Test Results
+  <small><span class="badge badge-{{ obj.status_class }} align-middle">{{ obj.status }}</span></small>
+</h1>
+
+{% if obj.result_summary.incomplete or obj.result_summary.testcases.values %}
+  <div class="mb-3 card">
+    <div class="card-body">
+      {% if obj.result_summary.incomplete %}
+        <div title="{{ obj.result_summary.incomplete }} incomplete environments" class="text-nowrap d-inline-block mr-4">
+          Incomplete<br>
+
+          {% for i in obj.result_summary.incomplete_range %}
+            <span class="text-secondary fas fa-circle"></span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% for tc in obj.result_summary.testcases.values %}
+        <div title="{{ tc.testcase.name }}: {{ tc.passed }} passed, {{ tc.failed }} failed" class="text-nowrap d-inline-block mr-4">
+          {% if tc.testcase.description_url %}
+            <a href="{{ tc.testcase.description_url }}">{{ tc.testcase.name }}</a>
+          {% else %}
+            {{ tc.testcase.name }}
+          {% endif %}
+          <br>
+
+          {% for i in tc.passed_range %}
+            <span class="text-success fas fa-check-circle"></span>
+          {% endfor %}
+
+          {% for i in tc.failed_range %}
+            <span class="text-danger fas fa-times-circle"></span>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
   </div>
 {% endif %}
-{% for tc in obj.result_summary.testcases.values %}
-  <div title="{{ tc.testcase.name }}: {{ tc.passed }} passed, {{ tc.failed }} failed">
-    {% for i in tc.passed_range %}
-      <span class="text-success fas fa-check-circle"></span>
-    {% endfor %}
-    {% for i in tc.failed_range %}
-      <span class="text-danger fas fa-times-circle"></span>
-    {% endfor %}
-  </div>
-{% endfor %}

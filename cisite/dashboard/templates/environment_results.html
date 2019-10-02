@@ -13,15 +13,13 @@
     {% else %}
     <h3>Configuration Information</h3>
     {% endif %}
-    <dl>
-      <div class="row">
-        <dt class="col">Kernel</dt>
-        <dd class="col-10">{{ environment.kernel_name }} {{ environment.kernel_version }}</dd>
-      </div>
-      <div class="row">
-        <dt class="col">Compiler</dt>
-        <dd class="col-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
-      </div>
+
+    <dl class="row">
+      <dt class="col-sm-3 col-lg-2">Kernel</dt>
+      <dd class="col-sm-9 col-lg-10">{{ environment.kernel_name }} {{ environment.kernel_version }}</dd>
+
+      <dt class="col-sm-3 col-lg-2">Compiler</dt>
+      <dd class="col-sm-9 col-lg-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
     </dl>
 
     {% if request.user.is_superuser and environment.pipeline and tarball %}
