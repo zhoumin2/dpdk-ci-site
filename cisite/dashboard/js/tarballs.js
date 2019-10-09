@@ -17,72 +17,53 @@ class TarballTable extends Row {
 
   render () {
     return (
-      <table className="table table-hover">
-        <thead>
-          <tr>
-            <th title="Tarball result. More information can be found by hovering over a status or by seeing the about page.">Status</th>
-            {(this.shown === 'all' || this.shown === 'with') &&
-              <th className="text-nowrap" title="Associated patch set">Patch set</th>
-            }
-            <th title="Tarball created from commit">Tarball</th>
-            <th title="Tarball created date">Date</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {this.state.rows.map(t =>
-            <tr key={t.id}>
-              <td>
-                {(t.status &&
-                  <div>
+      <ul className="list-group mb-3">
+        {this.state.rows.map(t =>
+          <a href={t.detail_url} key={t.id} className="list-group-item list-group-item-action">
+            {(t.branch &&
+              <div>
+                <div className="row">
+                  <div className="col-sm">
                     <span className={`badge badge-${t.status_class}`} title={t.status_tooltip}>{t.status}</span>
-
-                    <ResultSummary obj={t}></ResultSummary>
                   </div>
-                ) || (
-                  <div className="spinner-border spinner-border-sm text-secondary" role="status">
-                    <span className="sr-only">Fetching tarball information...</span>
+
+                  <div className="col-sm text-sm-center">
+                    Tarball {t.id}
                   </div>
-                )}
-              </td>
 
-              {(this.shown === 'all' || this.shown === 'with') &&
-                <td>
-                  {(t.patchset &&
-                    <a href={t.patchset.detail_url}>{t.patchset.id}</a>
-                  )}
-                </td>
-              }
+                  <small className="col-sm text-sm-right">
+                    <span className="text-muted" title="Repo/Branch tarball was created from">{t.branch.name}</span>
+                  </small>
+                </div>
 
-              <td className="text-truncate">
-                {(t.branch &&
-                  <div>
-                    <div className="d-flex justify-content-between">
-                      <a href={t.detail_url}>{t.id}</a>
-                      <small><span className="text-muted" title="Repo/Branch tarball was created from">{t.branch.name}</span></small>
-                    </div>
+                <div>
+                  <small className="d-sm-flex justify-content-between mt-1">
+                    <div><code title="Tarball created from commit">{t.commit_id}</code></div>
 
-                    <div>
-                      <small><code>{t.commit_id}</code></small>
-                    </div>
-                  </div>
-                ) || (
-                  <div>
-                    <br/>
-                    <br/>
-                  </div>
-                )}
-              </td>
+                    {(t.date &&
+                      <div><span title="Tarball created date">{t.date}</span></div>
+                    )}
+                  </small>
+                </div>
+              </div>
+            ) || (
+              <div className="spinner-border spinner-border-sm text-secondary mt-3 mb-3" role="status">
+                <span className="sr-only">Fetching tarball information...</span>
+              </div>
+            )}
 
-              <td className="text-nowrap">
-                {(t.date &&
-                  t.date
-                )}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            {t.status &&
+              <div className="d-sm-flex justify-content-between">
+                <ResultSummary obj={t}></ResultSummary>
+
+                {(this.shown === 'all' || this.shown === 'with') && t.patchset &&
+                  <a href={t.patchset.detail_url} title="Associated patch set">Patch set {t.patchset.id}</a>
+                }
+              </div>
+            }
+          </a>
+        )}
+      </ul>
     )
   }
 }

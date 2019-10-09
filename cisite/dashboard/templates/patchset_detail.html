@@ -12,41 +12,38 @@
 {% if patchset.series.name %}
   <h3 class="text-muted">{{ patchset.series.name }}</h3>
 {% endif %}
-<dl>
-  <div class="row">
-    <dt class="col">Submitter</dt>
-    <dd class="col-10">{{ patchset.series.submitter }}</dd>
-  </div>
+
+<dl class="row">
+  <dt class="col-sm-3">Submitter</dt>
+  <dd class="col-sm-9">{{ patchset.series.submitter }}</dd>
+
   {# patches that fail applying will have the commit id in the patch set (tarball will not be defined) #}
   {% if tarball or patchset.commit_id %}
-  <div class="row">
-    <dt class="col">Applied on</dt>
-    <dd class="col-10">
+    <dt class="col-sm-3">Applied on</dt>
+    <dd class="col-sm-9">
       {% if tarball %}
-      {% include "commit.html" with obj=tarball %}
+        {% include "commit.html" with obj=tarball %}
       {% elif patchset.commit_id %}
-      {% include "commit.html" with obj=patchset %}
+        {% include "commit.html" with obj=patchset %}
       {% endif %}
     </dd>
-  </div>
   {% endif %}
-  <div class="row">
-    <dt class="col">Date submitted</dt>
-    <dd class="col-10">{{ patchset.date }}</dd>
-  </div>
+
+  <dt class="col-sm-3">Date submitted</dt>
+  <dd class="col-sm-9">{{ patchset.date }}</dd>
+
   {% if tarball.tarball_url %}
-  <div class="row">
-    <dt class="col">Tarball</dt>
-    <dd class="col-10"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
-  </div>
+    <dt class="col-sm-3">Tarball</dt>
+    <dd class="col-sm-9"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
   {% endif %}
 </dl>
+
 <ul>
   {% for p in patchset.series.patches %}
   <li><a href="https://patches.dpdk.org/patch/{{ p.id }}">{{ p.name }}</a></li>
   {% endfor %}
 </ul>
-{% include 'test_status.html' with obj=patchset %}
+{% include 'result_summary.html' with obj=patchset %}
 {% if user.is_authenticated %}
 <form class="form-inline mb-3" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
