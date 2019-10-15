@@ -8,7 +8,16 @@
 
 {% block content %}
 {% include "messages.html" %}
-<h1>Patch set {{ patchset.patchwork_range_str|safe }}</h1>
+<h1>
+  Patch set {{ patchset.patchwork_range_str|safe }}
+  {% if patchset.series.version > 1 %}
+    <small class="ml-1">
+      <span class="badge badge-pill badge-secondary" title="Patch version">
+        v{{ patchset.series.version }}
+      </span>
+    </small>
+  {% endif %}
+</h1>
 {% if patchset.series.name %}
   <h3 class="text-muted">{{ patchset.series.name }}</h3>
 {% endif %}
