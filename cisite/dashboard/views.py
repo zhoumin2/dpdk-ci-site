@@ -483,14 +483,14 @@ class Tarball(BaseDashboardView):
         # Populate inactive environments from old runs
         for run_url, run in runs.items():
             env = run['environment']
+            show_elements = self.show_elements(s, env['owner'])
 
             # hide download artifact button to invalid users
-            if (not run['public_download'] and
-                    not self.show_elements(s, env['owner'])):
+            if not run['public_download'] and not show_elements:
                 run['log_upload_file'] = None
 
-            # check if user has owner group to show visibility button
-            if (self.show_elements(s, env['owner'])):
+            if show_elements:
+                # check if user has owner group to show visibility button
                 run['is_owner'] = True
 
             envs[env['url']] = env
@@ -536,7 +536,7 @@ class Tarball(BaseDashboardView):
 
             for result in run['results']:
                 self.set_parameter_keys(result['measurement'])
-                if result['result'].upper() == 'FAIL':
+                if result['result'] == 'FAIL':
                     run['failure_count'] += 1
 
             run['environment'] = s.get(run['environment']).json()
@@ -621,6 +621,24 @@ class Tarball(BaseDashboardView):
                 # environments
                 env['testcases'][tc_url] = copy.deepcopy(tc['testcase'])
                 env['testcases'][tc_url]['runs'] = runs
+
+                # check to see if a non-pass exists
+                env['all_pass'] = None
+                if not runs:
+                    continue
+
+                latest_run = runs[0]
+                if latest_run['results']:
+                    env['all_pass'] = True
+                else:
+                    # a test run with no results is an indeterminate result
+                    env['all_pass'] = False
+                    continue
+
+                for result in latest_run['results']:
+                    if result['result'] != 'PASS':
+                        env['all_pass'] = False
+                        break
 
         # Finally, update the context
         context['environments'] = envs
