@@ -1,99 +1,133 @@
+{# "all" acts as a radio, while the rest acts as a checkbox #}
+{# I tried using Bootstrap's btn-group-toggle, but the 'change' event wasn't getting propagated #}
+<div class="mb-3" id="expand-options">
+  <span class="mr-3">Expand</span>
+  <div class="btn-group" role="group">
+    <button id="expand-all" class="btn btn-secondary">
+      All <small><span id="expand-all-icon" class="fas fa-circle"></span></small>
+    </button>
+    <button id="expand-pass" class="btn btn-secondary">
+      Pass <small><span id="expand-pass-icon" class="fas fa-square"></span></small>
+    </button>
+    <button id="expand-fail" class="btn btn-secondary">
+      Fail <small><span id="expand-fail-icon" class="fas fa-square"></span></small>
+    </button>
+    <button id="expand-incomplete" class="btn btn-secondary">
+      Incomplete <small><span id="expand-incomplete-icon" class="fas fa-square"></span></small>
+    </button>
+    <button id="expand-custom" class="btn btn-secondary" title="Saves expanded environments based on what was manually selected">
+      Custom <small><span id="expand-custom-icon" class="fas fa-square"></span></small>
+    </button>
+  </div>
+</div>
+
 {% for env_url, environment in environments.items %}
-<div class="card mb-4">
-  <h2 class="card-header" id="env-{{ environment.id }}">{{ environment.name }}</h2>
-  <div class="card-body">
-    {% if 'url' not in r %}
-    <p>The tests were not run for this environment.</p>
-    {% else %}
-    {% if not environment.live_since or environment.live_since > r.timestamp %}
-    <p>Note: This run does not affect the overall result above.</p>
-    {% endif %}
-    {% if environment.hardware_description %}
-    <h3><a href="{{ environment.hardware_description }}">Configuration Information</a></h3>
-    {% else %}
-    <h3>Configuration Information</h3>
-    {% endif %}
+<div class="card mb-3" id="accordion-{{ environment.id }}">
+  <button class="card-header d-flex justify-content-between align-items-center btn text-left" data-toggle="collapse" data-target="#collapse-{{ environment.id }}" aria-expanded="false" aria-controls="collapse-{{ environment.id }}">
+    <h2 class="mb-0" id="env-{{ environment.id }}">{{ environment.name }}</h2>
+    <div>
+      {% if not environment.live_since or environment.live_since > r.timestamp %}
+        <span class="text-secondary fas fa-minus-circle" title="This run does not affect the overall result above."></span>
+      {% endif %}
 
-    <dl class="row">
-      <dt class="col-sm-3 col-lg-2">Kernel</dt>
-      <dd class="col-sm-9 col-lg-10">{{ environment.kernel_name }} {{ environment.kernel_version }}</dd>
+      {% if environment.all_pass %}
+        <span class="text-success fas fa-check-circle" title="All test cases passed"></span>
+      {% elif environment.all_pass == False %}
+        <span class="text-danger fas fa-times-circle" title="At least one test case did not pass"></span>
+      {% else %}
+        <span class="text-secondary fas fa-circle" title="There are not yet any runs for this patch set"></span>
+      {% endif %}
+    </div>
+  </button>
+  {# having collapse div outside of card-body makes animation smoother #}
+  <div id="collapse-{{ environment.id }}" class="collapse collapsible" aria-labelledby="env-{{ environment.id }}" data-parent="#accordion-{{ environment.id }}" data-all-pass="{{ environment.all_pass }}">
+    <div class="card-body">
+      {% if 'url' not in r %}
+      <p>The tests were not run for this environment.</p>
+      {% else %}
+      {% if environment.hardware_description %}
+      <h3><a href="{{ environment.hardware_description }}">Configuration Information</a></h3>
+      {% else %}
+      <h3>Configuration Information</h3>
+      {% endif %}
 
-      <dt class="col-sm-3 col-lg-2">Compiler</dt>
-      <dd class="col-sm-9 col-lg-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
-    </dl>
+      <dl class="row">
+        <dt class="col-sm-3 col-lg-2">Kernel</dt>
+        <dd class="col-sm-9 col-lg-10">{{ environment.kernel_name }} {{ environment.kernel_version }}</dd>
 
-    {% if request.user.is_superuser and environment.pipeline and tarball %}
-      <form class="form-inline mb-3" action="{% url 'dashboard_build' tarball.id %}?next={{ request.get_full_path }}" method="POST">
-        {% csrf_token %}
-        <div class="form-group">
+        <dt class="col-sm-3 col-lg-2">Compiler</dt>
+        <dd class="col-sm-9 col-lg-10">{{ environment.compiler_name }} {{ environment.compiler_version }}</dd>
+      </dl>
+
+      {% if request.user.is_superuser and environment.pipeline and tarball %}
+        <form class="form-inline" action="{% url 'dashboard_build' tarball.id %}?next={{ request.get_full_path }}" method="POST">
+          {% csrf_token %}
           <label class="mr-3" for="pipeline-select" title="Used for initially running a test in case it could not be ran automatically">
             Run pipeline
           </label>
-          <select id="pipeline-select" class="form-control mr-3" name="pipeline">
+          <select id="pipeline-select" class="form-control mr-3 mb-3 mb-sm-0" name="pipeline">
             {% for testcase in testcases %}
               {% if testcase.pipeline %}
                 <option value="{{ testcase.pipeline }}-{{ environment.pipeline }}">{{ testcase.name }}</option>
               {% endif %}
             {% endfor %}
           </select>
-        </div>
-        <input type="submit" class="btn btn-warning" value="Build">
-      </form>
-    {% endif %}
-
-    {% for tc_url, tc in environment.testcases.items %}
-      {% if tc.runs|length > 1 %}
-        <div class="card mb-4">
-          <div class="card-header">
-            <div class="d-flex flex-column justify-content-lg-between flex-lg-row">
-              <h4 class="mb-lg-0">
-                {% if tc.description_url %}
-                  <a href="{{ tc.description_url }}">{{ tc.name }}</a>
-                {% else %}
-                  {{ tc.name }}
-                {% endif %}
-              </h4>
-              <ul class="nav nav-tabs card-header-tabs ml-2">
-                {% for r in tc.runs %}
-                <li class="nav-item">
-                  <a class="nav-link{{ forloop.first|yesno:' active,' }}" data-toggle="tab" href="#run-{{ r.id }}" role="tab" aria-controls="run-{{ r.id }}" aria-selected="{{ forloop.first|lower }}">
-                    Run {{ forloop.revcounter }}
-                  </a>
-                </li>
-                {% endfor %}
-              </ul>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="tab-content">
-              {% for r in tc.runs %}
-              <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
-                {% include "test_run.html" %}
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      {% elif tc.runs|length == 1 %}
-        <div class="card mb-4">
-          <h4 class="card-header">
-            {% if tc.description_url %}
-              <a href="{{ tc.description_url }}">{{ tc.name }}</a>
-            {% else %}
-              {{ tc.name }}
-            {% endif %}
-          </h4>
-          <div class="card-body">
-            {% with tc.runs|first as r %}
-              {% include "test_run.html" %}
-            {% endwith %}
-          </div>
-        </div>
+          <input type="submit" class="btn btn-warning" value="Build">
+        </form>
       {% endif %}
-    {% empty %}
-      <p>There are not yet any runs for this patch set.</p>
-    {% endfor %}
-  {% endif %}
+
+      {% for tc_url, tc in environment.testcases.items %}
+        {% if tc.runs|length > 1 %}
+          <div class="card mt-3">
+            <div class="card-header">
+              <div class="d-flex flex-column justify-content-lg-between flex-lg-row">
+                <h4 class="mb-lg-0">
+                  {% if tc.description_url %}
+                    <a href="{{ tc.description_url }}">{{ tc.name }}</a>
+                  {% else %}
+                    {{ tc.name }}
+                  {% endif %}
+                </h4>
+                <ul class="nav nav-tabs card-header-tabs ml-2">
+                  {% for r in tc.runs %}
+                  <li class="nav-item">
+                    <a class="nav-link{{ forloop.first|yesno:' active,' }}" data-toggle="tab" href="#run-{{ r.id }}" role="tab" aria-controls="run-{{ r.id }}" aria-selected="{{ forloop.first|lower }}">
+                      Run {{ forloop.revcounter }}
+                    </a>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="tab-content">
+                {% for r in tc.runs %}
+                <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
+                  {% include "test_run.html" %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% elif tc.runs|length == 1 %}
+          <div class="card mt-3">
+            <h4 class="card-header">
+              {% if tc.description_url %}
+                <a href="{{ tc.description_url }}">{{ tc.name }}</a>
+              {% else %}
+                {{ tc.name }}
+              {% endif %}
+            </h4>
+            <div class="card-body">
+              {% with tc.runs|first as r %}
+                {% include "test_run.html" %}
+              {% endwith %}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    </div>
   </div>
 </div>
 {% empty %}
