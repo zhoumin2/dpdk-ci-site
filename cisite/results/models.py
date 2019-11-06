@@ -315,7 +315,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
     def __str__(self):
         """Return string representation of tarball record."""
-        return self.tarball_url
+        return f'{self._meta.object_name} {self.id}: {self.tarball_url}'
 
     @cached_property
     def status(self):

@@ -622,26 +622,36 @@ class Tarball(BaseDashboardView):
                 env['testcases'][tc_url] = copy.deepcopy(tc['testcase'])
                 env['testcases'][tc_url]['runs'] = runs
 
-                # check to see if a non-pass exists
-                env['all_pass'] = None
-                if not runs:
-                    continue
-
-                latest_run = runs[0]
-                if latest_run['results']:
-                    env['all_pass'] = True
-                else:
-                    # a test run with no results is an indeterminate result
-                    env['all_pass'] = False
-                    continue
-
-                for result in latest_run['results']:
-                    if result['result'] != 'PASS':
-                        env['all_pass'] = False
-                        break
+                self.set_all_pass(env, runs)
 
         # Finally, update the context
         context['environments'] = envs
+
+    def set_all_pass(self, env, runs):
+        """Check to see if a non-pass exists."""
+        if 'all_pass' not in env:
+            # set default to incomplete
+            env['all_pass'] = None
+        elif env['all_pass'] is False:
+            # if a previous test case failed, then skip checking other test cases
+            return
+
+        # if no runs, then keep as incomplete
+        if not runs:
+            return
+
+        latest_run = runs[0]
+        if not latest_run['results']:
+            # a test run with no results is an indeterminate result
+            env['all_pass'] = False
+            return
+
+        # since there are runs, just set to pass, and check if fail
+        env['all_pass'] = True
+        for result in latest_run['results']:
+            if result['result'] != 'PASS':
+                env['all_pass'] = False
+                break
 
     def set_parameter_keys(self, measurement):
         """Update the parameter list to be an object with name as the key.
