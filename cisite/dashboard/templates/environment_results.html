@@ -24,8 +24,8 @@
 {% for env_url, environment in environments.items %}
 <div class="card mb-3" id="accordion-{{ environment.id }}">
   <button class="card-header d-flex justify-content-between align-items-center btn text-left" data-toggle="collapse" data-target="#collapse-{{ environment.id }}" aria-expanded="false" aria-controls="collapse-{{ environment.id }}">
-    <h2 class="mb-0" id="env-{{ environment.id }}">{{ environment.name }}</h2>
-    <div>
+    <h3 class="mb-0" id="env-{{ environment.id }}">{{ environment.name }}</h3>
+    <div class="text-nowrap">
       {% if not environment.live_since or environment.live_since > r.timestamp %}
         <span class="text-secondary fas fa-minus-circle" title="This run does not affect the overall result above."></span>
       {% endif %}
@@ -46,9 +46,9 @@
       <p>The tests were not run for this environment.</p>
       {% else %}
       {% if environment.hardware_description %}
-      <h3><a href="{{ environment.hardware_description }}">Configuration Information</a></h3>
+      <h4><a href="{{ environment.hardware_description }}">Configuration Information</a></h4>
       {% else %}
-      <h3>Configuration Information</h3>
+      <h4>Configuration Information</h4>
       {% endif %}
 
       <dl class="row">
