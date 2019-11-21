@@ -965,7 +965,7 @@ class Subscriptions(BasePreferencesView):
         """Pass post request to REST API."""
         with api_session(request) as s:
             url = urljoin(settings.API_BASE_URL, 'subscriptions/')
-            response = s.post(url, data=json.loads(request.body))
+            response = s.post(url, json=json.loads(request.body))
             # default response does not contain a GET
             return JsonResponse(response.json(), status=response.status_code)
 
@@ -981,7 +981,7 @@ class Subscriptions(BasePreferencesView):
         """Pass patch request to REST API."""
         with api_session(request) as s:
             url = urljoin(settings.API_BASE_URL, f'subscriptions/{subscription}/')
-            response = s.patch(url, data=json.loads(request.body))
+            response = s.patch(url, json=json.loads(request.body))
             # default response does not contain a GET
             return JsonResponse(response.json(), status=response.status_code)
 
