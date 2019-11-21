@@ -57,15 +57,13 @@
 {% if user.is_authenticated %}
 <form class="form-inline mb-3" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
-  <div class="form-group">
-    <label class="mr-3" for="branch-select">Apply patch to</label>
-    <select id="branch-select" class="form-control mr-3" name="branch">
-      {% for branch in branches %}
-      <option value="{{ branch.name }}">{{ branch.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <input type="submit" class="btn btn-warning" value="Rebuild">
+  <label class="mr-2" for="branch-select">Apply patch to</label>
+  <select id="branch-select" class="form-control form-control-sm mr-2 mb-2 mb-sm-0" name="branch">
+    {% for branch in branches %}
+    <option value="{{ branch.name }}">{{ branch.name }}</option>
+    {% endfor %}
+  </select>
+  <input type="submit" class="btn btn-sm btn-warning" value="Rebuild">
 </form>
 {% endif %}
 {% if patchset.has_error and patchset.build_log %}

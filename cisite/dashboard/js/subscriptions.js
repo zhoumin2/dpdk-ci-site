@@ -133,39 +133,32 @@ export class Subscriptions extends Component {
           <li className="list-group-item" key={envSub.environment.id}>
             <h5 className="card-title">{envSub.environment.name}</h5>
 
-            <form autoComplete="off">
-              <div className="form-row">
-                <div className="col-sm-4">
-                  <div className="form-check col-form-label">
-                    <input
-                      type="checkbox"
-                      className="form-check-input subscribe"
-                      id={`env-sub-${envSub.environment.id}`}
-                      checked={envSub.subscription !== null}
-                      disabled={envSub.updating}
-                      onChange={e => this.handleSubscriptionCheckbox(e, index)}
-                    />
-                    <label className="form-check-label" htmlFor={`env-sub-${envSub.environment.id}`}>Subscribe</label>
-                  </div>
-                </div>
+            <form className="form-inline justify-content-between" autoComplete="off">
+              <div className="form-check col-form-label">
+                <input
+                  type="checkbox"
+                  className="form-check-input subscribe"
+                  id={`env-sub-${envSub.environment.id}`}
+                  checked={envSub.subscription !== null}
+                  disabled={envSub.updating}
+                  onChange={e => this.handleSubscriptionCheckbox(e, index)}
+                />
+                <label className="form-check-label" htmlFor={`env-sub-${envSub.environment.id}`}>Subscribe</label>
+              </div>
 
-                <div className="col-sm-4 text-sm-right">
-                  <label className="col-form-label">Send method</label>
-                </div>
-
-                <div className="col-sm-4">
-                  <select
-                    className="form-control send-method"
-                    name="send"
-                    value={envSub.subscription === null ? 'null' : envSub.subscription.email_success}
-                    disabled={!envSub.subscription}
-                    onChange={e => this.handleSendChange(e, index)}
-                  >
-                    <option value="null">Inherit (On failure)</option>
-                    <option value="false">On failure</option>
-                    <option value="true">Always</option>
-                  </select>
-                </div>
+              <div className="form-group mb-0 flex-grow-1 flex-sm-grow-0">
+                <label className="col-form-label mr-2">Send method</label>
+                <select
+                  className="form-control form-control-sm send-method"
+                  name="send"
+                  value={envSub.subscription === null ? 'null' : envSub.subscription.email_success}
+                  disabled={!envSub.subscription}
+                  onChange={e => this.handleSendChange(e, index)}
+                >
+                  <option value="null">Inherit (On failure)</option>
+                  <option value="false">On failure</option>
+                  <option value="true">Always</option>
+                </select>
               </div>
             </form>
           </li>

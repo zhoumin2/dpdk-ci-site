@@ -1,7 +1,7 @@
 {# "all" acts as a radio, while the rest acts as a checkbox #}
 {# I tried using Bootstrap's btn-group-toggle, but the 'change' event wasn't getting propagated #}
 <div class="mb-3" id="expand-options">
-  <span class="mr-3">Expand</span>
+  <span class="mr-2">Expand</span>
   <div class="btn-group" role="group">
     <button id="expand-all" class="btn btn-secondary">
       All <small><span id="expand-all-icon" class="fas fa-circle"></span></small>
@@ -62,17 +62,17 @@
       {% if request.user.is_superuser and environment.pipeline and tarball %}
         <form class="form-inline" action="{% url 'dashboard_build' tarball.id %}?next={{ request.get_full_path }}" method="POST">
           {% csrf_token %}
-          <label class="mr-3" for="pipeline-select" title="Used for initially running a test in case it could not be ran automatically">
+          <label class="mr-2" for="pipeline-select" title="Used for initially running a test in case it could not be ran automatically">
             Run pipeline
           </label>
-          <select id="pipeline-select" class="form-control mr-3 mb-3 mb-sm-0" name="pipeline">
+          <select id="pipeline-select" class="form-control form-control-sm mr-2 mb-2 mb-sm-0" name="pipeline">
             {% for testcase in testcases %}
               {% if testcase.pipeline %}
                 <option value="{{ testcase.pipeline }}-{{ environment.pipeline }}">{{ testcase.name }}</option>
               {% endif %}
             {% endfor %}
           </select>
-          <input type="submit" class="btn btn-warning" value="Build">
+          <input type="submit" class="btn btn-sm btn-warning" value="Build">
         </form>
       {% endif %}
 

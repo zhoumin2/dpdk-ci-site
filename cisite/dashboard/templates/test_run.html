@@ -61,14 +61,14 @@
 {% endif %}
 
 {% if r.log_upload_file %}
-  <a class="btn btn-info mt-3 mr-3" href="{{ r.log_upload_file }}">Download test result artifacts</a>
+  <a class="btn btn-sm btn-info mt-3 mr-3" href="{{ r.log_upload_file }}">Download artifacts</a>
   {% if r.is_owner %}
     <form class="d-inline" action="{% url 'testrun_togglepublic' r.id %}?next={{ request.path }}" method="POST">
       {% csrf_token %}
       {% if r.public_download %}
-        <input type="submit" class="btn btn-secondary mt-3 mr-3" value="Set download private">
+        <input type="submit" class="btn btn-sm btn-secondary mt-3 mr-3" value="Set download private">
       {% else %}
-        <input type="submit" class="btn btn-secondary mt-3 mr-3" value="Set download public">
+        <input type="submit" class="btn btn-sm btn-secondary mt-3 mr-3" value="Set download public">
       {% endif %}
     </form>
   {% endif %}
@@ -77,6 +77,6 @@
 {% if environment.pipeline and r.testcase.pipeline %}
   <form class="d-inline" action="{% url 'dashboard_rerun' r.id %}?next={{ request.path }}" method="POST">
     {% csrf_token %}
-    <input type="submit" class="btn btn-warning mt-3" value="Rerun">
+    <input type="submit" class="btn btn-sm btn-warning mt-3" value="Rerun">
   </form>
 {% endif %}
