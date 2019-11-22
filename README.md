@@ -1,10 +1,12 @@
 # CI Website for DPDK Community Lab
 
-This is a Django-based website and API for the DPDK performance test lab.
+This is a Django-based website and API for the DPDK Community Lab.
 
 ## Local Installation
 
 Python3.6+ is required.
+
+Dependencies: `python3 python3-pip nodejs npm libldap2-dev libsasl2-dev`
 
 Try using the `./configure` script to create the environment.
 
