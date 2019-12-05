@@ -38,9 +38,4 @@
 {# Required polyfills to use the fetch api #}
 <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
 <script src="{% static 'build/app.bundle.js' %}"></script>
-<script>
-$(function () {
-  $('[data-toggle="popover"]').popover()
-})
-</script>
 {% endblock %}
