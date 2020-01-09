@@ -35,7 +35,7 @@ from rest_framework.response import Response
 
 from . import permissions
 from .filters import EnvironmentFilter, PatchSetFilter, SubscriptionFilter, \
-    DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter, UserFilter
+    DjangoObjectPermissionsFilterWithAnonPerms, TarballFilter, UserFilter, TestRunFilter
 from .models import Branch, Environment, Measurement, PatchSet, \
     Subscription, Tarball, TestCase, TestRun
 from .parsers import JSONMultiPartParser
@@ -326,12 +326,16 @@ class MeasurementViewSet(viewsets.ReadOnlyModelViewSet):
 class TestRunViewSet(viewsets.ModelViewSet):
     """Provide a read-write view of test runs."""
 
-    filter_backends = (DjangoObjectPermissionsFilterWithAnonPerms,)
+    filter_backends = (
+        DjangoObjectPermissionsFilterWithAnonPerms, DjangoFilterBackend,
+        OrderingFilter)
     permission_classes = (permissions.TestRunPermission,)
     queryset = TestRunSerializer.setup_eager_loading(TestRun.objects.all())
     # JSONMultiPartParser is used in add_results_to_db
     # JSONParser is used in send_performance_report
     parser_classes = (JSONMultiPartParser, JSONParser)
+    filter_class = TestRunFilter
+    ordering_fields = ('id', 'timestamp')
 
     def get_serializer_class(self):
         """

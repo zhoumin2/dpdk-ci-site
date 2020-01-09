@@ -125,7 +125,7 @@ class TestCaseSerializer(serializers.HyperlinkedModelSerializer):
         """Define how to serialize test cases."""
 
         model = TestCase
-        fields = ('url', 'name', 'description_url', 'pipeline')
+        fields = ('url', 'id', 'name', 'description_url', 'pipeline')
 
 
 class MeasurementSerializer(serializers.HyperlinkedModelSerializer,
@@ -479,8 +479,8 @@ class BranchSerializer(serializers.HyperlinkedModelSerializer):
         """Specify fields to pull in for BranchSerializer."""
 
         model = Branch
-        fields = ('url', 'name', 'repository_url', 'regexp', 'last_commit_id',
-                  'web_url')
+        fields = ('url', 'id', 'name', 'repository_url', 'regexp',
+                  'last_commit_id', 'web_url')
 
 
 class TarballSerializer(serializers.HyperlinkedModelSerializer,

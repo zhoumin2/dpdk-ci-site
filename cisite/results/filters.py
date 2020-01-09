@@ -8,12 +8,12 @@ This file contains custom filter sets for the results application.
 """
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django_filters.rest_framework import BooleanFilter, FilterSet
+from django_filters.rest_framework import BooleanFilter, FilterSet, CharFilter
 from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_anonymous_user
 from rest_framework.filters import DjangoObjectPermissionsFilter
 
-from .models import Environment, PatchSet, Subscription, Tarball
+from .models import Environment, PatchSet, Subscription, Tarball, TestRun
 
 
 class EnvironmentFilter(FilterSet):
@@ -200,3 +200,48 @@ class UserFilter(FilterSet):
                 .distinct()
         else:
             return queryset.exclude(groups__in=groups)
+
+
+class TestRunFilter(FilterSet):
+    """
+    This filter class is utilized in finding the baseline for a combined
+    environment, test case, and branch.
+    The baseline typically does not have a patch set associated with it.
+    The baseline should never be the same commit as the currently testing
+    commit.
+    """
+
+    has_patchset = BooleanFilter(
+        field_name='has_patchset', label='has patchset',
+        method='has_patchset_filter',
+        help_text='If present, limits to test runs with or without a '
+                  'corresponding patchset of the tarball used in the test '
+                  'run.')
+    does_not_have_commit = CharFilter(
+        field_name='does_not_have_commit', label='does not have commit',
+        method='does_not_have_commit_filter',
+        help_text='If present, limits to test runs that DO NOT have the '
+                  'specific commit of the tarball used in the test '
+                  'run.')
+
+    class Meta:
+        """Set up class fields automatically."""
+
+        model = TestRun
+        fields = ('environment', 'tarball__branch', 'testcase')
+
+    def has_patchset_filter(self, queryset, name, value):
+        """Filter based on the value of the complete query field."""
+        assert name == 'has_patchset', 'Unexpected query field name'
+        if value:
+            return queryset.exclude(tarball__patchset=None)
+        else:
+            return queryset.filter(tarball__patchset=None)
+
+    def does_not_have_commit_filter(self, queryset, name, value):
+        """Filter based on the value of the complete query field."""
+        assert name == 'does_not_have_commit', 'Unexpected query field name'
+        if value:
+            return queryset.exclude(tarball__commit_id=value)
+        else:
+            return queryset
