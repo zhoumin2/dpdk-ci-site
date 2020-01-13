@@ -418,8 +418,8 @@ class TestRunSerializer(serializers.HyperlinkedModelSerializer,
         model = TestRun
         fields = ('id', 'url', 'timestamp', 'log_output_file',
                   'tarball', 'results', 'environment',
-                  'report_timestamp', 'log_upload_file', 'branch',
-                  'commit_id', 'commit_url', 'testcase', 'public_download')
+                  'report_timestamp', 'log_upload_file', 'baseline',
+                  'testcase', 'public_download')
 
     def update(self, instance, validated_data):
         """Update a test run based on the validated POST data.

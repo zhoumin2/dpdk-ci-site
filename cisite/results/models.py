@@ -871,7 +871,7 @@ class Parameter(models.Model):
             value=self.value, unit=self.unit)
 
 
-class TestRun(models.Model, CommitURLMixin):
+class TestRun(models.Model):
     """Model a test run of a patch set."""
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -891,14 +891,9 @@ class TestRun(models.Model, CommitURLMixin):
     report_timestamp = models.DateTimeField(
         null=True, blank=True,
         help_text='Date and time of last e-mail report of this test run')
-    branch = models.ForeignKey(
-        'Branch', on_delete=models.SET_NULL, related_name='runs',
-        null=True, blank=True,
-        help_text='The branch of the baseline used')
-    # this can be different from the tarball commit_id if rerunning old tests
-    # where the baseline has changed
-    commit_id = models.CharField('git commit hash', max_length=40, blank=True,
-                                 help_text='The commit id of the baseline used')
+    baseline = models.ForeignKey(
+        'TestRun', on_delete=models.SET_NULL, null=True, blank=True,
+        help_text='The baseline results used for performance tests')
     testcase = models.ForeignKey(
         TestCase, on_delete=models.CASCADE, null=True, blank=True,
         related_name='runs',

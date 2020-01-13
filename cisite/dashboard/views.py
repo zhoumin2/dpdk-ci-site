@@ -525,7 +525,10 @@ class Tarball(BaseDashboardView):
                 continue
             run = resp.json()
 
-            self.set_cache_request(run, s, 'branch')
+            if run['baseline']:
+                run['baseline'] = s.get(run['baseline']).json()
+                self.set_cache_request(run['baseline'], s, 'tarball')
+                self.set_cache_request(run['baseline']['tarball'], s, 'branch')
 
             if run['log_upload_file']:
                 run['log_upload_file'] = build_upload_url(

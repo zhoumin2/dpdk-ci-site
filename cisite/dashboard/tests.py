@@ -243,7 +243,7 @@ class BaseTestCase(StaticLiveServerTestCase):
             'environment': urljoin(settings.API_BASE_URL, 'environments/1/'),
             'report_timestamp': None,
             'log_upload_file': None,
-            'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
+            'baseline': None,
             'testcase': None,
             'public_download': False,
         }
