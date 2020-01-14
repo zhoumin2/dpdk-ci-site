@@ -46,6 +46,11 @@
     <dt class="col-sm-3">Tarball</dt>
     <dd class="col-sm-9"><a href="{{ tarball.tarball_url }}">{{ tarball.tarball_name }}</a></dd>
   {% endif %}
+
+  {% if enable_rest_api %}
+    <dt class="col-sm-3">Patchset API</dt>
+    <dd class="col-sm-9"><a href="{{ patchset.url }}">{{ patchset.url }}</a></dd>
+  {% endif %}
 </dl>
 
 <ul>
