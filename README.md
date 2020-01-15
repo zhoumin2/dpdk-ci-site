@@ -169,10 +169,3 @@ docker-compose up test_migrate
 docker-compose up test_style
 docker-compose up test
 ```
-
-### Production with Docker
-
-```sh
-docker-compose up build
-# WIP: Run with local Apache/SQL/Memcached
-```

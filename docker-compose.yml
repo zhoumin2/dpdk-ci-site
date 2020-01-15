@@ -10,33 +10,7 @@ services:
   cisite_dev:
     build:
       context: .
-      target: dev
     image: cisite_dev
-
-  # Build prod image
-  cisite_prod:
-    build:
-      context: .
-      target: prod
-    image: cisite_prod
-
-##
-# Production
-# WIP - Prod is ran with local Apache WSGI
-##
-
-  # Build prod
-  build:
-    image: cisite_prod
-    command: >
-      sh -c "./manage.py migrate --noinput &&
-             ./manage.py collectstatic --noinput &&
-             npm --prefix .. install &&
-             npm --prefix .. run build"
-    volumes:
-      - .:/workspace
-    depends_on:
-      - cisite_prod
 
 ##
 # Development
