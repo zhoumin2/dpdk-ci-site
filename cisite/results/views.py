@@ -19,7 +19,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import get_list_or_404
+from django.shortcuts import get_list_or_404, redirect
+from django.urls import reverse
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import get_perms, assign_perm, remove_perm
@@ -124,11 +125,12 @@ class CacheListModelMixin:
     Based from:
     https://github.com/encode/django-rest-framework/blob/963ce306f3226ec64eb8990c4fbc094a77fabcba/rest_framework/mixins.py#L35
     """
+
     def list(self, request, *args, **kwargs):
         use_cache = request.query_params.get('cache', None)
         # The key is based on ordering the queryset, so that requests with
         # different ordering of the queryset hits the same cached page
-        key = request.META['PATH_INFO'] +\
+        key = request.META['PATH_INFO'] + \
             ''.join([i[0] + i[1] for i in sorted(request.GET.items())])
 
         queryset = self.filter_queryset(self.get_queryset())
@@ -158,7 +160,16 @@ class CacheListModelMixin:
         return get_value_method()
 
 
-class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
+class ReturnDashboardMixin:
+    """Provide an extra action to redirect to dashboard for patchest/tarball"""
+
+    @action(methods=['get'], detail=True)
+    def dashboard_detail(self, request, pk):
+        obj = self.get_object()
+        return redirect(reverse(obj._meta.model_name + '_detail', args=(obj.id,)))
+
+
+class PatchSetViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelViewSet):
     """Provide a read-write view of incoming patchsets.
 
     list:
@@ -188,7 +199,7 @@ class PatchSetViewSet(CacheListModelMixin, viewsets.ModelViewSet):
         ps.build_error = False
         ps.save()
         pipeline_url = f'{settings.JENKINS_URL}job/Apply-Custom-Patch-Set/' \
-            'buildWithParameters/'
+                       'buildWithParameters/'
         message = f'{request.user} rebuilt {pipeline_url} for patchset {pk} ' \
                   f'with branch {branch}'
         logger.info(message)
@@ -220,7 +231,7 @@ class BranchViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'last_commit_id', 'repository_url')
 
 
-class TarballViewSet(CacheListModelMixin, viewsets.ModelViewSet):
+class TarballViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelViewSet):
     """Provide a read-write view of tarballs for testing."""
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)

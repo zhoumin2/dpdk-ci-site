@@ -32,6 +32,11 @@
     <dt class="col-sm-3">Associated patch set</dt>
     <dd class="col-sm-9"><a href="{% url 'patchset_detail' tarball.patchset.id %}">{{ tarball.patchset.id }}</a></dd>
   {% endif %}
+
+  {% if enable_rest_api %}
+    <dt class="col-sm-3">Tarball API</dt>
+    <dd class="col-sm-9"><a href="{{ tarball.url }}">{{ tarball.url }}</a></dd>
+  {% endif %}
 </dl>
 
 {% include 'result_summary.html' with obj=tarball %}
