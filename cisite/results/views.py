@@ -20,6 +20,7 @@ from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_list_or_404, redirect
+from django.urls import reverse
 from django_auth_ldap.backend import LDAPBackend
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import get_perms, assign_perm, remove_perm
@@ -164,7 +165,8 @@ class ReturnDashboardMixin:
 
     @action(methods=['get'], detail=True)
     def dashboard_detail(self, request, pk):
-        return redirect("/dashboard" + self.get_object().get_absolute_url())
+        obj = self.get_object()
+        return redirect(reverse(obj._meta.model_name + '_detail', args=(obj.id,)))
 
 
 class PatchSetViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelViewSet):
