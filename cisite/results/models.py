@@ -320,7 +320,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
     @cached_property
     def status(self):
         """Return a status string to be displayed on the dashboard."""
-        if not self.runs.exists():
+        if not self.runs_exists:
             return "Waiting"
 
         if self.result_summary['incomplete']:
@@ -339,6 +339,11 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface and reruns."""
         return reverse('tarball-detail', args=(self.id,))
+
+    @cached_property
+    def runs_exists(self):
+        """Avoid duplicate sql calls"""
+        return self.runs.exists()
 
     @cached_property
     def result_summary(self):
@@ -383,7 +388,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
             'testcases': {}
         }
 
-        if not self.runs.exists():
+        if not self.runs_exists:
             return result_summary
 
         date = getattr(self, 'date', None)
@@ -398,7 +403,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         active_envs = Environment.objects.filter(
             query, successor__isnull=True, live_since__isnull=False)
 
-        for env in active_envs.iterator():
+        for env in active_envs:
             tr_qs = env.all_runs\
                 .filter(tarball__id=self.id)\
                 .order_by('-timestamp')
