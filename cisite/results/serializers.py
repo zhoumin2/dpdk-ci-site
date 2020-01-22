@@ -81,6 +81,7 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
                          EagerLoadingMixin):
     """Serialize PatchSet objects."""
 
+    _SELECT_RELATED_FIELDS = ('branch',)
     _PREFETCH_RELATED_FIELDS = ('tarballs',)
 
     pw_series_url = serializers.SerializerMethodField()
@@ -487,7 +488,7 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
                         EagerLoadingMixin):
     """Serialize Tarball objects."""
 
-    _SELECT_RELATED_FIELDS = ('patchset',)
+    _SELECT_RELATED_FIELDS = ('patchset', 'branch')
     _PREFETCH_RELATED_FIELDS = ('runs',)
 
     runs = serializers.HyperlinkedRelatedField(many=True, read_only=True,
