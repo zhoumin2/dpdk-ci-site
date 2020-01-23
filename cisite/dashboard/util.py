@@ -113,7 +113,7 @@ def build_upload_url(request, real_url):
         reverse('dashboard') + urlparse(real_url).path[1:])
 
 
-def pw_get(url, session=None):
+def pw_get(url, set=True, session=None):
     """Calls a GET request to the patchworks API.
 
     This also caches the response for future usage for an arbitrary amount.
@@ -139,8 +139,12 @@ def pw_get(url, session=None):
             resp = session.get(url)
         resp.raise_for_status()
         return resp.json()
-    # cache for 6 hours
-    return cache.get_or_set(url, call_pw_json, 60 * 60 * 6)
+
+    if set:
+        # cache for 6 hours
+        return cache.get_or_set(url, call_pw_json, 60 * 60 * 6)
+    else:
+        return cache.get(url)
 
 
 def _pw_get_devel(url):

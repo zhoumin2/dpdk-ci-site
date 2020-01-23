@@ -42,6 +42,8 @@ CACHES = {
     }
 }
 
+ENVIRONMENT = 'development'
+
 API_BASE_URL = 'http://example.com/'
 CA_CERT_BUNDLE = None
 JENKINS_URL = 'http://example.com/'

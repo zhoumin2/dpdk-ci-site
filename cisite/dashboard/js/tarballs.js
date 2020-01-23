@@ -18,61 +18,65 @@ class TarballTable extends Row {
     return (
       <ul className="list-group mb-3">
         {this.state.rows.map(t =>
-          <a href={t.detail_url} key={t.id} className="list-group-item list-group-item-action">
-            {(t.branch &&
-              <div>
-                <div className="row">
-                  <div className="col-sm">
-                    {(t.result_summary.status &&
-                      <span className={`badge badge-${t.result_summary.status_class}`} title={t.result_summary.status_tooltip}>
-                        {t.result_summary.status}
-                      </span>
-                    ) || (
-                      <div className="spinner-border spinner-border-sm text-secondary" role="status" title="Fetching status...">
-                        <span className="sr-only">Fetching status...</span>
-                      </div>
-                    )}
-                  </div>
+          <a href={t.detail_url} key={t.js_id} className="list-group-item list-group-item-action">
+            <div>
+              <div className="row">
+                <div className="col-sm">
+                  {(t.result_summary && t.result_summary.status &&
+                    <span className={`badge badge-${t.result_summary.status_class}`} title={t.result_summary.status_tooltip}>
+                      {t.result_summary.status}
+                    </span>
+                  ) || (
+                    <div className="spinner-border spinner-border-sm text-secondary" role="status" title="Fetching status...">
+                      <span className="sr-only">Fetching status...</span>
+                    </div>
+                  )}
+                </div>
 
+                {/* Avoid changing font color as detail_url gets populated */}
+                {t.id &&
                   <div className="col-sm text-sm-center">
                     Tarball {t.id}
                   </div>
+                }
 
-                  <small className="col-sm text-sm-right">
+                <small className="col-sm text-sm-right">
+                  {t.branch &&
                     <span className="text-muted" title="Repo/Branch tarball was created from">{t.branch.name}</span>
-                  </small>
-                </div>
-
-                <div>
-                  <small className="d-sm-flex justify-content-between mt-1">
-                    <div><code title="Tarball created from commit">{t.commit_id}</code></div>
-
-                    {(t.date &&
-                      <div><span title="Tarball created date">{t.date}</span></div>
-                    )}
-                  </small>
-                </div>
-
-                <div className="d-sm-flex justify-content-between">
-                  {typeof t.result_summary === 'object' &&
-                    <ResultSummary obj={t}></ResultSummary>
                   }
+                </small>
+              </div>
 
-                  {/* Avoid changing height of row when results get populated */}
-                  <div class="d-inline-block">
-                    &nbsp;
-                  </div>
+              <div>
+                <small className="d-sm-flex justify-content-between mt-1">
+                  <div><code title="Tarball created from commit">{t.commit_id}</code></div>
 
-                  {t.patchset &&
-                    <a href={t.patchset.detail_url} title="Associated patch set">Patch set {t.patchset.id}</a>
-                  }
+                  {(t.date &&
+                    <div><span title="Tarball created date">{t.date}</span></div>
+                  ) || (
+                    <div class="d-inline-block">
+                      {/* Avoid changing height of row when tarball gets populated */}
+                      &nbsp;
+                    </div>
+                  )}
+                </small>
+              </div>
+
+              <div className="d-sm-flex justify-content-between">
+                {(typeof t.result_summary === 'object' &&
+                  <ResultSummary obj={t}></ResultSummary>
+                )}
+
+                {/* Avoid changing height of row when results gets populated - or if results don't exist */}
+                <div class="d-inline-block">
+                  &nbsp;
                 </div>
+
+                {t.patchset &&
+                  <a href={t.patchset.detail_url} title="Associated patch set">Patch set {t.patchset.id}</a>
+                }
               </div>
-            ) || (
-              <div className="spinner-border spinner-border-sm text-secondary my-4" role="status" title="Fetching information...">
-                <span className="sr-only">Fetching tarball information...</span>
-              </div>
-            )}
+            </div>
           </a>
         )}
       </ul>

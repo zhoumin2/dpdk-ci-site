@@ -23,8 +23,7 @@ export class Row extends Component {
 
     const rows = []
     for (let i = linkStart; i < linkEnd; i++) {
-      // negative id to not conflict with retrieved row id
-      rows.push({ id: -i })
+      rows.push({ js_id: i })
     }
 
     this.state = {
@@ -54,34 +53,76 @@ export class Row extends Component {
         return { rows: state.rows }
       })
 
-      fetch(`row/${rows[i].id}/?result_summary=True`).then(response => {
-        if (response.ok) {
-          return response.json()
-        } else {
-          response.text(() => {
-            this.setState(state => {
-              state.rows[i].result_summary = this.errorStatus
-              return { rows: state.rows }
-            })
-            logError(response)
-          })
-        }
-      }).then(json => {
-        this.setState(state => {
-          state.rows[i].result_summary = json
-          return { rows: state.rows }
-        })
-      }).catch(e => {
-        if (!this.isPageChange(e)) {
-          logError(e)
-        }
+      // only call if the series was not set from cache
+      if (!rows[i].series && rows[i].series_id) {
+        this.setSeries(rows, i)
+      }
 
-        this.setState(state => {
-          state.rows[i].result_summary = this.errorStatus
-          return { rows: state.rows }
-        })
-      })
+      this.setResultSummary(rows, i)
     }
+  }
+
+  setSeries (rows, i) {
+    fetch(`row/${rows[i].id}/?series=${rows[i].series_id}`).then(response => {
+      if (response.ok) {
+        return response.json()
+      } else {
+        response.text().then(text => {
+          this.setState(state => {
+            state.rows[i].error = `Error getting patchwork information: ${text}`
+            return { rows: state.rows }
+          })
+          logError(response)
+        })
+      }
+    }).then(json => {
+      this.setState(state => {
+        state.rows[i].series = json
+        return { rows: state.rows }
+      })
+    }).catch(e => {
+      let text = `Error getting patchwork information: ${e}`
+      if (!this.isPageChange(e)) {
+        logError(e)
+      } else {
+        text = ''
+      }
+
+      this.setState(state => {
+        state.rows[i].error = text
+        return { rows: state.rows }
+      })
+    })
+  }
+
+  setResultSummary (rows, i) {
+    fetch(`row/${rows[i].id}/?result_summary=True`).then(response => {
+      if (response.ok) {
+        return response.json()
+      } else {
+        response.text(() => {
+          this.setState(state => {
+            state.rows[i].result_summary = this.errorStatus
+            return { rows: state.rows }
+          })
+          logError(response)
+        })
+      }
+    }).then(json => {
+      this.setState(state => {
+        state.rows[i].result_summary = json
+        return { rows: state.rows }
+      })
+    }).catch(e => {
+      if (!this.isPageChange(e)) {
+        logError(e)
+      }
+
+      this.setState(state => {
+        state.rows[i].result_summary = this.errorStatus
+        return { rows: state.rows }
+      })
+    })
   }
 
   /**
@@ -92,10 +133,10 @@ export class Row extends Component {
       if (response.ok) {
         return response.json()
       } else {
-        response.text(text => {
+        response.text().then(text => {
           for (let i = 0; i < tableSize; i++) {
             this.setState(state => {
-              state.rows[i] = { id: i, error: `Error getting patch information: ${text}` }
+              state.rows[i].error = `Error getting patch information: ${text}`
               return { rows: state.rows }
             })
           }
@@ -118,7 +159,7 @@ export class Row extends Component {
 
         for (let i = rows.length; i < rest; i++) {
           this.setState(state => {
-            state.rows[i] = { id: i, error: 'A patch may have become inactive at the time of requesting.' }
+            state.rows[i].error = 'A patch may have become inactive at the time of requesting.'
             return { rows: state.rows }
           })
         }
@@ -133,7 +174,7 @@ export class Row extends Component {
 
       for (let i = 0; i < this.state.rows.length; i++) {
         this.setState(state => {
-          state.rows[i] = { id: i, error: text }
+          state.rows[i].error = text
           return { rows: state.rows }
         })
       }

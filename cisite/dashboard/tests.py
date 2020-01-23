@@ -453,7 +453,7 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
-        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(ps['series']['patchwork_range_str'], '40574')
         self.assertEqual(ps['series']['submitter'], 'Thomas Monjalon')
 
     def test_auth_active_patchset(self, m):
@@ -472,7 +472,7 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         ps = response.context['patchsets'][0]
         self.assertEqual(ps['id'], 1)
-        self.assertEqual(ps['patchwork_range_str'], '40574')
+        self.assertEqual(ps['series']['patchwork_range_str'], '40574')
         self.assertEqual(ps['series']['submitter'],
                          'Thomas Monjalon <thomas@monjalon.net>')
 

@@ -354,22 +354,31 @@ class PatchSet(BaseDashboardView):
         context['shown']['active'] = True
         return True
 
-    def update_patchsets(self, context, **kwargs):
-        with requests.Session() as pw_session:
-            for patchset in context['patchsets']:
-                series = pw_get(patchset['pw_series_url'], pw_session)
-                if not series['name']:
-                    series['name'] = f'Untitled series #{series["id"]}'
+    def update_series(self, series):
+        if not series['name']:
+            series['name'] = f'untitled series #{series["id"]}'
+        series['patchwork_range_str'] = self.patchwork_range_str(series)
+        self.set_patchset_submitter(series)
+
+        # Remove not needed things from series -- saves some bandwidth
+        series.pop('project', None)
+        series.pop('patches', None)
+        series.pop('cover_letter', None)
+
+    def update_patchsets(self, context):
+        for patchset in context['patchsets']:
+            # Use a cached version of the series if it exists, else let
+            # js call to populate the series
+            series = pw_get(patchset['pw_series_url'], False)
+            if series:
+                self.update_series(series)
                 patchset['series'] = series
-                patchset['patchwork_range_str'] = \
-                    self.patchwork_range_str(series)
-                self.set_patchset_submitter(series)
-                if 'time_to_last_test' in patchset:
-                    patchset['time_to_last_test'] = format_timedelta(
-                        timedelta(
-                            seconds=float(patchset['time_to_last_test'])))
-                patchset['detail_url'] = reverse(
-                    'patchset_detail', args=(patchset['id'],))
+            if 'time_to_last_test' in patchset:
+                patchset['time_to_last_test'] = format_timedelta(
+                    timedelta(
+                        seconds=float(patchset['time_to_last_test'])))
+            patchset['detail_url'] = reverse(
+                'patchset_detail', args=(patchset['id'],))
 
 
 class PatchSetList(PatchSet):
@@ -425,23 +434,26 @@ class PatchSetRow(PatchSet):
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
 
-            self.update_patchsets(context, **kwargs)
+            self.update_patchsets(context)
         return context
 
     def get(self, request, *args, **kwargs):
+        # Return just a result summary (js)
         if self.request.GET.get('result_summary'):
             with api_session(self.request) as s:
                 url = f'patchsets/{self.kwargs["offset"]}/result_summary/'
                 resp = s.get(urljoin(settings.API_BASE_URL, url))
             return JsonResponse(resp.json())
 
-        context = self.get_context_data(add_range=False, **kwargs)
+        # Return just a series when not cached (js)
+        series_id = self.request.GET.get('series')
+        if series_id:
+            series_url = f'https://patches.dpdk.org/api/1.0/series/{series_id}'
+            series = pw_get(series_url)
+            self.update_series(series)
+            return JsonResponse(series)
 
-        # Remove not needed things from patchset -- saves some bandwidth
-        for ps in context['patchsets']:
-            ps['series'].pop('project', None)
-            ps['series'].pop('patches', None)
-            ps['series'].pop('cover_letter', None)
+        context = self.get_context_data(add_range=False, **kwargs)
 
         return JsonResponse({
             'patchsets': context['patchsets'],
