@@ -6,15 +6,20 @@ export class Row extends Component {
    * exactly what I need it to do. (Which is to share common methods and state
    * for different components.)
    */
-  constructor (props, type, linkStart, linkEnd, limit, shown, isAdmin) {
+  constructor (props, type, linkStart, linkEnd, shown, isAdmin) {
     super(props)
 
     this.type = type
     this.linkStart = linkStart
     this.linkEnd = linkEnd
-    this.limit = limit
     this.shown = shown
     this.isAdmin = isAdmin
+
+    this.errorStatus = {
+      status: 'Error getting status',
+      incomplete: 0,
+      testcases: {}
+    }
 
     const rows = []
     for (let i = linkStart; i < linkEnd; i++) {
@@ -29,16 +34,52 @@ export class Row extends Component {
 
   componentDidMount () {
     const tableSize = this.linkEnd - this.linkStart
-    for (let i = 0; i < tableSize; i += this.limit) {
-      this.getAndAddRow(i, i + this.linkStart, this.limit, tableSize, this.shown)
-    }
+    this.getAndAddRow(this.linkStart, tableSize, this.shown)
   }
 
-  setRowState (offset, to, rows) {
+  isPageChange (e) {
+    // Happens when changing pages during a fetch. Ignore it.
+    // This can happen when a page is not fully rendered but a request to
+    // a new page is made.
+    return (
+      e.message === 'NetworkError when attempting to fetch resource.' ||
+      e.message === 'Failed to fetch'
+    )
+  }
+
+  setRowState (to, rows) {
     for (let i = 0; i < to; i++) {
       this.setState(state => {
-        state.rows[i + offset] = rows[i]
+        state.rows[i] = rows[i]
         return { rows: state.rows }
+      })
+
+      fetch(`row/${rows[i].id}/?result_summary=True`).then(response => {
+        if (response.ok) {
+          return response.json()
+        } else {
+          response.text(() => {
+            this.setState(state => {
+              state.rows[i].result_summary = this.errorStatus
+              return { rows: state.rows }
+            })
+            logError(response)
+          })
+        }
+      }).then(json => {
+        this.setState(state => {
+          state.rows[i].result_summary = json
+          return { rows: state.rows }
+        })
+      }).catch(e => {
+        if (!this.isPageChange(e)) {
+          logError(e)
+        }
+
+        this.setState(state => {
+          state.rows[i].result_summary = this.errorStatus
+          return { rows: state.rows }
+        })
       })
     }
   }
@@ -46,26 +87,13 @@ export class Row extends Component {
   /**
    * Fetch the row from the server, and replace the placeholders
    */
-  getAndAddRow (tableOffset, linkOffset, limit, tableSize, shown) {
-    // there is a possible race condition where the active rows change after
-    // the initial request. This also accounts for when the limit ends up greater
-    // than the offset.
-
-    // case 1: offset=4, limit=4, size=16, ret=4 (normal case) (ret + offset < size)
-    //         offset=4, limit=4, size=8,  ret=4
-    //         offset=1, limit=4, size=5,  ret=4
-    //         offset=5, limit=4, size=10, ret=4
-    // case 2: offset=4, limit=4, size=7,  ret=4 (ret + offset > size) (size - offset < limit)
-    //         offset=4, limit=4, size=5,  ret=4
-    // case 3: offset=4, limit=4, size=8,  ret=3 (ret < limit)
-    const max = tableSize - tableOffset
-
-    fetch(`row/${linkOffset}/?limit=${limit}&${this.type}=${shown}`).then(response => {
+  getAndAddRow (linkOffset, tableSize, shown) {
+    fetch(`row/${linkOffset}/?${this.type}=${shown}`).then(response => {
       if (response.ok) {
         return response.json()
       } else {
         response.text(text => {
-          for (let i = tableOffset; i < max; i++) {
+          for (let i = 0; i < tableSize; i++) {
             this.setState(state => {
               state.rows[i] = { id: i, error: `Error getting patch information: ${text}` }
               return { rows: state.rows }
@@ -77,31 +105,32 @@ export class Row extends Component {
     }).then(json => {
       const rows = json[this.type]
 
-      if (rows.length + tableOffset <= tableSize) {
-        // case 1
-        this.setRowState(tableOffset, rows.length, rows)
-      } else if (rows.length + tableOffset > tableSize && rows.length >= limit) {
-        // case 2
-        this.setRowState(tableOffset, max, rows)
+      if (rows.length === tableSize) {
+        // normal case
+        this.setRowState(rows.length, rows)
+      } else if (rows.length > tableSize) {
+        // new rows added by the time of requesting
+        this.setRowState(tableSize, rows)
       } else {
-        // case 3
-        this.setRowState(tableOffset, rows.length, rows)
-        const rest = max - rows.length
-        for (let i = tableOffset + rows.length; i < rest; i++) {
+        // old rows removed by the time of requesting
+        this.setRowState(rows.length, rows)
+        const rest = tableSize - rows.length
+
+        for (let i = rows.length; i < rest; i++) {
           this.setState(state => {
-            state.rows[i] = { id: i, error: 'This patch may have become inactive at the time of requesting.' }
+            state.rows[i] = { id: i, error: 'A patch may have become inactive at the time of requesting.' }
             return { rows: state.rows }
           })
         }
       }
     }).catch(e => {
-      let text = `Error getting patch information: ${e}`
-      // Happens when changing pages during a fetch in Firefox. Ignore it.
-      if (e.message === 'NetworkError when attempting to fetch resource.') {
+      let text = `Error getting information: ${e}`
+      if (this.isPageChange(e)) {
         text = ''
       } else {
         logError(e)
       }
+
       for (let i = 0; i < this.state.rows.length; i++) {
         this.setState(state => {
           state.rows[i] = { id: i, error: text }

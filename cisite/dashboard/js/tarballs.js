@@ -8,11 +8,10 @@ class TarballTable extends Row {
 
     const linkStart = parseInt(table.dataset.start)
     const linkEnd = parseInt(table.dataset.end)
-    const limit = parseInt(table.dataset.limit)
     const shown = table.dataset.shown
     const isAdmin = table.dataset.admin === 'True'
 
-    super(props, 'tarballs', linkStart, linkEnd, limit, shown, isAdmin)
+    super(props, 'tarballs', linkStart, linkEnd, shown, isAdmin)
   }
 
   render () {
@@ -24,7 +23,15 @@ class TarballTable extends Row {
               <div>
                 <div className="row">
                   <div className="col-sm">
-                    <span className={`badge badge-${t.status_class}`} title={t.status_tooltip}>{t.status}</span>
+                    {(t.result_summary.status &&
+                      <span className={`badge badge-${t.result_summary.status_class}`} title={t.result_summary.status_tooltip}>
+                        {t.result_summary.status}
+                      </span>
+                    ) || (
+                      <div className="spinner-border spinner-border-sm text-secondary" role="status" title="Fetching status...">
+                        <span className="sr-only">Fetching status...</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="col-sm text-sm-center">
@@ -45,22 +52,27 @@ class TarballTable extends Row {
                     )}
                   </small>
                 </div>
+
+                <div className="d-sm-flex justify-content-between">
+                  {typeof t.result_summary === 'object' &&
+                    <ResultSummary obj={t}></ResultSummary>
+                  }
+
+                  {/* Avoid changing height of row when results get populated */}
+                  <div class="d-inline-block">
+                    &nbsp;
+                  </div>
+
+                  {t.patchset &&
+                    <a href={t.patchset.detail_url} title="Associated patch set">Patch set {t.patchset.id}</a>
+                  }
+                </div>
               </div>
             ) || (
-              <div className="spinner-border spinner-border-sm text-secondary mt-3 mb-3" role="status">
+              <div className="spinner-border spinner-border-sm text-secondary my-4" role="status" title="Fetching information...">
                 <span className="sr-only">Fetching tarball information...</span>
               </div>
             )}
-
-            {t.status &&
-              <div className="d-sm-flex justify-content-between">
-                <ResultSummary obj={t}></ResultSummary>
-
-                {(this.shown === 'all' || this.shown === 'with') && t.patchset &&
-                  <a href={t.patchset.detail_url} title="Associated patch set">Patch set {t.patchset.id}</a>
-                }
-              </div>
-            }
           </a>
         )}
       </ul>

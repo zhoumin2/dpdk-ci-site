@@ -8,11 +8,10 @@ class DashboardTable extends Row {
 
     const linkStart = parseInt(table.dataset.start)
     const linkEnd = parseInt(table.dataset.end)
-    const limit = parseInt(table.dataset.limit)
     const shown = table.dataset.shown
     const isAdmin = table.dataset.admin === 'True'
 
-    super(props, 'patchsets', linkStart, linkEnd, limit, shown, isAdmin)
+    super(props, 'patchsets', linkStart, linkEnd, shown, isAdmin)
   }
 
   render () {
@@ -23,11 +22,17 @@ class DashboardTable extends Row {
             {(ps.series &&
               <div>
                 <div className="row">
-                  {ps.status &&
-                    <div className="col-sm-6 col-md-4">
-                      <span className={`badge badge-${ps.status_class}`} title={ps.status_tooltip}>{ps.status}</span>
-                    </div>
-                  }
+                  <div className="col-sm-6 col-md-4">
+                    {(ps.result_summary.status &&
+                      <span className={`badge badge-${ps.result_summary.status_class}`} title={ps.result_summary.status_tooltip}>
+                        {ps.result_summary.status}
+                      </span>
+                    ) || (
+                      <div className="spinner-border spinner-border-sm text-secondary" role="status" title="Fetching status...">
+                        <span className="sr-only">Fetching status...</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="col-sm-6 text-sm-right col-md-4 text-md-center">
                     Patch {ps.patchwork_range_str}
@@ -43,28 +48,33 @@ class DashboardTable extends Row {
                     <small>{ps.series.submitter}</small>
                   </div>
                 </div>
+
+                <div className="d-sm-flex justify-content-between">
+                  {(typeof ps.result_summary === 'object' &&
+                    <ResultSummary obj={ps}></ResultSummary>
+                  )}
+
+                  {/* Avoid changing height of row when results get populated */}
+                  <div class="d-inline-block">
+                    &nbsp;
+                  </div>
+
+                  {this.isAdmin &&
+                    <small className="text-nowrap text-muted" title="The time it took from when the patchset was submitted to when the last test run completed.">
+                      {(ps.time_to_last_test &&
+                        ps.time_to_last_test
+                      )}
+                    </small>
+                  }
+                </div>
               </div>
             ) || (ps.error &&
               <div>{ps.error}</div>
             ) || (
-              <div className="spinner-border spinner-border-sm text-secondary mt-3 mb-3" role="status">
-                <span className="sr-only">Fetching tarball information...</span>
+              <div className="spinner-border spinner-border-sm text-secondary my-4" role="status" title="Fetching information...">
+                <span className="sr-only">Fetching information...</span>
               </div>
             )}
-
-            <div className="d-sm-flex justify-content-between">
-              {(ps.status &&
-                <ResultSummary obj={ps}></ResultSummary>
-              )}
-
-              {this.isAdmin &&
-                <small className="text-nowrap text-muted" title="The time it took from when the patchset was submitted to when the last test run completed.">
-                  {(ps.time_to_last_test &&
-                    ps.time_to_last_test
-                  )}
-                </small>
-              }
-            </div>
           </a>
         )}
       </ul>

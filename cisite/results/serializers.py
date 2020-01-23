@@ -14,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from guardian.shortcuts import get_objects_for_user, get_perms
 from guardian.utils import get_anonymous_user
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from .models import Branch, ContactPolicy, Environment, Measurement, \
     Parameter, PatchSet, Tarball, TestCase, TestResult, TestRun, \
@@ -85,13 +86,13 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
     _PREFETCH_RELATED_FIELDS = ('tarballs',)
 
     pw_series_url = serializers.SerializerMethodField()
+    result_summary = serializers.SerializerMethodField()
 
     class Meta:
         """Specify fields to pull from PatchSet model."""
 
         model = PatchSet
         fields = ('url', 'id', 'is_public', 'apply_error', 'tarballs',
-                  'status', 'status_class', 'status_tooltip',
                   'time_to_last_test', 'series_id', 'pw_series_url',
                   'completed_timestamp', 'pw_is_active', 'build_log',
                   'result_summary', 'build_error', 'has_error',
@@ -104,6 +105,11 @@ class PatchSetSerializer(serializers.HyperlinkedModelSerializer,
         if obj.series_id is None:
             return None
         return urljoin(settings.PATCHWORKS_URL, f'series/{obj.series_id}')
+
+    def get_result_summary(self, obj):
+        request = self.context.get('request')
+        rev = reverse('patchset-result-summary', args=[obj.id])
+        return request.build_absolute_uri(rev)
 
 
 class ParameterSerializer(serializers.HyperlinkedModelSerializer):
@@ -493,6 +499,7 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
 
     runs = serializers.HyperlinkedRelatedField(many=True, read_only=True,
                                                view_name='testrun-detail')
+    result_summary = serializers.SerializerMethodField()
 
     class Meta:
         """Specify fields to pull from Tarball model."""
@@ -500,9 +507,13 @@ class TarballSerializer(serializers.HyperlinkedModelSerializer,
         model = Tarball
         fields = ('id', 'url', 'patchset', 'branch', 'commit_id', 'job_name',
                   'build_id', 'tarball_url', 'runs', 'date', 'commit_url',
-                  'status', 'status_class', 'status_tooltip',
                   'result_summary',)
         read_only_fields = ('date', 'commit_url')
+
+    def get_result_summary(self, obj):
+        request = self.context.get('request')
+        rev = reverse('tarball-result-summary', args=[obj.id])
+        return request.build_absolute_uri(rev)
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):

@@ -245,8 +245,13 @@ class PatchSet(models.Model, CommitURLMixin, StatusMixin):
     def result_summary(self):
         """Return the number of passed environments."""
         if self.has_error or not self.tarballs.exists():
-            return {'incomplete': 0, 'testcases': {}}
-        return self.last_tarball.result_summary
+            ret = {'incomplete': 0, 'testcases': {}}
+        else:
+            ret = self.last_tarball.result_summary
+        ret['status'] = self.status
+        ret['status_class'] = self.status_class()
+        ret['status_tooltip'] = self.status_tooltip()
+        return ret
 
     def get_absolute_url(self):
         """Return url to REST API for use with admin interface and rebuilds."""
@@ -429,6 +434,10 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
                         'failed': 0,
                         'passed': 0,
                         'indeterminate': 0,
+                        'testcase': {
+                            'name': tr.testcase.name,
+                            'description_url': tr.testcase.description_url
+                        }
                     }
 
                 if tr.results.filter(result="FAIL").exists():
@@ -440,6 +449,14 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
                 test_case.add(testcase)
         return result_summary
+
+    @cached_property
+    def result_summary_status(self):
+        ret = self.result_summary
+        ret['status'] = self.status
+        ret['status_class'] = self.status_class()
+        ret['status_tooltip'] = self.status_tooltip()
+        return ret
 
 
 def validate_contact_list(value):

@@ -1,6 +1,10 @@
 <h2>
   Test Results
-  <small><span class="badge badge-{{ obj.status_class }} align-middle">{{ obj.status }}</span></small>
+  <small>
+    <span class="badge badge-{{ obj.result_summary.status_class }} align-middle" title="{{ obj.result_summary.status_tooltip }}">
+      {{ obj.result_summary.status }}
+    </span>
+  </small>
 </h2>
 
 {% if obj.result_summary.incomplete or obj.result_summary.testcases.values %}

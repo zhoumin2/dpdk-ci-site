@@ -189,13 +189,12 @@ class BaseDashboardView(TemplateView):
 
     def add_status(self, patchset, session, add_range=True, **kwargs):
         """Pass in the patchset to apply a range."""
+        self.set_cache_request(patchset, session, 'result_summary', 300)
         summary = patchset['result_summary']
         if add_range:
             summary['incomplete_range'] = range(summary['incomplete'])
         for tc_id in summary['testcases']:
             tc = summary['testcases'][tc_id]
-            tc['testcase'] = self.get_cache_request(
-                urljoin(settings.API_BASE_URL, f'testcases/{tc_id}/'), session)
             if add_range:
                 tc['passed_range'] = range(tc['passed'])
                 tc['failed_range'] = range(tc['failed'])
@@ -355,7 +354,7 @@ class PatchSet(BaseDashboardView):
         context['shown']['active'] = True
         return True
 
-    def update_patchsets(self, context, session, **kwargs):
+    def update_patchsets(self, context, **kwargs):
         with requests.Session() as pw_session:
             for patchset in context['patchsets']:
                 series = pw_get(patchset['pw_series_url'], pw_session)
@@ -369,7 +368,6 @@ class PatchSet(BaseDashboardView):
                     patchset['time_to_last_test'] = format_timedelta(
                         timedelta(
                             seconds=float(patchset['time_to_last_test'])))
-                self.add_status(patchset, session, **kwargs)
                 patchset['detail_url'] = reverse(
                     'patchset_detail', args=(patchset['id'],))
 
@@ -394,7 +392,6 @@ class PatchSetList(PatchSet):
                 'ordering': '-id',
                 'offset': offset,
                 'limit': 1,
-                'cache': True,
             })
             resp.raise_for_status()
             resp_json = resp.json()
@@ -402,13 +399,10 @@ class PatchSetList(PatchSet):
             context['patchsets'] = resp_json['results']
             context['start'] = offset
             context['end'] = end
-            # Limit chosen based on speed when cached (overall page load) and
-            # speed when uncached (overall page load AND first row response)
-            context['limit'] = 4
             context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
-        self.update_patchsets(context, s)
+        self.update_patchsets(context)
         return context
 
 
@@ -427,17 +421,20 @@ class PatchSetRow(PatchSet):
                 'without_series': False,
                 'ordering': '-id',
                 'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
-                'limit': self.request.GET.get('limit') or 1,
-                'cache': True,
             })
-            resp.raise_for_status()
             resp_json = resp.json()
             context['patchsets'] = resp_json['results']
 
-            self.update_patchsets(context, s, **kwargs)
+            self.update_patchsets(context, **kwargs)
         return context
 
     def get(self, request, *args, **kwargs):
+        if self.request.GET.get('result_summary'):
+            with api_session(self.request) as s:
+                url = f'patchsets/{self.kwargs["offset"]}/result_summary/'
+                resp = s.get(urljoin(settings.API_BASE_URL, url))
+            return JsonResponse(resp.json())
+
         context = self.get_context_data(add_range=False, **kwargs)
 
         # Remove not needed things from patchset -- saves some bandwidth
@@ -697,10 +694,12 @@ class Tarball(BaseDashboardView):
         context['shown']['without'] = True
         return False
 
-    def update_tarballs(self, context, s, **kwargs):
+    def update_tarballs(self, context, s, add_status, **kwargs):
         for tarball in context['tarballs']:
             self.set_cache_request(tarball, s, 'branch')
-            self.add_status(tarball, s, **kwargs)
+
+            if add_status:
+                self.add_status(tarball, s, **kwargs)
 
             if tarball['date']:
                 tarball['date'] = dateformat.format(
@@ -773,7 +772,8 @@ class PatchSetDetail(Tarball, PatchSet):
                 context['branches'] = api_resp.json()['results']
 
         context['title'] = f'Patch set {context["patchset"]["id"]}'
-        context['status_classes'] = text_color_classes(context['patchset']['status_class'])
+        context['status_classes'] = text_color_classes(
+            context['patchset']['result_summary']['status_class'])
         return context
 
 
@@ -797,7 +797,6 @@ class TarballList(Tarball):
                 'ordering': '-date',
                 'offset': offset,
                 'limit': 1,
-                'cache': True,
             })
 
             resp.raise_for_status()
@@ -807,13 +806,10 @@ class TarballList(Tarball):
             context['tarballs'] = resp_json['results']
             context['start'] = offset
             context['end'] = end
-            # Limit chosen based on speed when cached (overall page load) and
-            # speed when uncached (overall page load AND first row response)
-            context['limit'] = 4
             context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
-        self.update_tarballs(context, s)
+        self.update_tarballs(context, s, False)
         return context
 
 
@@ -833,17 +829,20 @@ class TarballRow(Tarball):
                 'without_series': False,
                 'ordering': '-date',
                 'offset': page * settings.REST_FRAMEWORK['PAGE_SIZE'] + self.kwargs["offset"],
-                'limit': self.request.GET.get('limit') or 1,
-                'cache': True,
             })
-            resp.raise_for_status()
             resp_json = resp.json()
             context['tarballs'] = resp_json['results']
 
-            self.update_tarballs(context, s, **kwargs)
+            self.update_tarballs(context, s, False, **kwargs)
         return context
 
     def get(self, request, *args, **kwargs):
+        if self.request.GET.get('result_summary'):
+            with api_session(self.request) as s:
+                url = f'tarballs/{self.kwargs["offset"]}/result_summary/'
+                resp = s.get(urljoin(settings.API_BASE_URL, url))
+            return JsonResponse(resp.json())
+
         context = self.get_context_data(add_range=False, **kwargs)
 
         return JsonResponse({
@@ -882,7 +881,8 @@ class TarballDetail(Tarball):
                 context['tarball']['patchset'] = resp.json()
 
         context['title'] = f'Tarball {context["tarball"]["id"]}'
-        context['status_classes'] = text_color_classes(context['tarball']['status_class'])
+        context['status_classes'] = text_color_classes(
+            context['tarball']['result_summary']['status_class'])
         return context
 
 

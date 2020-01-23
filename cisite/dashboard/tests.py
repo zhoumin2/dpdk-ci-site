@@ -154,6 +154,15 @@ class BaseTestCase(StaticLiveServerTestCase):
                     }
                 ]
             })
+        m.register_uri(
+            'GET', urljoin(settings.API_BASE_URL, 'patchsets/1/result_summary'),
+            json={
+                'status': 'Pass',
+                'status_class': 'success',
+                'status_tooltip': 'Pass',
+                'incomplete': 0,
+                'testcases': {}
+            })
         with open('cisite/request_mapping.json') as f:
             mapping = json.load(f)
             url = urljoin(settings.PATCHWORKS_URL, 'series/1')
@@ -176,16 +185,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'tarballs': [
                 urljoin(settings.API_BASE_URL, 'tarballs/1/')
             ],
-            'status': 'Pass',
-            'status_class': 'success',
-            'status_tooltip': 'Pass',
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
             'completed_timestamp': '2018-07-20T00:00:00Z',
-            'result_summary': {
-                'incomplete': 0,
-                'testcases': {}
-            },
+            'result_summary': urljoin(settings.API_BASE_URL, 'patchsets/1/result_summary'),
             'build_error': False,
             'has_error': False,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
@@ -260,16 +263,10 @@ class BaseTestCase(StaticLiveServerTestCase):
             'tarballs': [
                 urljoin(settings.API_BASE_URL, 'tarballs/1/')
             ],
-            'status': 'Possible Regression' if fail else 'Pass',
-            'status_class': 'danger' if fail else 'success',
-            'status_tooltip': 'Possible Regression' if fail else 'Pass',
             'series_id': 1,
             'pw_series_url': urljoin(settings.PATCHWORKS_URL, 'series/1'),
             'completed_timestamp': '2018-07-20T00:00:00Z',
-            'result_summary': {
-                'incomplete': 0,
-                'testcases': {}
-            },
+            'result_summary': urljoin(settings.API_BASE_URL, 'patchsets/1/result_summary'),
             'build_error': False,
             'has_error': False,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
@@ -458,9 +455,6 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(ps['id'], 1)
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(ps['series']['submitter'], 'Thomas Monjalon')
-        self.assertEqual(ps['status'], 'Pass')
-        self.assertEqual(ps['status_class'], 'success')
-        self.assertEqual(ps['status_tooltip'], 'Pass')
 
     def test_auth_active_patchset(self, m):
         """Verify that patchsets are shown properly in authenticated view."""
@@ -481,9 +475,6 @@ class PatchListViewTests(BaseTestCase):
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(ps['series']['submitter'],
                          'Thomas Monjalon <thomas@monjalon.net>')
-        self.assertEqual(ps['status'], 'Pass')
-        self.assertEqual(ps['status_class'], 'success')
-        self.assertEqual(ps['status_tooltip'], 'Pass')
 
 
 @requests_mock.Mocker()
@@ -509,7 +500,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['series']['patches']), 1)
-        self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(len(response.context['environments'].items()), 0)
 
     def test_auth_fail(self, m):
@@ -526,7 +516,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['series']['patches']), 1)
-        self.assertEqual(ps['status'], 'Possible Regression')
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
@@ -556,7 +545,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['series']['patches']), 1)
-        self.assertEqual(ps['status'], 'Pass')
         env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',
                                                    args=(env['id'],)))]
@@ -589,7 +577,6 @@ class DetailViewTests(BaseTestCase):
         ps = response.context['patchset']
         self.assertEqual(ps['patchwork_range_str'], '40574')
         self.assertEqual(len(ps['series']['patches']), 1)
-        self.assertEqual(ps['status'], 'Pass')
         self.assertEqual(len(response.context['environments']), 2)
         cloned_env = response.context['environments'][
             urljoin(settings.API_BASE_URL, reverse('environment-detail',

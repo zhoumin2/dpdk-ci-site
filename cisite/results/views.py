@@ -18,7 +18,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_list_or_404, redirect
 from django.urls import reverse
 from django_auth_ldap.backend import LDAPBackend
@@ -116,50 +116,6 @@ class TestRunLogDownloadView(DownloadPermissionView):
             not self.request.user.is_anonymous
 
 
-class CacheListModelMixin:
-    """List a queryset and cache the serializer if the cache parameter is set.
-
-    Using a cached queryset is slower than just getting it from the database.
-    Thus we only cache the serialized data.
-
-    Based from:
-    https://github.com/encode/django-rest-framework/blob/963ce306f3226ec64eb8990c4fbc094a77fabcba/rest_framework/mixins.py#L35
-    """
-
-    def list(self, request, *args, **kwargs):
-        use_cache = request.query_params.get('cache', None)
-        # The key is based on ordering the queryset, so that requests with
-        # different ordering of the queryset hits the same cached page
-        key = request.META['PATH_INFO'] + \
-            ''.join([i[0] + i[1] for i in sorted(request.GET.items())])
-
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            return self.get_paginated_response(self._get_or_set(
-                use_cache, key, partial(self._get_page_serializer_data, page)))
-
-        return Response(self._get_or_set(
-            use_cache, key, partial(self._get_serializer_data, queryset)))
-
-    def _get_page_serializer_data(self, page):
-        return self.get_serializer(page, many=True).data
-
-    def _get_serializer_data(self, queryset):
-        return self.get_serializer(queryset, many=True).data
-
-    def _get_or_set(self, use_cache, key, get_value_method):
-        if use_cache:
-            value = cache.get(key)
-            if value is None:
-                value = get_value_method()
-                # Arbitrarily cache pages for 10 minutes
-                cache.set(key, value, 10 * 60)
-            return value
-        return get_value_method()
-
-
 class ReturnDashboardMixin:
     """Provide an extra action to redirect to dashboard for patchest/tarball"""
 
@@ -169,7 +125,7 @@ class ReturnDashboardMixin:
         return redirect(reverse(obj._meta.model_name + '_detail', args=(obj.id,)))
 
 
-class PatchSetViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelViewSet):
+class PatchSetViewSet(ReturnDashboardMixin, viewsets.ModelViewSet):
     """Provide a read-write view of incoming patchsets.
 
     list:
@@ -221,6 +177,11 @@ class PatchSetViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelV
         resp.raise_for_status()
         return Response({'status': 'pending'})
 
+    @action(detail=True)
+    def result_summary(self, request, pk=None):
+        ps = self.get_object()
+        return JsonResponse(ps.result_summary)
+
 
 class BranchViewSet(viewsets.ModelViewSet):
     """Manage git branches used by DPDK."""
@@ -231,7 +192,7 @@ class BranchViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'last_commit_id', 'repository_url')
 
 
-class TarballViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelViewSet):
+class TarballViewSet(ReturnDashboardMixin, viewsets.ModelViewSet):
     """Provide a read-write view of tarballs for testing."""
 
     permission_classes = (permissions.IsAdminUserOrReadOnly,)
@@ -287,6 +248,11 @@ class TarballViewSet(ReturnDashboardMixin, CacheListModelMixin, viewsets.ModelVi
         resp.raise_for_status()
 
         return Response({'status': 'pending'})
+
+    @action(detail=True)
+    def result_summary(self, request, pk=None):
+        tb = self.get_object()
+        return JsonResponse(tb.result_summary_status)
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
