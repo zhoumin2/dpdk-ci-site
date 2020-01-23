@@ -423,8 +423,7 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
                 if env.live_since >= tr.timestamp:
                     continue
 
-                # Assume first testcase if None, for old database
-                testcase = tr.testcase.id if tr.testcase else 1
+                testcase = tr.testcase.id
 
                 if testcase in test_case:
                     continue
@@ -723,7 +722,7 @@ class Environment(models.Model):
             assign_perm('view_testrun', anon, run)
 
             # Set artifacts public only if the testcase is also public
-            if (set_artifacts_public and run.testcase and
+            if (set_artifacts_public and
                     'download_artifacts' in get_perms(anon, run.testcase)):
                 assign_perm('download_artifacts', anon, run)
 
@@ -922,7 +921,7 @@ class TestRun(models.Model, CommitURLMixin):
     commit_id = models.CharField('git commit hash', max_length=40, blank=True,
                                  help_text='The commit id of the baseline used')
     testcase = models.ForeignKey(
-        TestCase, on_delete=models.CASCADE, null=True, blank=True,
+        TestCase, on_delete=models.CASCADE,
         related_name='runs',
         help_text='Test case that this test run applies to')
 

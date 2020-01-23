@@ -333,14 +333,7 @@ class TestRunViewSet(viewsets.ModelViewSet):
     def rerun(self, request, pk):
         """Rerun a test run."""
         tr = self.get_object()
-
-        tc = tr.testcase
-        # Legacy testcase check
-        if not tc:
-            # assume 1 test case per test run
-            tc = tr.results.first().measurement.testcase
-
-        pipeline = f'{tr.environment.pipeline}-{tc.pipeline}'
+        pipeline = f'{tr.environment.pipeline}-{tr.testcase.pipeline}'
         pipeline_url = urljoin(settings.JENKINS_URL, f'job/{pipeline}/buildWithParameters/')
 
         message = f'{request.user} reran {pipeline_url} for test run {pk}'

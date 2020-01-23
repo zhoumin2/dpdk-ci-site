@@ -247,7 +247,7 @@ class BaseTestCase(StaticLiveServerTestCase):
             'report_timestamp': None,
             'log_upload_file': None,
             'branch': urljoin(settings.API_BASE_URL, 'branches/1/'),
-            'testcase': None,
+            'testcase': urljoin(settings.API_BASE_URL, 'testcases/1/'),
             'public_download': False,
         }
         tr.update(**kwargs)

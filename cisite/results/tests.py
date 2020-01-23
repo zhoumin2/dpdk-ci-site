@@ -46,6 +46,13 @@ def create_branch():
         last_commit_id='0' * 40)
 
 
+def create_test_case(**kwargs):
+    return TestCase.objects.create(
+        name='nic_single_core_perf',
+        description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
+        **kwargs)
+
+
 def create_test_run(environment, **kwargs):
     """Create a dummy test run object for use by tests."""
     tb = kwargs.pop('tarball', None)
@@ -56,7 +63,8 @@ def create_test_run(environment, **kwargs):
             commit_id="0" * 40, patchset=ps)
     tr_kwargs = {
         'timestamp': now(),
-        'log_output_file': 'http://foo.invalid/bar'
+        'log_output_file': 'http://foo.invalid/bar',
+        'testcase': create_test_case(),
     }
     tr_kwargs.update(kwargs)
     return TestRun.objects.create(tarball=tb, environment=environment,
@@ -467,9 +475,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        tc = create_test_case()
         user = User.objects.create(username='testuser', first_name='Test',
                                    last_name='User')
         group = Group.objects.create(name="TestGroup")
@@ -485,7 +491,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
         m = Measurement.objects.create(name='throughput_large_queue',
                                        unit='Mpps',
                                        higher_is_better=True,
-                                       testcase=TestCase.objects.first(),
+                                       testcase=tc,
                                        environment=cls.env)
         Parameter.objects.create(name='Frame size', unit='bytes',
                                  value=64, measurement=m)
@@ -495,6 +501,8 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             'measurement-detail', args=[m.id], request=None)
         cls.env_url = reverse(
             'environment-detail', args=[cls.env.id], request=None)
+        tc_url = reverse(
+            'testcase-detail', args=[tc.id], request=None)
         cls.initial_data = dict(
             tarball=cls.tarball_url,
             log_output_file='http://host.invalid/log_file.txt',
@@ -505,7 +513,7 @@ class TestRunSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             commit_id='',
             commit_url='',
             branch=None,
-            testcase=None,
+            testcase=tc_url,
             public_download=False,
             results=[dict(result='PASS',
                           difference=-0.85,
@@ -704,22 +712,20 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         """Reset model properties."""
         super().setUp()
         self.env_date = datetime(2017, 1, 1, tzinfo=utc)
-        self.tc = TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        self.tc = create_test_case()
         self.test_ps = PatchSet.objects.create()
         self.env1 = create_test_environment(
             inventory_id='IOL-IOL-1', date=self.env_date, live_since=self.env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env1,
-                                   testcase=TestCase.objects.first())
+                                   testcase=self.tc)
         self.env2 = create_test_environment(
             inventory_id='IOL-IOL-2', date=self.env_date, live_since=self.env_date)
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=self.env2,
-                                   testcase=TestCase.objects.first())
+                                   testcase=self.tc)
 
     def tearDown(self):
         """Clear cache to fix an IntegrityError bug."""
@@ -789,7 +795,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=env3,
-                                   testcase=TestCase.objects.first())
+                                   testcase=self.tc)
         self.assertEqual(self.test_ps.status, 'Pass')
 
     def test_status_pass(self):
@@ -910,7 +916,7 @@ class PatchSetModelTestCase(test.TransactionTestCase):
         env = create_test_environment(date=self.env_date)
         Measurement.objects.create(
             name='throughput', unit='Mpps', higher_is_better=True,
-            environment=env, testcase=TestCase.objects.first())
+            environment=env, testcase=self.tc)
         self.assertEqual(self.test_ps.status, 'Pass')
 
 
@@ -920,9 +926,7 @@ class OwnerTestCase(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        cls.tc = create_test_case()
         cls.g1 = Group.objects.create(name='group1')
         cls.g2 = Group.objects.create(name='group2')
         cls.env1 = create_test_environment(owner=cls.g1)
@@ -934,7 +938,7 @@ class OwnerTestCase(test.TestCase):
     def create_measurement(self, environment):
         return Measurement.objects.create(
             name="throughput", unit="Gbps", higher_is_better=True,
-            environment=environment, testcase=TestCase.objects.first())
+            environment=environment, testcase=self.tc)
 
     def test_measurement_owner(self):
         """Test owner property of Measurement model."""
@@ -988,9 +992,7 @@ class EnvironmentTestCase(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        cls.tc = create_test_case()
         cls.user = User.objects.create_user('joevendor',
                                             'joe@example.com', 'AbCdEfGh')
         cls.grp = Group.objects.create(name='Group1')
@@ -1008,7 +1010,7 @@ class EnvironmentTestCase(test.TestCase):
         ContactPolicy.objects.create(environment=env)
         m = Measurement.objects.create(name='throughput', unit='Mpps',
                                        higher_is_better=True, environment=env,
-                                       testcase=TestCase.objects.first())
+                                       testcase=self.__class__.tc)
         Parameter.objects.create(name='frame_size', unit='bytes', value=64,
                                  measurement=m)
         self.sub = Subscription.objects.create(
@@ -1051,9 +1053,9 @@ class EnvironmentTestCase(test.TestCase):
             tarball_url='http://example.com/dpdk.tar.gz',
             branch=create_branch(),
             commit_id='0000000000000000000000000000000000000000')
-        TestRun.objects.create(timestamp=now(),
-                               log_output_file='http://example.com/log.tar.gz',
-                               tarball=tb, environment=env)
+        TestRun.objects.create(
+            timestamp=now(), log_output_file='http://example.com/log.tar.gz',
+            tarball=tb, environment=env, testcase=self.__class__.tc)
         self.assertTrue(
             self.__class__.user.has_perm('results.view_environment', env))
         self.assertFalse(
@@ -1119,9 +1121,7 @@ class TestResultTestCase(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        cls.tc = create_test_case()
         cls.test_tb = Tarball.objects.create(branch=create_branch(),
                 commit_id="0000000000000000000000000000000000000000",
                 tarball_url='http://host.invalid/dpdk.tar.gz')
@@ -1130,18 +1130,18 @@ class TestResultTestCase(test.TestCase):
         ContactPolicy.objects.create(environment=cls.env1)
         cls.m1 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
-                environment=cls.env1, testcase=TestCase.objects.first())
+                environment=cls.env1, testcase=cls.tc)
         cls.env2 = create_test_environment(owner=grp)
         ContactPolicy.objects.create(environment=cls.env2)
         cls.m2 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
-                environment=cls.env2, testcase=TestCase.objects.first())
+                environment=cls.env2, testcase=cls.tc)
 
     def test_different_envs_fails(self):
         cls = self.__class__
-        run = TestRun.objects.create(timestamp=now(),
-            log_output_file='/foo/bar', tarball=cls.test_tb,
-            environment=cls.env1)
+        run = TestRun.objects.create(
+            timestamp=now(), log_output_file='/foo/bar', tarball=cls.test_tb,
+            environment=cls.env1, testcase=cls.tc)
         TestResult.objects.create(result="PASS", difference=-1.0,
                                   measurement=cls.m1, run=run)
         with self.assertRaises(ValidationError):
@@ -1154,9 +1154,7 @@ class MeasurementTestCase(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up dummy test data."""
-        TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next')
+        cls.tc = create_test_case()
         grp = Group.objects.create(name='group')
         cls.env = create_test_environment(owner=grp)
         ContactPolicy.objects.create(environment=cls.env)
@@ -1164,17 +1162,19 @@ class MeasurementTestCase(test.TestCase):
     def test_create_measurement_anon(self):
         """Verify that anon user can view measurement if env is anon."""
         self.__class__.env.set_public()
-        m = Measurement.objects.create(name="throughput",
-                                       unit="Gbps", higher_is_better=True,
-                                       environment=self.__class__.env, testcase=TestCase.objects.first())
+        m = Measurement.objects.create(
+            name="throughput",
+            unit="Gbps", higher_is_better=True,
+            environment=self.__class__.env, testcase=self.__class__.tc)
         anon = get_anonymous_user()
         self.assertTrue(anon.has_perm('view_measurement', m))
 
         # Sanity check by setting env back to private
         self.__class__.env.set_private()
-        m = Measurement.objects.create(name="throughput",
-                                       unit="Gbps", higher_is_better=True,
-                                       environment=self.__class__.env, testcase=TestCase.objects.first())
+        m = Measurement.objects.create(
+            name="throughput",
+            unit="Gbps", higher_is_better=True,
+            environment=self.__class__.env, testcase=self.__class__.tc)
         anon = get_anonymous_user()
         self.assertFalse(anon.has_perm('view_measurement', m))
 
@@ -1482,7 +1482,8 @@ class TestDownloadURL(test.TestCase):
         tr_kwargs = {
             'timestamp': now(),
             'log_output_file': 'http://foo.invalid/bar',
-            'tarball': tb
+            'tarball': tb,
+            'testcase': create_test_case(),
         }
         tr = TestRun.objects.create(environment=self.env, **tr_kwargs)
         path = upload_model_path_test_run('log_upload_file', tr, 'test.pdf')
@@ -1514,10 +1515,7 @@ class TestDownloadViewPermission(test.TestCase):
         self.django_file = File(self.tmp_file, name='test')
         self.env = create_test_environment(
             owner=group, hardware_description=self.django_file)
-        self.tc = TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
-            pipeline='pipeline-tc')
+        self.tc = create_test_case(pipeline='pipeline-tc')
         self.run = create_test_run(
             self.env, log_upload_file=self.django_file, testcase=self.tc)
 
@@ -1758,15 +1756,12 @@ class TestRerun(test.TestCase):
         self.user.groups.add(self.group)
         env = create_test_environment(
             owner=self.group, pipeline='pipeline-env')
-        tc = TestCase.objects.create(
-            name='nic_single_core_perf',
-            description_url='http://git.dpdk.org/tools/dts/tree/test_plans/nic_single_core_perf_test_plan.rst?h=next',
-            pipeline='pipeline-tc')
+        tc = create_test_case(pipeline='pipeline-tc')
         Measurement.objects.create(name='throughput', unit='Mpps',
                                    higher_is_better=True,
                                    environment=env,
                                    testcase=tc)
-        self.tr = create_test_run(env)
+        self.tr = create_test_run(env, testcase=tc)
         TestResult.objects.create(result='PASS', difference=-0.002,
                                   measurement=env.measurements.first(),
                                   run=self.tr)

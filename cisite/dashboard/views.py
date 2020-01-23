@@ -559,38 +559,16 @@ class Tarball(BaseDashboardView):
         return runs
 
     def populate_test_cases(self, s, runs):
-        # Legacy test case results check. Set test case to test run.
-        for run_url, run in runs.items():
-            if run['testcase']:
-                continue
-            if run['results']:
-                # If the test run does not have a test case, check its results.
-                # Assume that there is only one testcase per run
-                measurement = run['results'][0]['measurement']
-                run['testcase'] = measurement['testcase']
-            elif run['log_upload_file']:
-                # If there are no results, then it means there was a test
-                # harness error. Unfortunately, there is no test case attached
-                # to a test run, only to test results. This may get resolved
-                # when Bug 254 is resolved (since a test case would be attached
-                # to a test run)
-                run['testcase'] = 'other'
-
         # for each test case, add all runs
         test_cases = {}
 
         for run_url, run in runs.items():
-            if not run['testcase']:
-                continue
-
             tc = run['testcase']
             if tc not in test_cases:
-                test_cases[tc] = {}
-                if tc == 'other':
-                    test_cases[tc]['testcase'] = {'name': 'other'}
-                else:
-                    test_cases[tc]['testcase'] = s.get(tc).json()
-                test_cases[tc]['runs'] = []
+                test_cases[tc] = {
+                    'testcase': s.get(tc).json(),
+                    'runs': []
+                }
 
             test_cases[tc]['runs'].append(run)
 
