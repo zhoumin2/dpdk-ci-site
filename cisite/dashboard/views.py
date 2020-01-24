@@ -191,8 +191,6 @@ class BaseDashboardView(TemplateView):
         """Pass in the patchset to apply a range."""
         self.set_cache_request(patchset, session, 'result_summary', 300)
         summary = patchset['result_summary']
-        if add_range:
-            summary['incomplete_range'] = range(summary['incomplete'])
         for tc_id in summary['testcases']:
             tc = summary['testcases'][tc_id]
             if add_range:

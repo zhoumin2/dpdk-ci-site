@@ -245,7 +245,7 @@ class PatchSet(models.Model, CommitURLMixin, StatusMixin):
     def result_summary(self):
         """Return the number of passed environments."""
         if self.has_error or not self.tarballs.exists():
-            ret = {'incomplete': 0, 'testcases': {}}
+            ret = {'testcases': {}}
         else:
             ret = self.last_tarball.result_summary
         ret['status'] = self.status
@@ -328,9 +328,6 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
         if not self.runs_exists:
             return "Waiting"
 
-        if self.result_summary['incomplete']:
-            return "Incomplete"
-
         for tc in self.result_summary['testcases']:
             if self.result_summary['testcases'][tc]['failed']:
                 return "Possible Regression"
@@ -352,15 +349,13 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
 
     @cached_property
     def result_summary(self):
-        """Return a dict of passed, failed, and incomplete test runs.
-
+        """
         These are separated by test case. There is a key for each testcase and
         an incomplete key for each environment that doesn't have a test run.
 
         For example:
-        // 4 environments, 2 testcases
+        // 4 environments (2 incomplete), 2 testcases
         result_summary = {
-            incomplete: 2,
             testcases: {
                 testcase1: {
                     passed: 1,
@@ -375,78 +370,61 @@ class Tarball(models.Model, CommitURLMixin, StatusMixin):
             }
         }
 
-        For the Incomplete status, we consider only environments created since
-        the tarball was created (falling back to the patchset submission date
-        for old tarballs which didn't have a date tied to them). Environments
-        with a null creation date are considered to have always been active.
+        Since the result summary is meant to be public, only environments
+        that have their "live_since" key set are considered in these results.
+        This allows for members to tweak their system until they are confident
+        of showing results (date vs live_since). This is not related to
+        "public" environments. Public environments show up in the detail page,
+        so results can be attributed to a specific environment. The result
+        summary is not supposed to attribute results to a specific environment.
+        This allows showing at least something on the list and detail pages
+        until members are comfortable showing their numerical results.
 
-        For the Possible Regression status, we consider only active
-        environments that were live at the time the test run was completed
-        (note that the reference time is *not* the same as for Incomplete).
-        If the live_since value is null, then we also ignore failures because
-        we presume that the environment is not yet live. Test results with
-        no test runs are also considered a failure, as something may have gone
-        wrong.
+        This also allows tarballs older than live_since to update the result
+        summary if runs newer than live_since are created.
         """
         result_summary = {
-            'incomplete': 0,
             'testcases': {}
         }
 
         if not self.runs_exists:
             return result_summary
 
-        date = getattr(self, 'date', None)
-        if not date and self.patchset:
-            date = self.patchset.completed_timestamp
+        # Only keep the first env + test run of each test case
+        envs_test_cases = set()
 
-        query = Q(date__isnull=True)
-        if date:
-            query |= Q(date__lte=date)
-
-        Environment = apps.get_model('results', 'Environment')
-        active_envs = Environment.objects.filter(
-            query, successor__isnull=True, live_since__isnull=False)
-
-        for env in active_envs:
-            tr_qs = env.all_runs\
-                .filter(tarball__id=self.id)\
-                .order_by('-timestamp')
-            if not tr_qs.exists():
-                result_summary['incomplete'] += 1
+        # order by timestamp to use the latest runs
+        for tr in self.runs.order_by('-timestamp'):
+            env = tr.environment
+            if env.live_since is None or env.live_since >= tr.timestamp:
                 continue
 
-            # Only keep the first test run of each test case
-            test_case = set()
+            testcase = tr.testcase.id
+            env_tc_id = f'{env.id}:{testcase}'
 
-            for tr in tr_qs:
-                if env.live_since >= tr.timestamp:
-                    continue
+            if env_tc_id in envs_test_cases:
+                continue
 
-                testcase = tr.testcase.id
-
-                if testcase in test_case:
-                    continue
-
-                if testcase not in result_summary['testcases']:
-                    result_summary['testcases'][testcase] = {
-                        'failed': 0,
-                        'passed': 0,
-                        'indeterminate': 0,
-                        'testcase': {
-                            'name': tr.testcase.name,
-                            'description_url': tr.testcase.description_url
-                        }
+            if testcase not in result_summary['testcases']:
+                result_summary['testcases'][testcase] = {
+                    'failed': 0,
+                    'passed': 0,
+                    'indeterminate': 0,
+                    'testcase': {
+                        'name': tr.testcase.name,
+                        'description_url': tr.testcase.description_url
                     }
+                }
 
-                if tr.results.filter(result="FAIL").exists():
-                    result_summary['testcases'][testcase]['failed'] += 1
-                elif tr.results.filter(result="PASS").exists():
-                    result_summary['testcases'][testcase]['passed'] += 1
-                else:
-                    result_summary['testcases'][testcase]['indeterminate'] += 1
+            if tr.results.filter(result="FAIL").exists():
+                result_summary['testcases'][testcase]['failed'] += 1
+            elif tr.results.filter(result="PASS").exists():
+                result_summary['testcases'][testcase]['passed'] += 1
+            else:
+                result_summary['testcases'][testcase]['indeterminate'] += 1
 
-                test_case.add(testcase)
+            envs_test_cases.add(env_tc_id)
+
         return result_summary
 
     @cached_property

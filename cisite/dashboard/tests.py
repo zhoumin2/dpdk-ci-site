@@ -160,7 +160,6 @@ class BaseTestCase(StaticLiveServerTestCase):
                 'status': 'Pass',
                 'status_class': 'success',
                 'status_tooltip': 'Pass',
-                'incomplete': 0,
                 'testcases': {}
             })
         with open('cisite/request_mapping.json') as f:

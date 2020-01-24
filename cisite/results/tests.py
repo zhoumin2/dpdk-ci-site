@@ -756,30 +756,13 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                patchset=self.test_ps)
         self.assertEqual(self.test_ps.status, 'Waiting')
 
-    def test_status_incomplete(self):
-        """Verify that status is Incomplete where needed."""
-        run = self.create_test_run(self.env1)
-        TestResult.objects.create(result='PASS', difference=-0.002,
-                                  measurement=self.env1.measurements.first(),
-                                  run=run)
-        run.tarball.patchset = self.test_ps
-        run.tarball.save()
-        self.assertEqual(self.test_ps.status, 'Incomplete')
-
-    def test_status_incomplete_null_date(self):
-        """Verify that status is Incomplete if environment date is null."""
-        self.env2.date = None
-        self.env2.save()
-        run = self.create_test_run(self.env1)
-        TestResult.objects.create(result='PASS', difference=-0.002,
-                                  measurement=self.env1.measurements.first(),
-                                  run=run)
-        run.tarball.patchset = self.test_ps
-        run.tarball.save()
-        self.assertEqual(self.test_ps.status, 'Incomplete')
-
     def test_status_ignore_incomplete(self):
-        """Test that adding a new environment does not trigger Incomplete."""
+        """Test that adding a new environment does not trigger Incomplete.
+
+        This is a legacy test when we used to use the Incomplete status.
+        I kept this test in case a similar status is added back so this
+        test can trip any issues.
+        """
         run = self.create_test_run(self.env1)
         run.tarball.patchset = self.test_ps
         run.tarball.save()
@@ -897,27 +880,6 @@ class PatchSetModelTestCase(test.TransactionTestCase):
                                   measurement=self.env2.measurements.first(),
                                   run=run)
         self.assertEqual(self.test_ps.status, 'Possible Regression')
-
-    def test_not_incomplete(self):
-        """
-        Verify that the status is Pass instead of Incomplete if live_since is
-        None for an environment.
-        """
-        run = self.create_test_run(self.env1)
-        run.tarball.patchset = self.test_ps
-        run.tarball.save()
-        TestResult.objects.create(
-            result='PASS', difference=-0.002,
-            measurement=self.env1.measurements.first(), run=run)
-        run = self.create_test_run(self.env2, tarball=run.tarball)
-        TestResult.objects.create(
-            result='PASS', difference=-0.021,
-            measurement=self.env2.measurements.first(), run=run)
-        env = create_test_environment(date=self.env_date)
-        Measurement.objects.create(
-            name='throughput', unit='Mpps', higher_is_better=True,
-            environment=env, testcase=self.tc)
-        self.assertEqual(self.test_ps.status, 'Pass')
 
 
 class OwnerTestCase(test.TestCase):

@@ -7,19 +7,9 @@
   </small>
 </h2>
 
-{% if obj.result_summary.incomplete or obj.result_summary.testcases.values %}
+{% if obj.result_summary.testcases.values %}
   <div class="mb-3 card">
     <div class="card-body">
-      {% if obj.result_summary.incomplete %}
-        <div title="{{ obj.result_summary.incomplete }} incomplete environments" class="text-nowrap d-inline-block mr-4">
-          Incomplete<br>
-
-          {% for i in obj.result_summary.incomplete_range %}
-            <span class="text-secondary fas fa-circle"></span>
-          {% endfor %}
-        </div>
-      {% endif %}
-
       {% for tc in obj.result_summary.testcases.values %}
         <div title="{{ tc.testcase.name }}: {{ tc.passed }} passed, {{ tc.failed }} failed" class="text-nowrap d-inline-block mr-4">
           {% if tc.testcase.description_url %}
