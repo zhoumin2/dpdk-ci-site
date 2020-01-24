@@ -7,7 +7,6 @@ Render views for results database objects.
 import abc
 import uuid
 from collections import OrderedDict
-from functools import partial
 from logging import getLogger
 from urllib.parse import urljoin
 
@@ -16,9 +15,8 @@ from django.conf import settings
 from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_list_or_404, redirect
 from django.urls import reverse
 from django_auth_ldap.backend import LDAPBackend
@@ -180,7 +178,7 @@ class PatchSetViewSet(ReturnDashboardMixin, viewsets.ModelViewSet):
     @action(detail=True)
     def result_summary(self, request, pk=None):
         ps = self.get_object()
-        return JsonResponse(ps.result_summary)
+        return Response(ps.result_summary)
 
 
 class BranchViewSet(viewsets.ModelViewSet):
@@ -252,7 +250,7 @@ class TarballViewSet(ReturnDashboardMixin, viewsets.ModelViewSet):
     @action(detail=True)
     def result_summary(self, request, pk=None):
         tb = self.get_object()
-        return JsonResponse(tb.result_summary_status)
+        return Response(tb.result_summary_status)
 
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
