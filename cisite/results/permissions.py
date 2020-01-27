@@ -34,7 +34,7 @@ class DjangoObjectPermissionsOrAnonReadOnly(DjangoObjectPermissions):
     an equivalent did not exist.
 
     This also makes it so that if anonymous users can view the object,
-    then any logged in user chan view the object.
+    then any logged in user can view the object.
     """
 
     authenticated_users_only = False

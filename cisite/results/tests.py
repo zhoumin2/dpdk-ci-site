@@ -192,6 +192,7 @@ class EnvironmentSerializerTestCase(test.TestCase, SerializerAssertionMixin):
             hardware_description=None,
             pipeline=None,
             name='Vendor Model S 10000 Mbps',
+            public=False,
             measurements=[dict(name="throughput_large_queue",
                                unit="Mpps",
                                higher_is_better=True,

@@ -203,6 +203,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
     measurements = MeasurementSerializer(many=True)
     contact_policy = ContactPolicySerializer()
     contacts = SubscriptionSerializer(many=True, read_only=True)
+    public = serializers.SerializerMethodField()
 
     class Meta:
         """Specify how to serialize environment."""
@@ -220,7 +221,7 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                   'compiler_version', 'bios_version', 'os_distro',
                   'measurements', 'contacts', 'contact_policy',
                   'predecessor', 'successor', 'date', 'live_since',
-                  'hardware_description', 'pipeline', 'name')
+                  'hardware_description', 'pipeline', 'name', 'public')
         read_only_fields = ('contacts', 'predecessor', 'successor',
                             'date')
 
@@ -386,6 +387,9 @@ class EnvironmentSerializer(serializers.HyperlinkedModelSerializer,
                 Parameter.objects.create(measurement=measurement,
                                          **parameter_data)
         return environment
+
+    def get_public(self, obj):
+        return 'view_environment' in get_perms(get_anonymous_user(), obj)
 
 
 class TestResultSerializer(serializers.HyperlinkedModelSerializer):
