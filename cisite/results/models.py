@@ -128,11 +128,6 @@ class StatusMixin:
             'class': 'warning',
             'tooltip': 'The patch series could not be built',
         },
-        'Incomplete': {
-            'class': 'warning',
-            'tooltip': 'Not all test cases have been completed for this '
-                       'patch series',
-        },
         'Waiting': {
             'class': 'primary',
             'tooltip': 'A tarball has been generated but no test results '

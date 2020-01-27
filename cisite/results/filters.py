@@ -31,7 +31,7 @@ class EnvironmentFilter(FilterSet):
         """Set up model association."""
 
         model = Environment
-        fields = ()
+        fields = ('inventory_id',)
 
     def active_filter(self, queryset, name, value):
         """Filter based on whether this environment is active."""
