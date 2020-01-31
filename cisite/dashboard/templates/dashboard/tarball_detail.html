@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 
 {% block breadcrumb_items %}
@@ -8,14 +8,14 @@
 {% endblock %}
 
 {% block content %}
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 
 <h1>{{ title }}</h1>
 
 <dl class="row">
   <dt class="col-sm-3">Tarball Info</dt>
   <dd class="col-sm-9">
-    {% include "commit.html" with obj=tarball %}
+    {% include "dashboard/commit.html" with obj=tarball %}
   </dd>
 
   {% if tarball.date %}
@@ -39,9 +39,9 @@
   {% endif %}
 </dl>
 
-{% include 'result_summary.html' with obj=tarball %}
-{% include 'environment_results.html' %}
-{% include 'disclaimers.html' %}
+{% include 'dashboard/result_summary.html' with obj=tarball %}
+{% include 'dashboard/environment_results.html' %}
+{% include 'dashboard/disclaimers.html' %}
 {% endblock %}
 
 {% block js %}

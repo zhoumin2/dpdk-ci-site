@@ -1,4 +1,4 @@
-{% extends "preferences/base.html" %}
+{% extends "dashboard/preferences/base.html" %}
 {% load static %}
 
 {% block preference %}
@@ -7,7 +7,7 @@
   or create a new environment, please contact us about what you'd like to be changed.
   It may require creating a new, successor environment, to keep old and new results reproducible.
 </p>
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 {% for env in environments %}
   <div class="card mb-3">
     <h3 class="card-header">{{ env.name }}</h3>

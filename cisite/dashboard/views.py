@@ -386,7 +386,7 @@ class PatchSet(BaseDashboardView):
 class PatchSetList(PatchSet):
     """Display the list of patches on the dashboard."""
 
-    template_name = 'patchset_list.html'
+    template_name = 'dashboard/patchset_list.html'
 
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
@@ -712,7 +712,7 @@ class Tarball(BaseDashboardView):
 class PatchSetDetail(Tarball, PatchSet):
     """Display the details for a particular patchset on the dashboard."""
 
-    template_name = 'patchset_detail.html'
+    template_name = 'dashboard/patchset_detail.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
@@ -772,7 +772,7 @@ class PatchSetDetail(Tarball, PatchSet):
 class TarballList(Tarball):
     """Display the list of master comparisons on the dashboard."""
 
-    template_name = 'tarball_list.html'
+    template_name = 'dashboard/tarball_list.html'
 
     def get_context_data(self, **kwargs):
         """Return extra data for the dashboard template."""
@@ -850,7 +850,7 @@ class TarballRow(Tarball):
 class TarballDetail(Tarball):
     """Display the details for a particular patchset on the dashboard."""
 
-    template_name = 'tarball_detail.html'
+    template_name = 'dashboard/tarball_detail.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the tarball for the test runs."""
@@ -911,7 +911,7 @@ class Subscriptions(BasePreferencesView):
     DELETE, PATCH, and POST are proxy subscription calls to REST API.
     """
 
-    template_name = 'preferences/subscriptions.html'
+    template_name = 'dashboard/preferences/subscriptions.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -1052,7 +1052,7 @@ class PasswordChangeDoneView(BasePreferencesView, auth_views.PasswordChangeDoneV
 class RESTAPIPreferences(BasePreferencesView):
     """Show REST API preferences."""
 
-    template_name = 'preferences/rest_api_preferences.html'
+    template_name = 'dashboard/preferences/rest_api_preferences.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -1087,7 +1087,7 @@ class RESTAPIPreferences(BasePreferencesView):
 class AboutView(BaseDashboardView):
     """Display the about page."""
 
-    template_name = 'about.html'
+    template_name = 'dashboard/about.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
@@ -1157,7 +1157,7 @@ class Rerun(LoginRequiredMixin, View):
 class StatsView(BaseDashboardView):
     """Display the graph page."""
 
-    template_name = 'stats.html'
+    template_name = 'dashboard/stats.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
@@ -1214,7 +1214,7 @@ class Build(LoginRequiredMixin, View):
 class CIStatusView(BaseDashboardView):
     """Display the CI status page."""
 
-    template_name = 'status.html'
+    template_name = 'dashboard/status.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1244,7 +1244,7 @@ class CIStatusView(BaseDashboardView):
 class ManageUsers(BasePreferencesView):
     """Manage users page."""
 
-    template_name = 'preferences/manage_users.html'
+    template_name = 'dashboard/preferences/manage_users.html'
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the available preferences."""
@@ -1317,7 +1317,7 @@ class ManageUsersAdd(LoginRequiredMixin, View):
 class ManageEnvironments(FormView, BasePreferencesView):
     """Manage environments page."""
 
-    template_name = 'preferences/manage_environments.html'
+    template_name = 'dashboard/preferences/manage_environments.html'
     form_class = EnvironmentForm
     success_url = '.'
 

@@ -1,9 +1,9 @@
-{% extends "preferences/base.html" %}
+{% extends "dashboard/preferences/base.html" %}
 {% load static %}
 
 {% block preference %}
 <p>As a primary contact, you are able to manage users in your company to be able to view private results.</p>
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 {% if group_users %}
   {% for group, users in group_users.items %}
     <div class="card mb-3">

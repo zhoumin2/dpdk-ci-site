@@ -1,4 +1,4 @@
-{% extends "preferences/base.html" %}
+{% extends "dashboard/preferences/base.html" %}
 {% load static %}
 
 {% block preference %}
@@ -18,5 +18,5 @@
   {% csrf_token %}
   <button type="submit" class="btn btn-secondary">Generate</button>
 </form>
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 {% endblock %}

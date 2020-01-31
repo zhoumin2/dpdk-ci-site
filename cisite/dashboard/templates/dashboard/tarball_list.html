@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 {% load templatehelpers %}
 
@@ -9,7 +9,7 @@
   Possible Regression, and Pass. NIC vendors may log in to view detailed
   performance results for their hardware.
 </p>
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 <div class="dropdown mb-3 d-flex justify-content-end">
   <button type="button" class="btn btn-secondary dropdown-toggle" id="withPatchsetFilter" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     Showing: {{ shown.text }} tarballs
@@ -29,7 +29,7 @@
        data-admin="{{ request.user.is_superuser }}"
   ></div>
 </div>
-{% include 'pagination.html' %}
+{% include 'dashboard/pagination.html' %}
 {% endblock %}
 
 {% block js %}

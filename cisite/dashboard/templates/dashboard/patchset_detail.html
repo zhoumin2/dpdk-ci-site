@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 
 {% block breadcrumb_items %}
@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-{% include "messages.html" %}
+{% include "dashboard/messages.html" %}
 <h1>
   Patch set {{ patchset.patchwork_range_str|safe }}
   {% if patchset.series.version > 1 %}
@@ -32,9 +32,9 @@
     <dt class="col-sm-3">Applied on</dt>
     <dd class="col-sm-9">
       {% if tarball %}
-        {% include "commit.html" with obj=tarball %}
+        {% include "dashboard/commit.html" with obj=tarball %}
       {% elif patchset.commit_id %}
-        {% include "commit.html" with obj=patchset %}
+        {% include "dashboard/commit.html" with obj=patchset %}
       {% endif %}
     </dd>
   {% endif %}
@@ -58,7 +58,7 @@
   <li><a href="https://patches.dpdk.org/patch/{{ p.id }}">{{ p.name }}</a></li>
   {% endfor %}
 </ul>
-{% include 'result_summary.html' with obj=patchset %}
+{% include 'dashboard/result_summary.html' with obj=patchset %}
 {% if user.is_authenticated %}
 <form class="form-inline mb-3" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
@@ -74,9 +74,9 @@
 {% if patchset.has_error and patchset.build_log %}
 <pre class="bg-dark text-light p-2">{{ patchset.build_log }}</pre>
 {% else %}
-{% include 'environment_results.html' %}
+{% include 'dashboard/environment_results.html' %}
 {% endif %}
-{% include 'disclaimers.html' %}
+{% include 'dashboard/disclaimers.html' %}
 {% endblock %}
 
 {% block js %}

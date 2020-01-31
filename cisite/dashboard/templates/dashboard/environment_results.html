@@ -107,7 +107,7 @@
               <div class="tab-content">
                 {% for r in tc.runs %}
                 <div class="tab-pane fade{{ forloop.first|yesno:' show active,' }}" id="run-{{ r.id }}" role="tabpanel" aria-labelledby="run-{{ r.id }}-tab">
-                  {% include "test_run.html" %}
+                  {% include "dashboard/test_run.html" %}
                 </div>
                 {% endfor %}
               </div>
@@ -124,7 +124,7 @@
             </h4>
             <div class="card-body">
               {% with tc.runs|first as r %}
-                {% include "test_run.html" %}
+                {% include "dashboard/test_run.html" %}
               {% endwith %}
             </div>
           </div>
