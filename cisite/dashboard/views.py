@@ -358,6 +358,10 @@ class PatchSet(BaseDashboardView):
         series['patchwork_range_str'] = self.patchwork_range_str(series)
         self.set_patchset_submitter(series)
 
+        series['date'] = dateformat.format(
+            parse_datetime(series['date']),
+            settings.DATETIME_FORMAT)
+
         # Remove not needed things from series -- saves some bandwidth
         series.pop('project', None)
         series.pop('patches', None)

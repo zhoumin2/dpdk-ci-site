@@ -35,24 +35,28 @@ class TarballTable extends Row {
 
                 {/* Avoid changing font color as detail_url gets populated */}
                 {t.id &&
-                  <div className="col-sm text-sm-center">
+                  <div className="col-sm text-sm-right text-md-center">
                     Tarball {t.id}
                   </div>
                 }
 
-                <small className="col-sm text-sm-right">
-                  {t.branch &&
-                    <span className="text-muted" title="Repo/Branch tarball was created from">{t.branch.name}</span>
-                  }
-                </small>
+                {t.date &&
+                  <div className="col-md text-md-right">
+                    <small title="Tarball created date">
+                      {t.date}
+                    </small>
+                  </div>
+                }
               </div>
 
               <div>
-                <small className="d-sm-flex justify-content-between mt-1">
+                <small className="d-sm-flex justify-content-between my-1">
                   <div><code title="Tarball created from commit">{t.commit_id}</code></div>
 
-                  {(t.date &&
-                    <div><span title="Tarball created date">{t.date}</span></div>
+                  {(t.branch &&
+                    <span className="text-muted" title="Repo/Branch tarball was created from">
+                      {t.branch.name}
+                    </span>
                   ) || (
                     <div class="d-inline-block">
                       {/* Avoid changing height of row when tarball gets populated */}

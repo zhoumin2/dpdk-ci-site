@@ -44,10 +44,16 @@ class DashboardTable extends Row {
                       )}
                     </div>
                   }
+
+                  {ps.series &&
+                    <div className="col text-md-right">
+                      <small title="Date submitted">{ps.series.date}</small>
+                    </div>
+                  }
                 </div>
 
                 {(ps.series &&
-                  <div className="d-sm-flex justify-content-between mt-1 mb-1">
+                  <div className="d-sm-flex justify-content-between my-1">
                     {ps.series.name}
                     <div className="text-sm-right text-muted">
                       <small>{ps.series.submitter}</small>
