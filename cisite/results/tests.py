@@ -33,7 +33,7 @@ from .models import PatchSet, ContactPolicy, Environment, \
     Subscription, UserProfile, Branch, \
     upload_model_path, upload_model_path_test_run
 from .serializers import EnvironmentSerializer, \
-    SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
+    SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField, TestResultSerializer
 from .urls import upload_model_path as upload_model_path_url, \
     upload_model_path_test_run as upload_model_path_test_run_url
 from .views import HardwareDescriptionDownloadView, TestRunLogDownloadView
@@ -1090,6 +1090,7 @@ class TestResultTestCase(test.TestCase):
                 tarball_url='http://host.invalid/dpdk.tar.gz')
         grp = Group.objects.create(name='group')
         cls.env1 = create_test_environment(owner=grp)
+        cls.env1.set_public()
         ContactPolicy.objects.create(environment=cls.env1)
         cls.m1 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
@@ -1099,18 +1100,60 @@ class TestResultTestCase(test.TestCase):
         cls.m2 = Measurement.objects.create(name="throughput",
                 unit="Gbps", higher_is_better=True,
                 environment=cls.env2, testcase=cls.tc)
+        cls.user = User.objects.create_user('joevendor',
+                                            'joe@example.com', 'AbCdEfGh')
+        cls.user.groups.add(grp)
+
+    def create_run(self):
+        run = TestRun.objects.create(
+            timestamp=now(), log_output_file='/foo/bar', tarball=self.test_tb,
+            environment=self.env1, testcase=self.tc)
+        result = TestResult.objects.create(
+            result="PASS", difference=-1.0, measurement=self.m1,
+            expected_value=1, run=run)
+        return run, result
 
     def test_different_envs_fails(self):
-        cls = self.__class__
-        run = TestRun.objects.create(
-            timestamp=now(), log_output_file='/foo/bar', tarball=cls.test_tb,
-            environment=cls.env1, testcase=cls.tc)
-        TestResult.objects.create(result="PASS", difference=-1.0,
-                                  measurement=cls.m1, run=run)
+        """Make sure measure env and test run env raise error if different."""
+        run, result = self.create_run()
         with self.assertRaises(ValidationError):
             res2 = TestResult.objects.create(result="PASS", difference=1.0,
-                                             measurement=cls.m2, run=run)
+                                             measurement=self.m2, run=run)
             res2.full_clean()
+
+    def test_valid_user(self):
+        """Make sure the valid user can see the expected result."""
+        run, result = self.create_run()
+
+        self.client.login(username=self.user.username, password='AbCdEfGh')
+        run_url = reverse('testrun-detail', args=[run.id], request=None)
+        resp = self.client.get(run_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.json()['results'][0]['expected_value'],
+                         result.expected_value)
+
+    def test_other_user(self):
+        """Check a user of a different group can't see the expected result."""
+        user = User.objects.create_user(
+            'joevendor2', 'joe@example.com', 'AbCdEfGh')
+        group = Group.objects.create(name='TestGroup2')
+        user.groups.add(group)
+
+        run, result = self.create_run()
+
+        self.client.login(username=user.username, password='AbCdEfGh')
+        run_url = reverse('testrun-detail', args=[run.id], request=None)
+        resp = self.client.get(run_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIsNone(resp.json()['results'][0]['expected_value'])
+
+    def test_anonymous(self):
+        """Make sure anonymous users can't see the expected result"""
+        run, result = self.create_run()
+        run_url = reverse('testrun-detail', args=[run.id], request=None)
+        resp = self.client.get(run_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIsNone(resp.json()['results'][0]['expected_value'])
 
 
 class MeasurementTestCase(test.TestCase):

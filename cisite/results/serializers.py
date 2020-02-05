@@ -396,6 +396,7 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize test result objects."""
 
     id = serializers.IntegerField(required=False)
+    expected_value = serializers.SerializerMethodField()
 
     class Meta:
         """Specify how to serialize test results."""
@@ -404,6 +405,16 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'result', 'difference', 'expected_value',
                   'measurement', 'result_class')
         read_only_fields = ('result_class',)
+
+    def get_expected_value(self, obj):
+        """
+        Only privileged users can see what the expected value is.
+        """
+        request = self.context.get('request')
+        # Since view_* is used for anonymous access, just use delete_*
+        if request and 'delete_testresult' in get_perms(request.user, obj):
+            return obj.expected_value
+        return None
 
 
 class TestResultSerializerGet(TestResultSerializer):
