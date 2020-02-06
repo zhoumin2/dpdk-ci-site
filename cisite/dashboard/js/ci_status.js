@@ -1,4 +1,5 @@
 import { Component, h, render } from 'preact'
+import { errorPopup } from './utils'
 
 export class CIStatus extends Component {
   constructor (props) {
@@ -23,7 +24,7 @@ export class CIStatus extends Component {
       }, () => {
         this.updateJobs(json)
       })
-    })
+    }).catch(errorPopup)
   }
 
   updateJobs (jobs) {
@@ -37,7 +38,7 @@ export class CIStatus extends Component {
           state.jobs[index] = json
           return state
         })
-      })
+      }).catch(errorPopup)
     })
   }
 

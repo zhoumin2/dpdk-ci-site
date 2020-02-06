@@ -30,7 +30,7 @@ export class Subscriptions extends Component {
         })
         return state
       })
-    })
+    }).catch(errorPopup)
   }
 
   handleSubscriptionCheckbox (e, index) {

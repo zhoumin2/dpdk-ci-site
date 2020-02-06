@@ -1,4 +1,5 @@
 import { Component } from 'preact'
+import { isPageChange } from './utils'
 
 export class Row extends Component {
   /**
@@ -34,16 +35,6 @@ export class Row extends Component {
   componentDidMount () {
     const tableSize = this.linkEnd - this.linkStart
     this.getAndAddRow(this.linkStart, tableSize, this.shown)
-  }
-
-  isPageChange (e) {
-    // Happens when changing pages during a fetch. Ignore it.
-    // This can happen when a page is not fully rendered but a request to
-    // a new page is made.
-    return (
-      e.message === 'NetworkError when attempting to fetch resource.' ||
-      e.message === 'Failed to fetch'
-    )
   }
 
   setRowState (to, rows) {
@@ -82,7 +73,7 @@ export class Row extends Component {
       })
     }).catch(e => {
       let text = `Error getting patchwork information: ${e}`
-      if (!this.isPageChange(e)) {
+      if (!isPageChange(e)) {
         logError(e)
       } else {
         text = ''
@@ -114,7 +105,7 @@ export class Row extends Component {
         return { rows: state.rows }
       })
     }).catch(e => {
-      if (!this.isPageChange(e)) {
+      if (!isPageChange(e)) {
         logError(e)
       }
 
@@ -166,7 +157,7 @@ export class Row extends Component {
       }
     }).catch(e => {
       let text = `Error getting information: ${e}`
-      if (this.isPageChange(e)) {
+      if (isPageChange(e)) {
         text = ''
       } else {
         logError(e)
