@@ -9,6 +9,10 @@ module.exports = merge(common, {
   mode: 'production',
   devtool: 'source-map',
   plugins: [
-    new webpack.BannerPlugin(banner)
+    new webpack.BannerPlugin({
+      banner: banner,
+      entryOnly: true,
+      exclude: 'vendor.bundle.js',
+    })
   ]
 });

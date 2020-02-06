@@ -5,7 +5,8 @@ module.exports = {
   entry: path.resolve(__dirname, '../cisite/dashboard/js/main.js'),
   output: {
     path: path.resolve(__dirname, '../cisite/dashboard/static/build'),
-    filename: 'app.bundle.js'
+    filename: 'app.bundle.js',
+    chunkFilename: 'vendor.bundle.js',
   },
   module: {
     rules: [
@@ -34,5 +35,10 @@ module.exports = {
         }
       }
     ]
-  }
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    },
+  },
 };
