@@ -406,6 +406,12 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
                   'measurement', 'result_class')
         read_only_fields = ('result_class',)
 
+
+class TestResultSerializerGet(TestResultSerializer):
+    """Serialize test result objects."""
+
+    measurement = MeasurementSerializer()
+
     def get_expected_value(self, obj):
         """
         Only privileged users can see what the expected value is.
@@ -415,12 +421,6 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
         if request and 'delete_testresult' in get_perms(request.user, obj):
             return obj.expected_value
         return None
-
-
-class TestResultSerializerGet(TestResultSerializer):
-    """Serialize test result objects."""
-
-    measurement = MeasurementSerializer()
 
 
 class TestRunSerializer(serializers.HyperlinkedModelSerializer,
