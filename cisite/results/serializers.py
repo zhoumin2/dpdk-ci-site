@@ -396,7 +396,6 @@ class TestResultSerializer(serializers.HyperlinkedModelSerializer):
     """Serialize test result objects."""
 
     id = serializers.IntegerField(required=False)
-    expected_value = serializers.SerializerMethodField()
 
     class Meta:
         """Specify how to serialize test results."""
@@ -411,6 +410,7 @@ class TestResultSerializerGet(TestResultSerializer):
     """Serialize test result objects."""
 
     measurement = MeasurementSerializer()
+    expected_value = serializers.SerializerMethodField()
 
     def get_expected_value(self, obj):
         """
