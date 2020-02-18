@@ -714,6 +714,37 @@ class PatchSetDetail(Tarball, PatchSet):
 
     template_name = 'dashboard/patchset_detail.html'
 
+    def get(self, *args, **kwargs):
+        environment = self.request.GET.get('environments')
+        if environment:
+            with api_session(self.request) as s:
+                api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                         f'patchsets/{self.kwargs["id"]}/'))
+                if api_resp.status_code == HTTPStatus.NOT_FOUND:
+                    raise Http404
+                context = {'patchset': api_resp.json()}
+                context['tarball'] = s.get(context['patchset']['tarballs'][-1]).json()
+                self.add_testcases(context, s)
+                self.populate_tarball_context(context, s)
+
+                # Used for rebuilds
+                if self.request.user.is_authenticated:
+                    api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
+                    api_resp.raise_for_status()
+                    context['branches'] = api_resp.json()['results']
+            context.pop("patchset", None)
+            context.pop("tarball", None)
+            context.pop("branches", None)
+            for env in context["environments"]:
+                environment = context["environments"][env]
+                for testcase in environment["testcases"]:
+                    tc = environment["testcases"][testcase]
+                    for run in tc["runs"]:
+                        run.pop("environment", None)
+            context["csrf"] = csrf.get_token(self.request);
+            return JsonResponse(context)
+        return super().get(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
         context = super().get_context_data(**kwargs)
@@ -766,6 +797,14 @@ class PatchSetDetail(Tarball, PatchSet):
         context['title'] = f'Patch set {context["patchset"]["id"]}'
         context['status_classes'] = text_color_classes(
             context['patchset']['result_summary']['status_class'])
+        evnidlist=[]
+        for env in context["environments"]:
+           environments = context['environments']
+           environment = environments[env]
+           envid = environment['id']
+           evnidlist.append(str(envid))
+        context["env_ids"]=evnidlist
+        context["env_ids"] = ",".join(evnidlist)
         return context
 
 
