@@ -33,7 +33,7 @@ from .models import PatchSet, ContactPolicy, Environment, \
     Subscription, UserProfile, Branch, \
     upload_model_path, upload_model_path_test_run
 from .serializers import EnvironmentSerializer, \
-    SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField, TestResultSerializer
+    SubscriptionSerializer, TestRunSerializer, EnvironmentHyperlinkedField
 from .urls import upload_model_path as upload_model_path_url, \
     upload_model_path_test_run as upload_model_path_test_run_url
 from .views import HardwareDescriptionDownloadView, TestRunLogDownloadView
@@ -997,13 +997,13 @@ class EnvironmentTestCase(test.TestCase):
             self.user.has_perm('results.add_measurement'))
         self.assertTrue(
             self.user.has_perm('results.view_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
         self.assertTrue(
             self.user.has_perm('results.change_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
         self.assertTrue(
             self.user.has_perm('results.delete_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
 
     def test_add_test_run_removes_permissions(self):
         """Verify that adding a test run removes change permission.
@@ -1027,13 +1027,13 @@ class EnvironmentTestCase(test.TestCase):
             self.user.has_perm('results.delete_environment', env))
         self.assertTrue(
             self.user.has_perm('results.view_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
         self.assertFalse(
             self.user.has_perm('results.change_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
         self.assertFalse(
             self.user.has_perm('results.delete_measurement',
-                                         env.measurements.first()))
+                               env.measurements.first()))
 
     def test_clone_works(self):
         """Verify that the clone() method works."""
@@ -1065,19 +1065,15 @@ class EnvironmentTestCase(test.TestCase):
         self.assertTrue(
             self.user.has_perm('results.view_environment', new_env))
         self.assertTrue(
-            self.user.has_perm('results.change_environment',
-                                         new_env))
+            self.user.has_perm('results.change_environment', new_env))
         self.assertTrue(
-            self.user.has_perm('results.delete_environment',
-                                         new_env))
+            self.user.has_perm('results.delete_environment', new_env))
         self.assertTrue(
             self.user.has_perm('results.view_environment', old_env))
         self.assertFalse(
-            self.user.has_perm('results.change_environment',
-                                         old_env))
+            self.user.has_perm('results.change_environment', old_env))
         self.assertFalse(
-            self.user.has_perm('results.delete_environment',
-                                         old_env))
+            self.user.has_perm('results.delete_environment', old_env))
 
 
 class TestResultTestCase(test.TestCase):

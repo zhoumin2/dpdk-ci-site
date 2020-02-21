@@ -17,7 +17,6 @@ from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import models
-from django.db.models import Q
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
