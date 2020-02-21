@@ -1,5 +1,4 @@
 {% extends "dashboard/preferences/base.html" %}
-{% load static %}
 
 {% block preference %}
   <div class="card">
@@ -8,11 +7,5 @@
 {% endblock %}
 
 {% block js %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha256-R91pD48xW+oHbpJYGn5xR0Q7tMhH4xOrWn1QqMRINtA=" crossorigin="anonymous">
-  <script src="{% url 'js-error-handler-js' %}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha256-yNbKY1y6h2rbVcQtf0b8lq4a+xpktyFc3pSYoGAY1qQ=" crossorigin="anonymous"></script>
-  {# Required polyfills to use the fetch api #}
-  <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.js" integrity="sha256-mgxDAbboBKeoCOtpaU7QhWdgWBGum+8dPxnIjiC97JI=" crossorigin="anonymous"></script>
-  <script src="{% static 'build/vendor.bundle.js' %}"></script>
-  <script src="{% static 'build/app.bundle.js' %}"></script>
+  {% include 'dashboard/js_bundle.html' %}
 {% endblock %}
