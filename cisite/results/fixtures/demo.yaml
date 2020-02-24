@@ -571,363 +571,363 @@
 - model: results.testrun
   pk: 1
   fields: {timestamp: !!timestamp '2018-05-04 16:12:08+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 2
   fields: {timestamp: !!timestamp '2018-05-04 16:13:48+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 3
   fields: {timestamp: !!timestamp '2018-05-04 16:17:23+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 4
   fields: {timestamp: !!timestamp '2018-05-04 16:18:43+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 5
   fields: {timestamp: !!timestamp '2018-05-04 16:23:24+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 6
   fields: {timestamp: !!timestamp '2018-05-04 16:25:18+00:00', log_output_file: null,
-    tarball: 1, environment: 1}
+    tarball: 1, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 7
   fields: {timestamp: !!timestamp '2018-05-09 21:46:41+00:00', log_output_file: null,
-    tarball: 2, environment: 1}
+    tarball: 2, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 8
   fields: {timestamp: !!timestamp '2018-05-10 21:46:35+00:00', log_output_file: null,
-    tarball: 3, environment: 1}
+    tarball: 3, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 9
   fields: {timestamp: !!timestamp '2018-05-11 21:46:34+00:00', log_output_file: null,
-    tarball: 4, environment: 1}
+    tarball: 4, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 10
   fields: {timestamp: !!timestamp '2018-05-12 21:46:32+00:00', log_output_file: null,
-    tarball: 5, environment: 1}
+    tarball: 5, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 11
   fields: {timestamp: !!timestamp '2018-05-13 21:46:35+00:00', log_output_file: null,
-    tarball: 6, environment: 1}
+    tarball: 6, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 12
   fields: {timestamp: !!timestamp '2018-05-14 21:46:34+00:00', log_output_file: null,
-    tarball: 7, environment: 1}
+    tarball: 7, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 13
   fields: {timestamp: !!timestamp '2018-05-15 21:46:33+00:00', log_output_file: null,
-    tarball: 8, environment: 1}
+    tarball: 8, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 14
   fields: {timestamp: !!timestamp '2018-05-17 21:46:34+00:00', log_output_file: null,
-    tarball: 9, environment: 1}
+    tarball: 9, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 15
   fields: {timestamp: !!timestamp '2018-05-18 21:46:33+00:00', log_output_file: null,
-    tarball: 10, environment: 1}
+    tarball: 10, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 16
   fields: {timestamp: !!timestamp '2018-05-21 21:46:32+00:00', log_output_file: null,
-    tarball: 11, environment: 1}
+    tarball: 11, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 17
   fields: {timestamp: !!timestamp '2018-05-22 21:46:31+00:00', log_output_file: null,
-    tarball: 12, environment: 1}
+    tarball: 12, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 18
   fields: {timestamp: !!timestamp '2018-05-23 21:46:35+00:00', log_output_file: null,
-    tarball: 13, environment: 1}
+    tarball: 13, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 19
   fields: {timestamp: !!timestamp '2018-05-24 21:46:34+00:00', log_output_file: null,
-    tarball: 14, environment: 1}
+    tarball: 14, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 20
   fields: {timestamp: !!timestamp '2018-05-25 21:46:32+00:00', log_output_file: null,
-    tarball: 15, environment: 1}
+    tarball: 15, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 21
   fields: {timestamp: !!timestamp '2018-05-28 21:46:32+00:00', log_output_file: null,
-    tarball: 16, environment: 1}
+    tarball: 16, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 22
   fields: {timestamp: !!timestamp '2018-05-29 21:46:35+00:00', log_output_file: null,
-    tarball: 17, environment: 1}
+    tarball: 17, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 23
   fields: {timestamp: !!timestamp '2018-05-30 21:46:34+00:00', log_output_file: null,
-    tarball: 18, environment: 1}
+    tarball: 18, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 24
   fields: {timestamp: !!timestamp '2018-06-01 20:27:42+00:00', log_output_file: null,
-    tarball: 19, environment: 1}
+    tarball: 19, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 25
   fields: {timestamp: !!timestamp '2018-06-01 20:27:43+00:00', log_output_file: null,
-    tarball: 19, environment: 2}
+    tarball: 19, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 26
   fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: null,
-    tarball: 19, environment: 3}
+    tarball: 19, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 27
   fields: {timestamp: !!timestamp '2018-06-01 20:27:44+00:00', log_output_file: null,
-    tarball: 19, environment: 4}
+    tarball: 19, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 28
   fields: {timestamp: !!timestamp '2018-06-01 20:44:08+00:00', log_output_file: null,
-    tarball: 20, environment: 1}
+    tarball: 20, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 29
   fields: {timestamp: !!timestamp '2018-06-01 20:44:09+00:00', log_output_file: null,
-    tarball: 20, environment: 3}
+    tarball: 20, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 30
   fields: {timestamp: !!timestamp '2018-06-01 20:44:10+00:00', log_output_file: null,
-    tarball: 20, environment: 4}
+    tarball: 20, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 31
   fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: null,
-    tarball: 21, environment: 1}
+    tarball: 21, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 32
   fields: {timestamp: !!timestamp '2018-06-01 21:01:28+00:00', log_output_file: null,
-    tarball: 21, environment: 2}
+    tarball: 21, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 33
   fields: {timestamp: !!timestamp '2018-06-01 21:01:29+00:00', log_output_file: null,
-    tarball: 21, environment: 3}
+    tarball: 21, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 34
   fields: {timestamp: !!timestamp '2018-06-01 21:01:30+00:00', log_output_file: null,
-    tarball: 21, environment: 4}
+    tarball: 21, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 35
   fields: {timestamp: !!timestamp '2018-06-01 21:08:03+00:00', log_output_file: null,
-    tarball: 22, environment: 1}
+    tarball: 22, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 36
   fields: {timestamp: !!timestamp '2018-06-01 21:08:04+00:00', log_output_file: null,
-    tarball: 22, environment: 2}
+    tarball: 22, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 37
   fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: null,
-    tarball: 22, environment: 3}
+    tarball: 22, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 38
   fields: {timestamp: !!timestamp '2018-06-01 21:08:05+00:00', log_output_file: null,
-    tarball: 22, environment: 4}
+    tarball: 22, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 39
   fields: {timestamp: !!timestamp '2018-06-01 21:22:18+00:00', log_output_file: null,
-    tarball: 23, environment: 1}
+    tarball: 23, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 40
   fields: {timestamp: !!timestamp '2018-06-01 21:22:19+00:00', log_output_file: null,
-    tarball: 23, environment: 2}
+    tarball: 23, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 41
   fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: null,
-    tarball: 23, environment: 3}
+    tarball: 23, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 42
   fields: {timestamp: !!timestamp '2018-06-01 21:22:20+00:00', log_output_file: null,
-    tarball: 23, environment: 4}
+    tarball: 23, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 43
   fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: null,
-    tarball: 24, environment: 1}
+    tarball: 24, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 44
   fields: {timestamp: !!timestamp '2018-06-01 21:46:34+00:00', log_output_file: null,
-    tarball: 24, environment: 2}
+    tarball: 24, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 45
   fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: null,
-    tarball: 24, environment: 3}
+    tarball: 24, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 46
   fields: {timestamp: !!timestamp '2018-06-01 21:46:35+00:00', log_output_file: null,
-    tarball: 24, environment: 4}
+    tarball: 24, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 47
   fields: {timestamp: !!timestamp '2018-06-01 23:36:30+00:00', log_output_file: null,
-    tarball: 25, environment: 1}
+    tarball: 25, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 48
   fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: null,
-    tarball: 25, environment: 2}
+    tarball: 25, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 49
   fields: {timestamp: !!timestamp '2018-06-01 23:36:31+00:00', log_output_file: null,
-    tarball: 25, environment: 3}
+    tarball: 25, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 50
   fields: {timestamp: !!timestamp '2018-06-01 23:36:33+00:00', log_output_file: null,
-    tarball: 25, environment: 4}
+    tarball: 25, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 51
   fields: {timestamp: !!timestamp '2018-06-04 04:36:19+00:00', log_output_file: null,
-    tarball: 26, environment: 1}
+    tarball: 26, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 52
   fields: {timestamp: !!timestamp '2018-06-04 04:36:20+00:00', log_output_file: null,
-    tarball: 26, environment: 2}
+    tarball: 26, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 53
   fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: null,
-    tarball: 26, environment: 3}
+    tarball: 26, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 54
   fields: {timestamp: !!timestamp '2018-06-04 04:36:21+00:00', log_output_file: null,
-    tarball: 26, environment: 4}
+    tarball: 26, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 55
   fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: null,
-    tarball: 27, environment: 1}
+    tarball: 27, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 56
   fields: {timestamp: !!timestamp '2018-06-04 05:36:20+00:00', log_output_file: null,
-    tarball: 27, environment: 2}
+    tarball: 27, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 57
   fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: null,
-    tarball: 27, environment: 3}
+    tarball: 27, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 58
   fields: {timestamp: !!timestamp '2018-06-04 05:36:21+00:00', log_output_file: null,
-    tarball: 27, environment: 4}
+    tarball: 27, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 59
   fields: {timestamp: !!timestamp '2018-06-04 06:06:30+00:00', log_output_file: null,
-    tarball: 28, environment: 1}
+    tarball: 28, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 60
   fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: null,
-    tarball: 28, environment: 2}
+    tarball: 28, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 61
   fields: {timestamp: !!timestamp '2018-06-04 06:06:31+00:00', log_output_file: null,
-    tarball: 28, environment: 3}
+    tarball: 28, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 62
   fields: {timestamp: !!timestamp '2018-06-04 06:06:32+00:00', log_output_file: null,
-    tarball: 28, environment: 4}
+    tarball: 28, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 63
   fields: {timestamp: !!timestamp '2018-06-04 06:36:30+00:00', log_output_file: null,
-    tarball: 29, environment: 1}
+    tarball: 29, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 64
   fields: {timestamp: !!timestamp '2018-06-04 06:36:31+00:00', log_output_file: null,
-    tarball: 29, environment: 2}
+    tarball: 29, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 65
   fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: null,
-    tarball: 29, environment: 3}
+    tarball: 29, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 66
   fields: {timestamp: !!timestamp '2018-06-04 06:36:32+00:00', log_output_file: null,
-    tarball: 29, environment: 4}
+    tarball: 29, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 67
   fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: null,
-    tarball: 30, environment: 1}
+    tarball: 30, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 68
   fields: {timestamp: !!timestamp '2018-06-04 07:06:36+00:00', log_output_file: null,
-    tarball: 30, environment: 2}
+    tarball: 30, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 69
   fields: {timestamp: !!timestamp '2018-06-04 07:06:37+00:00', log_output_file: null,
-    tarball: 30, environment: 3}
+    tarball: 30, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 70
   fields: {timestamp: !!timestamp '2018-06-04 07:06:38+00:00', log_output_file: null,
-    tarball: 30, environment: 4}
+    tarball: 30, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 71
   fields: {timestamp: !!timestamp '2018-06-04 09:06:26+00:00', log_output_file: null,
-    tarball: 31, environment: 1}
+    tarball: 31, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 72
   fields: {timestamp: !!timestamp '2018-06-04 09:06:27+00:00', log_output_file: null,
-    tarball: 31, environment: 2}
+    tarball: 31, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 73
   fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: null,
-    tarball: 31, environment: 3}
+    tarball: 31, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 74
   fields: {timestamp: !!timestamp '2018-06-04 09:06:28+00:00', log_output_file: null,
-    tarball: 31, environment: 4}
+    tarball: 31, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 75
   fields: {timestamp: !!timestamp '2018-06-04 09:36:16+00:00', log_output_file: null,
-    tarball: 32, environment: 1}
+    tarball: 32, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 76
   fields: {timestamp: !!timestamp '2018-06-04 09:36:17+00:00', log_output_file: null,
-    tarball: 32, environment: 2}
+    tarball: 32, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 77
   fields: {timestamp: !!timestamp '2018-06-04 09:36:18+00:00', log_output_file: null,
-    tarball: 32, environment: 3}
+    tarball: 32, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 78
   fields: {timestamp: !!timestamp '2018-06-04 09:36:19+00:00', log_output_file: null,
-    tarball: 32, environment: 4}
+    tarball: 32, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 79
   fields: {timestamp: !!timestamp '2018-06-04 10:36:22+00:00', log_output_file: null,
-    tarball: 33, environment: 1}
+    tarball: 33, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 80
   fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: null,
-    tarball: 33, environment: 2}
+    tarball: 33, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 81
   fields: {timestamp: !!timestamp '2018-06-04 10:36:23+00:00', log_output_file: null,
-    tarball: 33, environment: 3}
+    tarball: 33, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 82
   fields: {timestamp: !!timestamp '2018-06-04 10:36:24+00:00', log_output_file: null,
-    tarball: 33, environment: 4}
+    tarball: 33, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 83
   fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: null,
-    tarball: 34, environment: 1}
+    tarball: 34, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 84
   fields: {timestamp: !!timestamp '2018-06-04 18:06:24+00:00', log_output_file: null,
-    tarball: 34, environment: 2}
+    tarball: 34, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 85
   fields: {timestamp: !!timestamp '2018-06-04 18:06:25+00:00', log_output_file: null,
-    tarball: 34, environment: 3}
+    tarball: 34, environment: 3, testcase: 1}
 - model: results.testrun
   pk: 86
   fields: {timestamp: !!timestamp '2018-06-04 18:06:26+00:00', log_output_file: null,
-    tarball: 34, environment: 4}
+    tarball: 34, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 87
   fields: {timestamp: !!timestamp '2018-06-04 20:06:29+00:00', log_output_file: null,
-    tarball: 35, environment: 1}
+    tarball: 35, environment: 1, testcase: 1}
 - model: results.testrun
   pk: 88
   fields: {timestamp: !!timestamp '2018-06-04 20:06:30+00:00', log_output_file: null,
-    tarball: 35, environment: 2}
+    tarball: 35, environment: 2, testcase: 1}
 - model: results.testrun
   pk: 89
   fields: {timestamp: !!timestamp '2018-06-04 20:06:31+00:00', log_output_file: null,
-    tarball: 35, environment: 4}
+    tarball: 35, environment: 4, testcase: 1}
 - model: results.testrun
   pk: 90
   fields: {timestamp: !!timestamp '2018-06-04 20:06:32+00:00', log_output_file: null,
-    tarball: 35, environment: 4}
+    tarball: 35, environment: 4, testcase: 1}
 - model: results.testresult
   pk: 1
   fields: {result: PASS, difference: 0.1, expected_value: null, measurement: 1, run: 1}
