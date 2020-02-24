@@ -1,23 +1,12 @@
-import { h, render } from 'preact'
+import { h, render, Component } from 'preact'
 import ResultSummary from './components/ResultSummary'
-import { Row } from './row'
+import { withRowSupport } from './row'
 
-class DashboardTable extends Row {
-  constructor (props) {
-    const table = document.getElementById('dashboard-table')
-
-    const linkStart = parseInt(table.dataset.start)
-    const linkEnd = parseInt(table.dataset.end)
-    const shown = table.dataset.shown
-    const isAdmin = table.dataset.admin === 'True'
-
-    super(props, 'patchsets', linkStart, linkEnd, shown, isAdmin)
-  }
-
+class DashboardTable extends Component {
   render () {
     return (
       <ul className="list-group mb-3">
-        {this.state.rows.map(ps =>
+        {this.props.rows.map(ps =>
           <a href={ps.detail_url} key={ps.js_id} className="list-group-item list-group-item-action">
             {(ps.error &&
               <div>{ps.error}</div>
@@ -76,7 +65,7 @@ class DashboardTable extends Row {
                     &nbsp;
                   </div>
 
-                  {this.isAdmin &&
+                  {this.props.isAdmin &&
                     <small className="text-nowrap text-muted" title="The time it took from when the patchset was submitted to when the last test run completed.">
                       {(ps.time_to_last_test &&
                         ps.time_to_last_test
@@ -101,5 +90,14 @@ export function initDashboard () {
     return
   }
 
-  render(<DashboardTable />, domContainer)
+  const DashboardTableWithRows = withRowSupport(
+    DashboardTable,
+    'patchsets',
+    parseInt(domContainer.dataset.start),
+    parseInt(domContainer.dataset.end),
+    domContainer.dataset.shown,
+    domContainer.dataset.admin === 'True'
+  )
+
+  render(<DashboardTableWithRows />, domContainer)
 }

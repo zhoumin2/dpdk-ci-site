@@ -1,23 +1,12 @@
-import { h, render } from 'preact'
+import { h, render, Component } from 'preact'
 import ResultSummary from './components/ResultSummary'
-import { Row } from './row'
+import { withRowSupport } from './row'
 
-class TarballTable extends Row {
-  constructor (props) {
-    const table = document.getElementById('tarball-table')
-
-    const linkStart = parseInt(table.dataset.start)
-    const linkEnd = parseInt(table.dataset.end)
-    const shown = table.dataset.shown
-    const isAdmin = table.dataset.admin === 'True'
-
-    super(props, 'tarballs', linkStart, linkEnd, shown, isAdmin)
-  }
-
+class TarballTable extends Component {
   render () {
     return (
       <ul className="list-group mb-3">
-        {this.state.rows.map(t =>
+        {this.props.rows.map(t =>
           <a href={t.detail_url} key={t.js_id} className="list-group-item list-group-item-action">
             <div>
               <div className="row">
@@ -96,5 +85,14 @@ export function initTarballs () {
     return
   }
 
-  render(<TarballTable />, domContainer)
+  const TarballTableWithRows = withRowSupport(
+    TarballTable,
+    'tarballs',
+    parseInt(domContainer.dataset.start),
+    parseInt(domContainer.dataset.end),
+    domContainer.dataset.shown,
+    domContainer.dataset.admin === 'True'
+  )
+
+  render(<TarballTableWithRows />, domContainer)
 }
