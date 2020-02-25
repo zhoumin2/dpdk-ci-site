@@ -42,27 +42,6 @@ from shared.util import requests_to_response
 logger = getLogger('dashboard')
 
 
-def text_color_classes(bg_class):
-    """Return optimal Bootstrap text and background classes for the given class.
-
-    The colors are chosen based on the Bootstrap documentation.
-    """
-    foregrounds = {
-        'primary': 'white',
-        'secondary': 'white',
-        'success': 'white',
-        'danger': 'white',
-        'warning': 'dark',
-        'info': 'white',
-        'light': 'dark',
-        'dark': 'white',
-        'white': 'dark',
-        'transparent': 'dark',
-    }
-    return 'bg-{0:s} text-{1:s}'.format(
-        bg_class, foregrounds.get(bg_class, 'dark'))
-
-
 def parse_page(page):
     """Parse the page to a positive 0-indexed number.
 
@@ -186,16 +165,6 @@ class BaseDashboardView(TemplateView):
                              'cache hit(s)')
             # Save some memory
             self.dev_cache = {}
-
-    def add_status(self, patchset, session, add_range=True, **kwargs):
-        """Pass in the patchset to apply a range."""
-        self.set_cache_request(patchset, session, 'result_summary', 300)
-        summary = patchset['result_summary']
-        for tc_id in summary['testcases']:
-            tc = summary['testcases'][tc_id]
-            if add_range:
-                tc['passed_range'] = range(tc['passed'])
-                tc['failed_range'] = range(tc['failed'])
 
     def get_cache_request(self, key, session, timeout=2400):
         """Get and cache the the return the response json of a GET request.
@@ -468,6 +437,37 @@ class PatchSetRow(PatchSet):
 
 
 class Tarball(BaseDashboardView):
+    def get(self, *args, **kwargs):
+        if self.request.GET.get('result_summary'):
+            with api_session(self.request) as s:
+                context = {'tarball': self.get_init_tarball(s)}
+                self.set_cache_request(
+                    context['tarball'], s, 'result_summary', 300)
+
+            return JsonResponse(context['tarball']['result_summary'])
+
+        if self.request.GET.get('environments'):
+            with api_session(self.request) as s:
+                context = {'tarball': self.get_init_tarball(s)}
+
+                self.add_testcases(context, s)
+                self.populate_tarball_context(context, s)
+
+            # Remove recursive runs
+            for env in context["environments"]:
+                environment = context["environments"][env]
+                for testcase in environment["testcases"]:
+                    tc = environment["testcases"][testcase]
+                    for run in tc["runs"]:
+                        run.pop("environment", None)
+
+            # Add token for js
+            context["csrf"] = csrf.get_token(self.request)
+            context["isAdmin"] = self.request.user.is_superuser
+
+            return JsonResponse(context)
+        return super().get(*args, **kwargs)
+
     def show_elements(self, s, owner):
         # if the user is not in the owning group, then don't show
         # certain elements, such as links (since they won't have access
@@ -542,6 +542,8 @@ class Tarball(BaseDashboardView):
                 run['log_upload_file'] = build_upload_url(
                     self.request, run['log_upload_file'])
 
+            run['rerun_url'] = reverse('dashboard_rerun', args=[run['id']])
+            run['togglepublic_url'] = reverse('testrun_togglepublic', args=[run['id']])
             run['timestamp'] = parse_datetime(run['timestamp'])
             run['failure_count'] = 0
 
@@ -582,6 +584,8 @@ class Tarball(BaseDashboardView):
     def populate_tarball_context(self, context, s):
         if context['tarball'].get('date'):
             context['tarball']['date'] = parse_datetime(context['tarball']['date'])
+
+        context['tarball']['build_url'] = reverse('dashboard_build', args=[context['tarball']['id']])
 
         self.set_cache_request(context['tarball'], s, 'branch')
         self.set_ci_download_url(context['tarball'])
@@ -686,12 +690,9 @@ class Tarball(BaseDashboardView):
         context['shown']['without'] = True
         return False
 
-    def update_tarballs(self, context, s, add_status, **kwargs):
+    def update_tarballs(self, context, s):
         for tarball in context['tarballs']:
             self.set_cache_request(tarball, s, 'branch')
-
-            if add_status:
-                self.add_status(tarball, s, **kwargs)
 
             if tarball['date']:
                 tarball['date'] = dateformat.format(
@@ -714,36 +715,13 @@ class PatchSetDetail(Tarball, PatchSet):
 
     template_name = 'dashboard/patchset_detail.html'
 
-    def get(self, *args, **kwargs):
-        environment = self.request.GET.get('environments')
-        if environment:
-            with api_session(self.request) as s:
-                api_resp = s.get(urljoin(settings.API_BASE_URL,
-                                         f'patchsets/{self.kwargs["id"]}/'))
-                if api_resp.status_code == HTTPStatus.NOT_FOUND:
-                    raise Http404
-                context = {'patchset': api_resp.json()}
-                context['tarball'] = s.get(context['patchset']['tarballs'][-1]).json()
-                self.add_testcases(context, s)
-                self.populate_tarball_context(context, s)
-
-                # Used for rebuilds
-                if self.request.user.is_authenticated:
-                    api_resp = s.get(urljoin(settings.API_BASE_URL, f'branches/'))
-                    api_resp.raise_for_status()
-                    context['branches'] = api_resp.json()['results']
-            context.pop("patchset", None)
-            context.pop("tarball", None)
-            context.pop("branches", None)
-            for env in context["environments"]:
-                environment = context["environments"][env]
-                for testcase in environment["testcases"]:
-                    tc = environment["testcases"][testcase]
-                    for run in tc["runs"]:
-                        run.pop("environment", None)
-            context["csrf"] = csrf.get_token(self.request);
-            return JsonResponse(context)
-        return super().get(*args, **kwargs)
+    def get_init_tarball(self, s):
+        api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                 f'patchsets/{self.kwargs["id"]}/'))
+        if api_resp.status_code == HTTPStatus.NOT_FOUND:
+            raise Http404
+        patchset = api_resp.json()
+        return s.get(patchset['tarballs'][-1]).json()
 
     def get_context_data(self, **kwargs):
         """Return contextual data about the patchset for the test runs."""
@@ -759,21 +737,27 @@ class PatchSetDetail(Tarball, PatchSet):
             if not context['patchset']['series_id']:
                 raise Http404
 
-            self.add_testcases(context, s)
-
             series = pw_get(context['patchset']['pw_series_url'])
             context['patchset']['series'] = series
             context['patchset']['patchwork_range_str'] = \
                 self.patchwork_range_str(series)
-            self.add_status(context['patchset'], s)
+
             # assume UTC
             context['patchset']['date'] = parse_datetime(f'{series["date"]}+00:00')
             self.set_patchset_submitter(series)
 
-            context['environments'] = dict()
+            context['environments'] = []
             if context['patchset'].get('tarballs', []):
                 context['tarball'] = s.get(context['patchset']['tarballs'][-1]).json()
-                self.populate_tarball_context(context, s)
+                self.set_cache_request(context['tarball'], s, 'branch')
+                self.set_ci_download_url(context['tarball'])
+
+                api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                                 params={'active': True})
+                if api_resp.status_code not in [HTTPStatus.UNAUTHORIZED,
+                                                HTTPStatus.FORBIDDEN]:
+                    api_resp.raise_for_status()
+                    context['environments'] = api_resp.json()['results']
 
             elif context['patchset']['build_log']:
                 api_resp = s.get(context['patchset']['build_log'])
@@ -795,16 +779,14 @@ class PatchSetDetail(Tarball, PatchSet):
                 context['branches'] = api_resp.json()['results']
 
         context['title'] = f'Patch set {context["patchset"]["id"]}'
-        context['status_classes'] = text_color_classes(
-            context['patchset']['result_summary']['status_class'])
-        evnidlist=[]
-        for env in context["environments"]:
-           environments = context['environments']
-           environment = environments[env]
-           envid = environment['id']
-           evnidlist.append(str(envid))
-        context["env_ids"]=evnidlist
-        context["env_ids"] = ",".join(evnidlist)
+
+        # Add ids and names for JS
+        if context['environments']:
+            env_id_list, env_name_list = zip(
+                *[(str(env['id']), env['name'])
+                  for env in context['environments']])
+            context['env_ids'] = ','.join(env_id_list)
+            context['env_names'] = ','.join(env_name_list)
         return context
 
 
@@ -840,7 +822,7 @@ class TarballList(Tarball):
             context['range'] = range(offset, end)
             paginate_rest(page, context, resp_json['count'])
 
-        self.update_tarballs(context, s, False)
+        self.update_tarballs(context, s)
         return context
 
 
@@ -864,7 +846,7 @@ class TarballRow(Tarball):
             resp_json = resp.json()
             context['tarballs'] = resp_json['results']
 
-            self.update_tarballs(context, s, False, **kwargs)
+            self.update_tarballs(context, s)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -891,6 +873,13 @@ class TarballDetail(Tarball):
 
     template_name = 'dashboard/tarball_detail.html'
 
+    def get_init_tarball(self, s):
+        api_resp = s.get(urljoin(settings.API_BASE_URL,
+                                 f'tarballs/{self.kwargs["id"]}/'))
+        if api_resp.status_code == HTTPStatus.NOT_FOUND:
+            raise Http404
+        return api_resp.json()
+
     def get_context_data(self, **kwargs):
         """Return contextual data about the tarball for the test runs."""
         context = super().get_context_data(**kwargs)
@@ -900,11 +889,20 @@ class TarballDetail(Tarball):
             if api_resp.status_code == HTTPStatus.NOT_FOUND:
                 raise Http404
             context['tarball'] = api_resp.json()
-            self.add_status(context['tarball'], s)
+
+            if context['tarball'].get('date'):
+                context['tarball']['date'] = parse_datetime(context['tarball']['date'])
+            self.set_cache_request(context['tarball'], s, 'branch')
+
+            api_resp = s.get(urljoin(settings.API_BASE_URL, 'environments/'),
+                             params={'active': True})
+            if api_resp.status_code not in [HTTPStatus.UNAUTHORIZED,
+                                            HTTPStatus.FORBIDDEN]:
+                api_resp.raise_for_status()
+                context['environments'] = api_resp.json()['results']
 
             self.add_testcases(context, s)
-
-            self.populate_tarball_context(context, s)
+            self.set_ci_download_url(context['tarball'])
 
             if context['tarball']['patchset']:
                 resp = s.get(context['tarball']['patchset'])
@@ -912,8 +910,14 @@ class TarballDetail(Tarball):
                 context['tarball']['patchset'] = resp.json()
 
         context['title'] = f'Tarball {context["tarball"]["id"]}'
-        context['status_classes'] = text_color_classes(
-            context['tarball']['result_summary']['status_class'])
+
+        # Add ids and names for JS
+        if context['environments']:
+            env_id_list, env_name_list = zip(
+                *[(str(env['id']), env['name'])
+                  for env in context['environments']])
+            context['env_ids'] = ','.join(env_id_list)
+            context['env_names'] = ','.join(env_name_list)
         return context
 
 

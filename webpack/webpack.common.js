@@ -27,10 +27,10 @@ module.exports = {
             ]
           ],
           plugins: [
-            [
-              '@babel/transform-react-jsx',
-              { pragma: 'h' }
-            ]
+            ['@babel/transform-react-jsx', {
+              pragma: 'h',
+              pragmaFrag: 'Fragment'
+            }]
           ]
         }
       }

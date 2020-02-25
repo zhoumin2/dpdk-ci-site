@@ -57,7 +57,9 @@
   <li><a href="https://patches.dpdk.org/patch/{{ p.id }}">{{ p.name }}</a></li>
   {% endfor %}
 </ul>
-{% include 'dashboard/result_summary.html' with obj=patchset %}
+
+<div id="result-summary"></div>
+
 {% if user.is_authenticated %}
 <form class="form-inline mb-3" action="{% url 'dashboard_rebuild' patchset.id %}?next={% url 'patchset_detail' patchset.id %}" method="POST">
   {% csrf_token %}
@@ -80,6 +82,4 @@
 
 {% block js %}
 {% include 'dashboard/js_bundle.html' %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.1/anchor.min.js" integrity="sha256-pB/deHc9CGfFpJRjC43imB29Rse8tak+5eXqntO94ck=" crossorigin="anonymous"></script>
-<script>anchors.add('.env-title');</script>
 {% endblock %}

@@ -11,7 +11,8 @@ module.exports = {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
     logError: 'readonly',
-    toastr: 'readonly'
+    toastr: 'readonly',
+    anchors: 'readonly'
   },
   parser: 'babel-eslint',
   parserOptions: {
@@ -26,6 +27,6 @@ module.exports = {
   ],
   rules: {
    'react/jsx-uses-vars': [2],
-   'no-unused-vars': ['error', { 'varsIgnorePattern': 'h' }]
+   'no-unused-vars': ['error', { 'varsIgnorePattern': 'h|Fragment' }]
   }
 }
